@@ -1076,8 +1076,8 @@ class CronJobsController extends AppController {
         $this->autoRender = false;
         $from = "8552271882";
         $callee = "9808117322";
-        $tApikey = "AC954e5b4acdc29986f96b44dd371eaf48";
-        $tApiToken = "1407cf1cd0273cbbfd097392228d93c9";
+        $tApikey = "";
+        $tApiToken = "";
         App::import('Vendor', 'Twilio', array('file' => 'Twilio' . DS . 'Services' . DS . 'Twilio.php'));
         $client = new Services_Twilio($tApikey, $tApiToken);
         //$from = "+91" . "" . "9808117322";
