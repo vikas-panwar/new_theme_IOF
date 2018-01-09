@@ -10,7 +10,7 @@ class AjaxMenusController extends StoreAppController {
 
     public function beforeFilter() {
         parent::beforeFilter();
-        $this->Auth->allow('user_login', 'user_guest', 'setDefaultStoreTime', 'delivery', 'guestdelivery', 'getDeliveryAddress', 'deleteaddress', 'addAddress', 'checklogin','checkAddressInZone');
+        $this->Auth->allow('user_login', 'user_guest', 'setDefaultStoreTime', 'delivery', 'guestdelivery', 'getDeliveryAddress', 'deleteaddress', 'addAddress', 'checklogin', 'checkAddressInZone');
         $roleId = AuthComponent::User('role_id');
         if (!empty($roleId) && $roleId != 4) {
             $this->InvalidLogin($roleId);
@@ -97,6 +97,8 @@ class AjaxMenusController extends StoreAppController {
         if (isset($this->request->data['ordertype'])) {
             $ReqorderType = $this->request->data['ordertype'];
         }
+        $this->Session->write('Order.order_type',$ReqorderType);
+        $nowAvail = $this->blackOutDays();
         //get current pick-up time
         $finaldata = array();
         $today = 1;
@@ -132,7 +134,9 @@ class AjaxMenusController extends StoreAppController {
         $finaldata['pickupmaxdate'] = $pickupmaxdate;
         $encrypted_storeId = $this->Encryption->encode($this->Session->read('store_id'));
         $encrypted_merchantId = $this->Encryption->encode($this->Session->read('merchant_id'));
-        $this->set(compact('finaldata', 'encrypted_storeId', 'encrypted_merchantId', 'ReqorderType'));
+        $type = $this->Session->read('Order.order_type');
+        $nowData = $this->_checkNowTime($type);
+        $this->set(compact('finaldata', 'encrypted_storeId', 'encrypted_merchantId', 'ReqorderType','nowAvail','nowData'));
     }
 
     public function delivery() {
@@ -140,25 +144,19 @@ class AjaxMenusController extends StoreAppController {
         if ($this->Session->check('Auth.User.Order')) {
             $this->Session->delete('Auth.User.Order');
         }
-        if ($this->request->data) {
+        if ($this->request->is('post') && $this->request->data) {
             $order_type = $this->request->data['orderType']['type'];
             $this->Session->write('Order.order_type', $order_type);
-            $type = $order_type;
+            $this->Session->write('Cart.segment_type', $order_type);
             $preOrderallowed = $this->Store->checkPreorder($this->Session->read('store_id'), $this->Session->read('merchant_id'));
             if (empty($preOrderallowed)) {
-                $current_date = date("Y-m-d", (strtotime($this->Common->storeTimeZoneUser('', date('Y-m-d H:i:s')))));
-                $orderType = $type;
-                $today = 1;
-                $finaldata = $this->Common->getNextDayTimeRange($current_date, $today, $orderType);
-                $timearray = array_diff($finaldata['time_range'], $finaldata['time_break']);
-                $pickupTime = reset($timearray);
-                $explodeVal = explode("-", $finaldata['currentdate']);
-                $finaldata['currentdate'] = $explodeVal[1] . "-" . $explodeVal[2] . "-" . $explodeVal[0];
-                $pickupDate = $finaldata['currentdate'];
+                $nowData = $this->_checkNowTime($order_type);
+                $pickupTime = $nowData['pickup_time'];
+                $pickupDate = $nowData['pickup_date'];
                 $this->Session->write('Order.is_preorder', 0);
             } else {
                 $this->request->data['Store']['pickup_time'] = $this->request->data['Store']['pickup_hour'] . ':' . $this->request->data['Store']['pickup_minute'] . ':00';
-                $pickupTime = $this->Common->storeTimeFormateUser($this->data['Store']['pickup_time']);
+                $pickupTime = $this->Common->storeTimeFormateUser($this->request->data['Store']['pickup_time']);
                 if ($order_type == 2) {
                     $pickupDate = $this->request->data['orderType']['pick_up_date'];
                 } else {
@@ -226,7 +224,7 @@ class AjaxMenusController extends StoreAppController {
 
         $dlocation = $data['DeliveryAddress']['address'] . " " . $data['DeliveryAddress']['city'] . " " . $data['DeliveryAddress']['state'] . " " . $data['DeliveryAddress']['zipcode'];
         $adjuster_address2 = str_replace(' ', '+', $dlocation);
-        $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+        $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
         $output = json_decode($geocode);
         if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
             
@@ -280,7 +278,7 @@ class AjaxMenusController extends StoreAppController {
             $address = trim(ucwords($this->request->data['DeliveryAddress']['address']));
             $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
             $adjuster_address2 = str_replace(' ', '+', $dlocation);
-            $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+            $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
             $output = json_decode($geocode);
             $this->request->data['DeliveryAddress']['user_id'] = AuthComponent::User('id');
             $this->request->data['DeliveryAddress']['store_id'] = $decrypt_storeId;
@@ -379,7 +377,7 @@ class AjaxMenusController extends StoreAppController {
                 $address = trim(ucwords($tmp['DeliveryAddress']['address']));
                 $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                 $adjuster_address2 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
                 $output = json_decode($geocode);
                 $tmp['DeliveryAddress']['user_id'] = AuthComponent::User('id');
                 $tmp['DeliveryAddress']['store_id'] = $decrypt_storeId;
@@ -411,7 +409,7 @@ class AjaxMenusController extends StoreAppController {
                 $address = trim(ucwords($tmp['DeliveryAddress1']['address']));
                 $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                 $adjuster_address2 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
                 $output = json_decode($geocode);
                 $tmp['DeliveryAddress1']['user_id'] = AuthComponent::User('id');
                 $tmp['DeliveryAddress1']['store_id'] = $decrypt_storeId;
@@ -443,7 +441,7 @@ class AjaxMenusController extends StoreAppController {
                 $address = trim(ucwords($tmp['DeliveryAddress2']['address']));
                 $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                 $adjuster_address2 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
                 $output = json_decode($geocode);
                 $tmp['DeliveryAddress2']['user_id'] = AuthComponent::User('id');
                 $tmp['DeliveryAddress2']['store_id'] = $decrypt_storeId;
@@ -475,7 +473,7 @@ class AjaxMenusController extends StoreAppController {
                 $address = trim(ucwords($tmp['DeliveryAddress3']['address']));
                 $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                 $adjuster_address3 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address3 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address3 . '&sensor=false');
                 $output = json_decode($geocode);
                 $tmp['DeliveryAddress3']['user_id'] = AuthComponent::User('id');
                 $tmp['DeliveryAddress3']['store_id'] = $decrypt_storeId;
@@ -508,7 +506,7 @@ class AjaxMenusController extends StoreAppController {
                 $address = trim(ucwords($tmp['DeliveryAddress4']['address']));
                 $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                 $adjuster_address4 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address4 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address4 . '&sensor=false');
                 $output = json_decode($geocode);
                 $tmp['DeliveryAddress4']['user_id'] = AuthComponent::User('id');
                 $tmp['DeliveryAddress4']['store_id'] = $decrypt_storeId;
@@ -565,7 +563,7 @@ class AjaxMenusController extends StoreAppController {
             $data['DeliveryAddress']['zipcode'] = $this->request->data['zipcode'];
             $dlocation = $data['DeliveryAddress']['address'] . " " . $data['DeliveryAddress']['city'] . " " . $data['DeliveryAddress']['state'] . " " . $data['DeliveryAddress']['zipcode'];
             $adjuster_address = str_replace(' ', '+', $dlocation);
-            $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address . '&sensor=false');
+            $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address . '&sensor=false');
             $output = json_decode($geocode);
             if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
                 $response['msg'] = "Order cannot be delivered to this address.";

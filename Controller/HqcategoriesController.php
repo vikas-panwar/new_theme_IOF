@@ -269,7 +269,7 @@ class HqcategoriesController extends HqAppController {
     public function updateOrder() {
         $this->autoRender = false;
         if (isset($_GET) && !empty($_GET)) {
-	    $_GET = array_filter($_GET);
+            $_GET = array_filter($_GET);
             foreach ($_GET as $key => $val) {
                 $this->Category->updateAll(array('position' => $val), array('id' => $this->Encryption->decode($key)));
             }

@@ -129,7 +129,7 @@ class ToppingsController extends StoreAppController {
                     'foreignKey' => 'item_id',
                     'type' => 'inner',
                     'conditions' => array('Item.is_deleted' => 0, 'Item.is_active' => 1),
-                    'fields' => array('id', 'name','category_id')
+                    'fields' => array('id', 'name', 'category_id')
                 ), 'Category' => array(
                     'className' => 'Category',
                     'foreignKey' => 'category_id',
@@ -777,7 +777,7 @@ class ToppingsController extends StoreAppController {
         if (!empty($itemList)) {
             foreach ($itemList as $iList) {
                 if (!empty($iList['Item']) && !empty($iList['Category'])) {
-                    if ($iList['Topping']['is_addon_category']==1) {
+                    if ($iList['Topping']['is_addon_category'] == 1) {
                         $categoryList[$iList['Category']['id']] = $iList['Category']['name'];
                     } else {
                         $nList[$iList['Item']['id']] = $iList['Item']['name'];
@@ -1083,12 +1083,19 @@ class ToppingsController extends StoreAppController {
                 $sheetData = $objPHPExcel->getActiveSheet()->toArray(null, true, true, true);
                 $real_data = array_values($sheetData);
                 $i = 0;
+                $storeId = $this->Session->read('admin_store_id');
+                $merchantId = $this->Session->read('admin_merchant_id');
                 foreach ($real_data as $key => $row) {
+                    $row['A'] = trim($row['A']);
+                    if (!empty($row['A'])) {
+                        $isUniqueId = $this->Topping->checkToppingWithId($row['A']);
+                        if (!empty($isUniqueId) && $isUniqueId['Topping']['store_id'] != $storeId) {
+                            continue;
+                        }
+                    }
                     $row = $this->Common->trimValue($row);
                     if ($key > 0) {
                         if (!empty($row['B']) && !empty($row['C'])) {
-                            $storeId = $this->Session->read('admin_store_id');
-                            $merchantId = $this->Session->read('admin_merchant_id');
                             if (!empty($storeId)) {
                                 $categoryId = $this->Category->getCategoryByName($storeId, trim($row['C']));
                                 if (!empty($categoryId)) {

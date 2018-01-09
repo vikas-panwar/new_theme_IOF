@@ -76,7 +76,7 @@ class HqnewslettersController extends HqAppController {
                         $storeData = $this->Store->getAllStoreByMerchantId($merchantId);
                         if (!empty($storeData)) {
                             foreach ($storeData as $key => $store) {
-                                $this->request->data['Newsletter']['store_id'] = $store['Store']['id'];
+                                $this->request->data['Newsletter']['store_id']  = $store['Store']['id'];
                                 $this->request->data['Newsletter']['added_from']= 2;
                                 $this->_saveNewsLetterAdd($merchantId, $this->request->data, 'All');
                             }
@@ -87,7 +87,6 @@ class HqnewslettersController extends HqAppController {
                         $this->request->data['Newsletter']['added_from']= 2;
                         $this->_saveNewsLetterAdd($merchantId, $this->request->data);
                     }
-
                     $this->Session->setFlash(__("Newsletter Successfully Created"), 'alert_success');
                     $this->redirect(array('controller' => 'hqnewsletters', 'action' => 'addNewsletter'));
                 } else {
@@ -228,8 +227,9 @@ class HqnewslettersController extends HqAppController {
             $this->request->data = $this->Common->trimValue($this->request->data);
             $newsletterTitle = trim($this->request->data['Newsletter']['name']);
             $newsletterCode = trim($this->request->data['Newsletter']['content_key']);
-            $isUniqueName = $this->Newsletter->checkNewsletterUniqueNameByMerchantId($newsletterTitle, $merchantId, $data['Newsletter']['id']);
-            $isUniqueCode = $this->Newsletter->checkNewsletterUniqueCodeByMerchantId($newsletterCode, $merchantId, $data['Newsletter']['id']);
+            $newsletterStoreId = $newsletterDetail['Newsletter']['store_id'];
+            $isUniqueName = $this->Newsletter->checkNewsletterUniqueNameByMerchantId($newsletterTitle, $merchantId, $data['Newsletter']['id'], $newsletterStoreId);
+            $isUniqueCode = $this->Newsletter->checkNewsletterUniqueCodeByMerchantId($newsletterCode, $merchantId, $data['Newsletter']['id'], $newsletterStoreId);
             if ($isUniqueName) {
                 if ($isUniqueCode) {
                     $newsletterdata = array();

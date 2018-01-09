@@ -688,13 +688,19 @@ class OffersController extends StoreAppController {
                 $sheetData = $objPHPExcel->getActiveSheet()->toArray(null, true, true, true);
                 $real_data = array_values($sheetData);
                 $i = 0;
-
+                $storeId = $this->Session->read('admin_store_id');
+                $merchantId = $this->Session->read('admin_merchant_id');
                 foreach ($real_data as $key => $row) {
+                    $row['A'] = trim($row['A']);
+                    if (!empty($row['A'])) {
+                        $isUniqueId = $this->Offer->checkOfferWithId($row['A']);
+                        if (!empty($isUniqueId) && $isUniqueId['Offer']['store_id'] != $storeId) {
+                            continue;
+                        }
+                    }
                     $row = $this->Common->trimValue($row);
                     if ($key > 0) {
                         if (!empty($row['B']) && !empty($row['C']) && !empty($row['E'])) {
-                            $storeId = $this->Session->read('admin_store_id');
-                            $merchantId = $this->Session->read('admin_merchant_id');
                             if (!empty($storeId)) {
                                 $itemId = $this->Item->getItemIdByName($storeId, trim($row['B']));
                                 if (!empty($itemId)) {
@@ -1199,7 +1205,7 @@ class OffersController extends StoreAppController {
             $this->redirect($this->referer());
         }
     }
-    
+
     public function offerUsedDetail($EncryptOrderId = null) {
         $this->layout = "admin_dashboard";
         $order_id = $this->Encryption->decode($EncryptOrderId);
@@ -1221,7 +1227,7 @@ class OffersController extends StoreAppController {
                         'OrderOfferedItem' => array(
                             'className' => 'Item',
                             'foreignKey' => 'offered_item_id',
-                            //'fields' => array('id', 'name'),
+                        //'fields' => array('id', 'name'),
                         )
         )));
         $this->Order->bindModel(
@@ -1243,8 +1249,8 @@ class OffersController extends StoreAppController {
                             'foreignKey' => 'item_id',
                             'fields' => array('Item.id', 'Item.name'),
                         )
-        ), 'hasMany' => array(
-            'OfferDetail' => array(
+                    ), 'hasMany' => array(
+                        'OfferDetail' => array(
                             'fields' => array('OfferDetail.discountAmt', 'OfferDetail.offerItemID'),
                             'className' => 'OfferDetail',
                             'foreignKey' => 'offer_id',
@@ -1259,19 +1265,17 @@ class OffersController extends StoreAppController {
             $index = 0;
             foreach ($totalOfferUsedLists as $key => $list) {
                 if (!empty($list)) {
-                    if(!in_array($list['Offer']['id'], $offerNewArray))
-                    {
+                    if (!in_array($list['Offer']['id'], $offerNewArray)) {
                         $offeredItemArray = $this->orderOfferItemNames($order_id, $list['Offer']['id']);
                         $offeredItemNames = '';
-                        foreach ($offeredItemArray as $offeredItem)
-                        {
+                        foreach ($offeredItemArray as $offeredItem) {
                             $offeredItemNames .= $offeredItem['Item']['name'] . ', ';
                         }
                         $offeredItemNames = trim($offeredItemNames, ', ');
-                        
+
                         $offerNewArray[] = $list['Offer']['id'];
                         $totalOfferUsedList[$index]['offer_id'] = $list['Offer']['id'];
-                        $totalOfferUsedList[$index]['order_offer_item_id'] = $list['OrderOffer']['offered_item_id'];          
+                        $totalOfferUsedList[$index]['order_offer_item_id'] = $list['OrderOffer']['offered_item_id'];
                         $totalOfferUsedList[$index]['is_fixed_price'] = $list['Offer']['is_fixed_price'];
                         $totalOfferUsedList[$index]['offerprice'] = $list['Offer']['offerprice'];
                         $totalOfferUsedList[$index]['offered_item_name'] = $offeredItemNames;
@@ -1281,7 +1285,6 @@ class OffersController extends StoreAppController {
                             $totalOfferUsedList[$index]['offer_item'] = $list['Offer']['OfferDetail'];
                             $totalOfferUsedList[$index]['name'] = $list['Order']['DeliveryAddress']['name_on_bell'];
                             $totalOfferUsedList[$index]['email'] = $list['Order']['DeliveryAddress']['email'];
-
                         } else {
                             $totalOfferUsedList[$index]['description'] = $list['Offer']['description'];
                             $totalOfferUsedList[$index]['item_name'] = $list['Offer']['Item']['name'];
@@ -1294,23 +1297,23 @@ class OffersController extends StoreAppController {
                 $index++;
             }
         }
-        
+
         $this->set('list', $totalOfferUsedList);
     }
-    
-    function orderOfferItemNames($orderId = null, $offerId = null)
-    {
+
+    function orderOfferItemNames($orderId = null, $offerId = null) {
         $this->OrderOffer->bindModel(
                 array('belongsTo' => array(
                         'Item' => array(
                             'className' => 'Item',
                             'foreignKey' => 'offered_item_id',
-                            //'fields' => array('id', 'name'),
+                        //'fields' => array('id', 'name'),
                         )
                     )
                 )
-            );
+        );
         $list = $this->OrderOffer->find('all', array('fields' => array('OrderOffer.id', 'OrderOffer.offered_item_id', 'Item.name'), 'conditions' => array('OrderOffer.order_id' => $orderId, 'OrderOffer.offer_id' => $offerId)));
         return $list;
     }
+
 }

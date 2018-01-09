@@ -782,7 +782,8 @@ class HqController extends HqAppController {
                 if ($emailSuccess) {
                     $this->Store->bindModel(array('belongsTo' => array('User' => array('fields' => array('User.fname', 'User.lname')))));
                     $store = $this->Store->getStoreDetail($this->request->data['StorePayment']['store_id']);
-                    if (($store['Store']['notification_type'] == 1 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_email']))) {
+                    $checkEmailNotificationMethod=$this->Common->checkNotificationMethod($store,'email');
+		    if ($checkEmailNotificationMethod){
                         $storeEmail = $store['Store']['notification_email'];
                     } else {
                         $storeEmail = $store['Store']['email_id'];
@@ -858,7 +859,8 @@ class HqController extends HqAppController {
                 if ($emailSuccess) {
                     $this->Store->bindModel(array('belongsTo' => array('User' => array('fields' => array('User.fname', 'User.lname')))));
                     $store = $this->Store->getStoreDetail($this->request->data['StorePayment']['store_id']);
-                    if (($store['Store']['notification_type'] == 1 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_email']))) {
+                    $checkEmailNotificationMethod=$this->Common->checkNotificationMethod($store,'email');
+		    if ($checkEmailNotificationMethod){
                         $storeEmail = $store['Store']['notification_email'];
                     } else {
                         $storeEmail = $store['Store']['email_id'];
@@ -1351,6 +1353,13 @@ class HqController extends HqAppController {
         }
         $this->paginate = array('conditions' => array($criteria), 'order' => array('MerchantContent.position' => 'ASC'));
         $pageDetail = $this->paginate('MerchantContent');
+        $this->loadModel('MerchantConfiguration');
+        $mcCount = $this->MerchantConfiguration->find('count', array('merchant_id' => $merchantId));
+        if ($mcCount == 0) {
+            $this->request->data['MerchantConfiguration']['merchant_id'] = $merchantId;
+            $this->MerchantConfiguration->create();
+            $this->MerchantConfiguration->save($this->request->data);
+        }
         $homepageExist = $this->MerchantContent->find('count', array('conditions' => array('OR' => array('LOWER(MerchantContent.name)' => strtolower('Home'), 'LOWER(MerchantContent.content_key)' => strtolower('Home')), 'MerchantContent.merchant_id' => $merchantId)));
         if ($homepageExist < 1) {//execute only once for home page dynamic content
             $pagedata['name'] = trim('HOME');
@@ -1405,6 +1414,13 @@ class HqController extends HqAppController {
             $this->MerchantContent->create();
             $this->MerchantContent->savePage($pagedata);
             $this->redirect(array('controller' => 'hq', 'action' => 'merchantPageList'));
+        }
+	$this->loadModel('TermsAndPolicy');
+        $termAndPolicyCount = $this->TermsAndPolicy->find('count', array('conditions' => array('merchant_id' => $merchantId, 'is_deleted' => 0,'store_id'=>null)));
+        if ($termAndPolicyCount == 0) {
+            $termAndPolicy['merchant_id'] = $merchantId;
+            $this->TermsAndPolicy->create();
+            $this->TermsAndPolicy->save($termAndPolicy);
         }
         $this->set('list', $pageDetail);
         $this->set('keyword', $value);
@@ -1830,8 +1846,9 @@ class HqController extends HqAppController {
         $objPHPExcel->getActiveSheet()->setCellValue('B1', 'Store Name');
         $objPHPExcel->getActiveSheet()->setCellValue('C1', 'Subscription Type');
         $objPHPExcel->getActiveSheet()->setCellValue('D1', 'Payment Date');
-        $objPHPExcel->getActiveSheet()->setCellValue('E1', 'Amount($)');
-        $objPHPExcel->getActiveSheet()->setCellValue('F1', 'Status');
+        $objPHPExcel->getActiveSheet()->setCellValue('E1', 'Payment Type');
+        $objPHPExcel->getActiveSheet()->setCellValue('F1', 'Amount($)');
+        $objPHPExcel->getActiveSheet()->setCellValue('G1', 'Status');
 
         $objPHPExcel->getActiveSheet()->getStyle('A1')->applyFromArray($styleArray);
         $objPHPExcel->getActiveSheet()->getStyle('B1')->applyFromArray($styleArray);
@@ -1839,6 +1856,7 @@ class HqController extends HqAppController {
         $objPHPExcel->getActiveSheet()->getStyle('D1')->applyFromArray($styleArray);
         $objPHPExcel->getActiveSheet()->getStyle('E1')->applyFromArray($styleArray);
         $objPHPExcel->getActiveSheet()->getStyle('F1')->applyFromArray($styleArray);
+        $objPHPExcel->getActiveSheet()->getStyle('G1')->applyFromArray($styleArray);
 
         $i = 2;
         foreach ($list as $data) {
@@ -1847,8 +1865,17 @@ class HqController extends HqAppController {
             $objPHPExcel->getActiveSheet()->setCellValue("B$i", $data['Store']['store_name']);
             $objPHPExcel->getActiveSheet()->setCellValue("C$i", $data['Plan']['name']);
             $objPHPExcel->getActiveSheet()->setCellValue("D$i", date('m-d-Y', strtotime($data['StorePayment']['payment_date'])));
-            $objPHPExcel->getActiveSheet()->setCellValue("E$i", $data['StorePayment']['amount']);
-            $objPHPExcel->getActiveSheet()->setCellValue("F$i", $data['StorePayment']['payment_status']);
+            $paymentType = '';
+            if ($data['StorePayment']['payment_type'] == 1) {
+                $paymentType = 'One-Time';
+            } else if ($data['StorePayment']['payment_type'] == 2) {
+                $paymentType = 'Recurring';
+            } else {
+                $paymentType = '-';
+            }
+            $objPHPExcel->getActiveSheet()->setCellValue("E$i", $paymentType);
+            $objPHPExcel->getActiveSheet()->setCellValue("F$i", $data['StorePayment']['amount']);
+            $objPHPExcel->getActiveSheet()->setCellValue("G$i", $data['StorePayment']['payment_status']);
 
             $i++;
         }
@@ -2051,14 +2078,17 @@ class HqController extends HqAppController {
         if (!empty($merchantConfiguration)) {
             $this->request->data = $merchantConfiguration;
         }
+	$this->loadModel("TimeZone");
+        $this->set('timeZoneList', $this->TimeZone->find('list', array('fields' => 'timezone_location')));
         $merchantInfo = $this->Merchant->fetchMerchantDetail($merchantId);
-        if (!empty($merchantInfo)) {
+	if (!empty($merchantInfo)) {
             $this->request->data['Merchant']['id'] = $merchantInfo['Merchant']['id'];
             $this->request->data['Merchant']['logotype'] = $merchantInfo['Merchant']['logotype'];
             $this->request->data['Merchant']['background_image'] = $merchantInfo['Merchant']['background_image'];
             $this->request->data['Merchant']['logo'] = $merchantInfo['Merchant']['logo'];
             $this->request->data['Merchant']['banner_image'] = $merchantInfo['Merchant']['banner_image'];
             $this->request->data['Merchant']['contact_us_bg_image'] = $merchantInfo['Merchant']['contact_us_bg_image'];
+	    $this->request->data['Merchant']['time_zone_id'] = ($merchantInfo['Merchant']['time_zone_id'])?$merchantInfo['Merchant']['time_zone_id']:5;
         }
     }
 
@@ -2311,6 +2341,8 @@ class HqController extends HqAppController {
                         'foreignKey' => 'store_id')
                 )
                     ), false);
+
+
             $searchData = $this->StorePayment->find('list', array('fields' => array('Store.store_name', 'Store.store_name'), 'conditions' => array('OR' => array('Store.store_name LIKE' => '%' . $_GET['term'] . '%', 'Store.address LIKE' => '%' . $_GET['term'] . '%', 'Store.phone LIKE' => '%' . $_GET['term'] . '%', 'Store.email_id LIKE' => '%' . $_GET['term'] . '%', 'Store.store_url LIKE' => '%' . $_GET['term'] . '%'), $criteria), 'recursive' => 2));
             echo json_encode($searchData);
         } else {
@@ -2392,6 +2424,7 @@ class HqController extends HqAppController {
             }
         }
     }
+
     public function homePageModal() {
         $this->layout = "hq_dashboard";
         $merchantId = $this->Session->read('merchantId');
@@ -2408,7 +2441,24 @@ class HqController extends HqAppController {
         }
         $this->request->data = $this->HomeModal->findByMerchantId($merchantId);
     }
-	
+
+    public function getStoreUrl() {
+        $this->layout = false;
+        $this->autoRender = false;
+        $merchant = array();
+        if ($this->request->is(array('ajax'))) {
+            if (isset($this->request->data)) {
+                if (isset($this->request->data['storeId']) && $this->request->data['storeId'] != '') {
+                    $storeId = $this->request->data['storeId'];
+                    $this->loadModel('Store');
+                    $store = $this->Store->find('first', array('fields' => array('id', 'store_url'), 'conditions' => array('Store.id' => $storeId)));
+                }
+            }
+        }
+        $store = json_encode($store);
+        return $store;
+    }
+
     /* ------------------------------------------------
       Function name:updateHqImageOrder()
       Description: Update the display order for Image in slider
@@ -2459,7 +2509,7 @@ class HqController extends HqAppController {
                             'foreignKey' => 'delivery_address_id',
                         )
         )));
-        
+
         $totalFreeUnitsDataList = $this->OrderItemFree->find('all', array('recursive' => 2, 'fields' => array('OrderItemFree.order_id', 'Order.id', 'OrderItemFree.free_quantity', 'OrderItemFree.user_id', 'Item.name', 'Order.delivery_address_id', 'Order.user_id'), 'conditions' => array('OrderItemFree.order_id' => $order_id, 'OrderItemFree.is_active' => 1, 'OrderItemFree.is_deleted' => 0), 'order' => array('OrderItemFree.created' => 'DESC')));
         $guestEmail = $totalFreeUnitsData = array();
         if (!empty($totalFreeUnitsDataList)) {
@@ -2502,7 +2552,7 @@ class HqController extends HqAppController {
         $this->loadModel('OrderOffer');
         $this->loadModel('Order');
         $this->loadModel('Offer');
-        
+
         $this->OrderOffer->bindModel(
                 array('belongsTo' => array(
                         'Offer' => array(
@@ -2538,8 +2588,8 @@ class HqController extends HqAppController {
                             'foreignKey' => 'item_id',
                             'fields' => array('Item.id', 'Item.name'),
                         )
-        ), 'hasMany' => array(
-            'OfferDetail' => array(
+                    ), 'hasMany' => array(
+                        'OfferDetail' => array(
                             'fields' => array('OfferDetail.discountAmt', 'OfferDetail.offerItemID'),
                             'className' => 'OfferDetail',
                             'foreignKey' => 'offer_id',
@@ -2552,19 +2602,17 @@ class HqController extends HqAppController {
             $index = 0;
             foreach ($totalOfferUsedLists as $key => $list) {
                 if (!empty($list)) {
-                    if(!in_array($list['Offer']['id'], $offerNewArray))
-                    {
+                    if (!in_array($list['Offer']['id'], $offerNewArray)) {
                         $offeredItemArray = $this->orderOfferItemNames($order_id, $list['Offer']['id']);
                         $offeredItemNames = '';
-                        foreach ($offeredItemArray as $offeredItem)
-                        {
+                        foreach ($offeredItemArray as $offeredItem) {
                             $offeredItemNames .= $offeredItem['Item']['name'] . ', ';
                         }
                         $offeredItemNames = trim($offeredItemNames, ', ');
-                        
+
                         $offerNewArray[] = $list['Offer']['id'];
                         $totalOfferUsedList[$index]['offer_id'] = $list['Offer']['id'];
-                        $totalOfferUsedList[$index]['order_offer_item_id'] = $list['OrderOffer']['offered_item_id'];          
+                        $totalOfferUsedList[$index]['order_offer_item_id'] = $list['OrderOffer']['offered_item_id'];
                         $totalOfferUsedList[$index]['is_fixed_price'] = $list['Offer']['is_fixed_price'];
                         $totalOfferUsedList[$index]['offerprice'] = $list['Offer']['offerprice'];
                         $totalOfferUsedList[$index]['offered_item_name'] = $offeredItemNames;
@@ -2587,27 +2635,26 @@ class HqController extends HqAppController {
                 $index++;
             }
         }
-        
+
         $this->set('list', $totalOfferUsedList);
     }
 
-    function orderOfferItemNames($orderId = null, $offerId = null)
-    {
+    function orderOfferItemNames($orderId = null, $offerId = null) {
         $this->loadModel('OrderOffer');
         $this->OrderOffer->bindModel(
                 array('belongsTo' => array(
                         'Item' => array(
                             'className' => 'Item',
                             'foreignKey' => 'offered_item_id',
-                            //'fields' => array('id', 'name'),
+                        //'fields' => array('id', 'name'),
                         )
                     )
                 )
-            );
+        );
         $list = $this->OrderOffer->find('all', array('fields' => array('OrderOffer.id', 'OrderOffer.offered_item_id', 'Item.name'), 'conditions' => array('OrderOffer.order_id' => $orderId, 'OrderOffer.offer_id' => $offerId)));
         return $list;
     }
-    
+
     /* ------------------------------------------------
       Function name:exportTransactionList()
       Description:Export excel list of transaction
@@ -2616,7 +2663,7 @@ class HqController extends HqAppController {
     public function exportTransactionList() {
         $this->layout = false;
         $this->autoRender = false;
-        
+
         $loginuserid = $this->Session->read('Auth.hq.id');
         if (!$this->Common->checkPermissionByaction($this->params['controller'], 'transactionList', $loginuserid)) {
             $this->Session->setFlash(__("Permission Denied"));
@@ -2629,7 +2676,7 @@ class HqController extends HqAppController {
         $criteria = "OrderPayment.is_deleted=0 AND Store.is_allow_transaction=1 AND Store.is_deleted=0 AND OrderPayment.merchant_id=" . $merchantId;
         $storeId = "";
         $value = '';
-        
+
         if ($this->Session->read('TransactionSearchData')) {
             $this->request->data = json_decode($this->Session->read('TransactionSearchData'), true);
         }
@@ -2679,10 +2726,9 @@ class HqController extends HqAppController {
                 ),
             )
                 ), false);
-        
+
         $transactions = $this->OrderPayment->find('all', array('conditions' => array($criteria), 'order' => array('OrderPayment.created' => 'DESC')));
-        if(!empty($transactions))
-        {
+        if (!empty($transactions)) {
             //Configure::write('debug', 2);
             App::import('Vendor', 'PHPExcel');
             $objPHPExcel = new PHPExcel;
@@ -2712,7 +2758,7 @@ class HqController extends HqAppController {
             $objPHPExcel->getActiveSheet()->setCellValue('A1', 'Order Id');
             $objPHPExcel->getActiveSheet()->setCellValue('B1', 'Store Name');
             $objPHPExcel->getActiveSheet()->setCellValue('C1', 'Transaction Id');
-            $objPHPExcel->getActiveSheet()->setCellValue('D1', 'Product Price');
+            $objPHPExcel->getActiveSheet()->setCellValue('D1', 'Sub Total');
             $objPHPExcel->getActiveSheet()->setCellValue('E1', 'Tax($)');
             $objPHPExcel->getActiveSheet()->setCellValue('F1', 'Tip');
             $objPHPExcel->getActiveSheet()->setCellValue('G1', 'Discount');
@@ -2739,75 +2785,69 @@ class HqController extends HqAppController {
             foreach ($transactions as $key => $data) {
                 // Order No 
                 $objPHPExcel->getActiveSheet()->setCellValue("A$i", $data['Order']['order_number']);
-                
+
                 // Store Name
                 $objPHPExcel->getActiveSheet()->setCellValue("B$i", $data['Store']['store_name']);
-                
+
                 // Transaction No 
                 $objPHPExcel->getActiveSheet()->setCellValue("C$i", (($data['OrderPayment']['transection_id'] != 0) ? $data['OrderPayment']['transection_id'] : ''));
-                
+
                 // Product Price
                 $orderDetail = $this->Common->orderItemDetail($data['OrderPayment']['order_id']);
                 $totalItemPrice = 0;
-                if($orderDetail)
-                {
-                    foreach ($orderDetail as $itemKey => $itemVal)
-                    {
+                if ($orderDetail) {
+                    foreach ($orderDetail as $itemKey => $itemVal) {
                         if ($itemVal['OrderItem']['total_item_price']) {
                             $totalItemPrice += $itemVal['OrderItem']['total_item_price'];
                         }
                     }
                 }
                 $objPHPExcel->getActiveSheet()->setCellValue("D$i", $this->Common->amount_format($totalItemPrice));
-                
+
                 // Tax
                 $objPHPExcel->getActiveSheet()->setCellValue("E$i", $this->Common->amount_format($data['Order']['tax_price']));
-                
+
                 // Tip
                 $tipValue = (($data['Order']['tip'] && $data['Order']['tip'] > 0) ? $this->Common->amount_format($data['Order']['tip']) : '-');
                 $objPHPExcel->getActiveSheet()->setCellValue("F$i", $tipValue);
-                
+
                 // Discount
                 $discountData = '';
                 $showcount = 0;
-                if($data['Order']['coupon_code'] != null)
-                {
+                if ($data['Order']['coupon_code'] != null) {
                     $coupon_amount = $this->Common->amount_format($data['Order']['coupon_discount']);
                     $discountData .= $coupon_amount . "\n\r";
                 }
-                
-                $promotionCount = $this->Common->usedOfferDetailCount($data['OrderPayment']['order_id']);       
-                if($promotionCount > 0)
-                {
+
+                $promotionCount = $this->Common->usedOfferDetailCount($data['OrderPayment']['order_id']);
+                if ($promotionCount > 0) {
                     $discountData .= "Promotions\n\r";
                 }
-                
+
                 $extendedOffersCount = $this->Common->usedItemOfferDetailCount($data['OrderPayment']['order_id']);
-                if($extendedOffersCount > 0)
-                {
+                if ($extendedOffersCount > 0) {
                     $discountData .= "Extended Offers\n\r";
                 }
                 $discountData = trim($discountData, "\n\r");
-                if($discountData == '')
-                {
+                if ($discountData == '') {
                     $discountData = '-';
                 }
                 $objPHPExcel->getActiveSheet()->setCellValue("G$i", $discountData);
                 $objPHPExcel->getActiveSheet()->getStyle("G$i")->getAlignment()->setWrapText(true);
-                
+
                 // Total Sales Amount ($)
                 $totalPrice = $this->Common->amount_format(($data['OrderPayment']['amount'] - $data['Order']['coupon_discount']));
                 $objPHPExcel->getActiveSheet()->setCellValue("H$i", $totalPrice);
-                
+
                 // Date
                 $objPHPExcel->getActiveSheet()->setCellValue("I$i", $this->Dateform->us_format($this->Common->storeTimezone('', $data['OrderPayment']['created'])));
-                
+
                 // Payment Type
                 $objPHPExcel->getActiveSheet()->setCellValue("J$i", $data['OrderPayment']['payment_gateway']);
-                
+
                 // Payment Status
                 $objPHPExcel->getActiveSheet()->setCellValue("K$i", $data['OrderPayment']['payment_status']);
-                
+
                 // Reason
                 $sReason = $data['OrderPayment']['response'];
                 if ($sReason) {
@@ -2818,11 +2858,11 @@ class HqController extends HqAppController {
                     $sReason = "-";
                 }
                 $objPHPExcel->getActiveSheet()->setCellValue("L$i", $sReason);
-                
+
                 // Response Code
                 $response = (($data['OrderPayment']['response_code']) ? $data['OrderPayment']['response_code'] : '-');
                 $objPHPExcel->getActiveSheet()->setCellValue("M$i", $response);
-                
+
                 $i++;
             }
             $filename = 'HQ - Transactions' . date("Y-m-d") . ".xls"; //create a file
@@ -2831,8 +2871,7 @@ class HqController extends HqAppController {
             header('Cache-Control: max-age=0');
             $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
             $objWriter->save('php://output');
-        }
-        else {
+        } else {
             $this->Session->setFlash(__('Record not Found.'), 'alert_failed');
             $this->redirect('/payments/paymentList/');
         }

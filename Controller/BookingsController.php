@@ -117,15 +117,17 @@ class BookingsController extends StoreAppController {
       created:17/8/2015
       ----------------------------------------------------- */
 
-    public function manageBooking($EncryptOrderID = null) {
-
+    public function manageBooking($EncryptBookingID = null) {
         $this->layout = "admin_dashboard";
         $storeId = $this->Session->read('admin_store_id');
         $merchantId = $this->Session->read('admin_merchant_id');
-        $orderId = $this->Encryption->decode($EncryptOrderID);
+        $bookingId = $this->Encryption->decode($EncryptBookingID);
+        if(empty($bookingId)){
+            $bookingId = $this->request->data['Data']['id'];
+        }
         $this->loadModel('Store');
         $storeEmail = $this->Store->fetchStoreDetail($storeId);
-        $criteria = "Booking.store_id =$storeId AND Booking.is_deleted=0 AND Booking.id= $orderId";
+        $criteria = "Booking.store_id =$storeId AND Booking.is_deleted=0 AND Booking.id= $bookingId";
         $this->loadModel('User');
         $this->User->bindModel(array('belongsTo' => array('CountryCode' => array('className' => 'CountryCode', 'foreignKey' => 'country_code_id', 'fields' => array('code')))), false);
         $this->Booking->bindModel(
@@ -304,7 +306,7 @@ class BookingsController extends StoreAppController {
                 'Store' => array(
                     'className' => 'Store',
                     'foreignKey' => 'store_id',
-                    'fields' => array('store_name', 'address', 'city', 'state', 'zipcode', 'time_zone_id')
+                    'fields' => array('id','store_name', 'address', 'city', 'state', 'zipcode', 'time_zone_id')
                 ),
                 'BookingStatuse' => array(
                     'className' => 'BookingStatuse',

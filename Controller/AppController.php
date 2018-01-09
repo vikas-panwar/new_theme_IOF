@@ -40,6 +40,15 @@ class AppController extends Controller {
 
     public function beforeFilter() {
         parent::beforeFilter();
+        //logout from all store and HQ front start
+        $this->mainDomain();
+        $checkCookie = $this->Cookie->read('logoutCookie');
+        if ($checkCookie && ($this->Session->check('Auth.User') || $this->Session->check('Auth.hqusers'))) {
+            $this->Session->delete('Auth.User');
+            $this->Session->delete('Auth.hqusers');
+            $this->Cookie->write('logoutCookie', '0', false, 7200);
+        }
+        //logout from all store and HQ front end
         $this->Security->validatePost = false;
         $this->Security->enabled = false;
         $this->Security->csrfCheck = false;
@@ -55,7 +64,6 @@ class AppController extends Controller {
         $this->Auth->allow('ajaxStaticContent', 'test', 'selectMerchant', 'merchant', 'sendNewLetter', 'checkCombination', 'resetPassword', 'accountActivation', 'staticContent', 'removeOfferItem', 'storePhoto', 'storeLocation', 'signIn', 'accountActivation', 'fetchCoupon', 'items', 'fetchProduct', 'sizePrice', 'fetchToppingPrice', 'fetchCategoryInfo', 'cart', 'removeItem', 'addQuantity', 'orderDetails', 'cancelOffer', 'orderSave', 'success', 'status', 'guestOrdering', 'login', 'registration', 'store', 'checkEmail', 'forgetPassword', 'selectStore', 'paymentSection', 'typePrice', 'fetchToppingSizePrice', 'removeOrderItem', 'removeOrderOfferItem', 'menuItems', 'menuFetchProduct', 'menuFetchCategoryInfo', 'getlatesttotalamont', 'getTimeIntervalPrice', 'itemShare', 'getStoreTime', 'ajaxChangeOrderType', 'confirmOrder', 'checkPreference', 'popuplogin', 'dologin', 'menuItems', 'customerOrderDetail');
         $siteSettingData = ClassRegistry::init('MainSiteSetting')->getSiteSettings(); // global values
         $this->Auth->fields = array('username' => 'email', 'password' => 'password');
-        //$this->_loginToBoth();
         if ($siteSettingData) {
             $this->smtp_host = "tls://" . $siteSettingData['MainSiteSetting']['smtp_host']; //SITE VARIABLES
             $this->smtp_port = $siteSettingData['MainSiteSetting']['smtp_port'];
@@ -75,42 +83,37 @@ class AppController extends Controller {
                 $this->request->data = $this->_sanitizeData($this->request->data);
             }
         }
-
-        /*
-          if ($this->Session->check('store_id')) {
-          $this->loadModel('Store');
-          $storeInfo = $this->Store->fetchStorePaypalDetail($this->Session->read('store_id'));
-          if (!empty($storeInfo)) {
-          $this->Paypal->sandboxMode = false;
-          $this->Paypal->config = array(
-          'webscr' => 'https://www.paypal.com/webscr/',
-          'endpoint' => 'https://api-3t.paypal.com/nvp/',
-          'password' => trim($storeInfo['Store']['paypal_password']),
-          'email' => trim($storeInfo['Store']['paypal_email']),
-          'signature' => trim($storeInfo['Store']['paypal_signature'])
-          );
-          }
-          }
-         */
     }
 
-    public function _loginToBoth() {//function is used to login if user go to merchant to store or vise-versa
-        $storeUserMerchantId = $this->Session->read('Auth.User.merchant_id');
-        //pr($storeUserMerchantId.'in Store');
-        pr($_SESSION);
-        $hqUserMerchantId = $this->Session->read('Auth.hqusers.merchant_id');
-        //pr($hqUserMerchantId.'in Hq');
-        $hq_id = $this->Session->read('hq_id');
-        pr($hq_id.'hq_id');
-        $merchant_id = $this->Session->read('merchant_id');
-        pr($merchant_id.'merchant_id');
-        if (empty($storeUserMerchantId) && !empty($hqUserMerchantId) && !empty($hq_id)) {//hq to store
-            if ($hqUserMerchantId == $hq_id) {
-                $this->Session->write('Auth.User', $this->Session->read('Auth.hqusers'));
-            }
-        } elseif (empty($hqUserMerchantId) && !empty($storeUserMerchantId) && !empty($merchant_id)) {//store to hq
-            if ($storeUserMerchantId == $merchant_id) {
-                $this->Session->write('Auth.hqusers', $this->Session->read('Auth.User'));
+    public function mainDomain() {
+        $url = $_SERVER['HTTP_HOST'];
+        $host = explode('.', $url);
+        $count = count($host);
+        $mainDomain = ($count == 3) ? $host[1] . "." . $host[2] : $host[0] . "." . $host[1];
+        $this->Cookie->domain = $mainDomain;
+    }
+
+//function is used to login if user go to merchant to store or vise-versa
+    public function loginToBoth() {
+        $loginByHq = $this->Cookie->read('_MF_E');
+        if (!empty($loginByHq) && ($loginByHq == 1)) {
+            $email = $this->Encryption->decode($this->Cookie->read('_ME_E'));
+            $password = $this->Encryption->decode($this->Cookie->read('_MST_E'));
+            $this->request->data['User']['remember'] = 1;
+            $this->request->data['User']['email'] = $email;
+            $this->request->data['User']['password'] = $password;
+            $this->loadModel('User');
+            $this->User->set($this->request->data);
+            if ($this->User->validates()) {
+                $password = AuthComponent::password($this->request->data['User']['password']);
+                $user = $this->User->find("first", array("conditions" => array("User.email" => $email, "User.password" => $password, "User.role_id" => array('5', '4'), 'User.is_active' => 1, 'User.is_deleted' => 0), 'fields' => array('User.id', 'User.is_deleted', 'User.is_active')));
+                if (!empty($user)) {
+                    if ($user['User']['is_deleted'] == 0) {
+                        if ($user['User']['is_active'] == 1) {
+                            $this->Auth->login();
+                        }
+                    }
+                }
             }
         }
     }
@@ -161,7 +164,7 @@ class AppController extends Controller {
 
     function setDefaultPage() {
         $checkCookie = $this->Cookie->read('storecookiename');
-        $controllerarray = array('hqreports', 'superreports', 'hqusers', 'cronJobs', 'shareSocials', 'hqtemplates', 'hqsettings', 'hqnewsletters', 'hqcategories', 'hqsizes', 'hqtypes', 'hqorders', 'hqsubpreferences', 'hqintervals', 'hqtoppings', 'hqitems', 'hqcoupons', 'hqoffers', 'WebServices', 'WebTests', 'hqitemoffers', 'hqstores', 'hqmenus', 'orderOverviews', 'coupons', 'hqcustomers', 'hqfeatures', 'hqdeals', 'datasyncs', 'adminservices', 'hqconfigurations', 'MBServices', 'AdminTests','AppServices','AppAdminServices', 'CronJobs', 'hqsalesreports');
+        $controllerarray = array('hqreports', 'superreports', 'hqusers', 'cronJobs', 'shareSocials', 'hqtemplates', 'hqsettings', 'hqnewsletters', 'hqcategories', 'hqsizes', 'hqtypes', 'hqorders', 'hqsubpreferences', 'hqintervals', 'hqtoppings', 'hqitems', 'hqcoupons', 'hqoffers', 'WebServices', 'WebTests', 'hqitemoffers', 'hqstores', 'hqmenus', 'orderOverviews', 'coupons', 'hqcustomers', 'hqfeatures', 'hqdeals', 'datasyncs', 'adminservices', 'hqconfigurations', 'MBServices', 'AdminTests', 'AppServices', 'AppAdminServices', 'CronJobs', 'hqsalesreports');
         if (!in_array($this->params['controller'], $controllerarray)) {
             if (!$this->Session->check('admin_store_id') && !$this->Session->check('store_id') && $this->params['action'] != 'selectStore') {
                 $string = BASE_URL;
@@ -228,9 +231,9 @@ class AppController extends Controller {
     }
 
     function Auth_users() {
-        $this->Auth->loginAction = array('controller' => 'users', 'action' => 'merchant');
-        $this->Auth->logoutRedirect = array('controller' => 'users', 'action' => 'merchant');
-        $this->Auth->loginRedirect = array('controller' => 'users', 'action' => 'merchant');
+        $this->Auth->loginAction = array('controller' => 'users', 'action' => 'login');
+        $this->Auth->logoutRedirect = array('controller' => 'users', 'action' => 'logout');
+        $this->Auth->loginRedirect = array('controller' => 'users', 'action' => 'login');
     }
 
     function Auth_super() {
@@ -449,6 +452,55 @@ class AppController extends Controller {
                 $this->ToppingPrice->updateAll(array('ToppingPrice.is_deleted' => 1), array('ToppingPrice.item_id' => $itemIds));
             }
         }
+    }
+
+    public function _checkNowTime($orderType = null) {
+        $nowTime = array();
+        $current_date = date("Y-m-d", (strtotime($this->Common->storeTimeZoneUser('', date('Y-m-d H:i:s')))));
+        $today = 1;
+        $orderType = ($orderType) ? $orderType : $this->Session->read('Order.order_type');
+        $finaldata = $this->Common->getNextDayTimeRange($current_date, $today, $orderType);
+        $timearray = array_diff($finaldata['time_range'], $finaldata['time_break']);
+        $nowTime['pickup_time'] = reset($timearray);
+        $explodeVal = explode("-", $finaldata['currentdate']);
+        $finaldata['currentdate'] = $explodeVal[1] . "-" . $explodeVal[2] . "-" . $explodeVal[0];
+        $nowTime['pickup_date'] = $finaldata['currentdate'];
+        $nowTime['pickup_date_time'] = $finaldata['currentdate'] . ' ' . $nowTime['pickup_time'];
+        $nowTime['setPre'] = $finaldata['setPre'];
+        return $nowTime;
+    }
+
+    public function _checkStoreStatus($orderType = null) {
+        //date time div start
+        $this->loadModel('Store');
+        $storeId = $this->Session->read('store_id');
+        $merchantID = $this->Session->read('merchant_id');
+        $PreorderAllowed = $this->Store->checkPreorder($storeId, $merchantID);
+        if (!empty($orderType)) {
+            $nowAvail = $this->Store->getNowAvailability($orderType, $storeId);
+        }
+        $current_date = date("Y-m-d", (strtotime($this->Common->storeTimeZoneUser('', date('Y-m-d H:i:s')))));
+        $today = 1;
+        $finaldata = $this->Common->getNextDayTimeRange($current_date, $today, $orderType);
+        $setPre = $finaldata['setPre'];
+        /*
+          PreorderAllowed - 0 (Preorder not allow), 1 (Allowed) - Flag Based
+          nowAvail - 0 (current date Black out), 1 (Current day available)- Date based
+          setPre - 0 (Now is avalable), 1 (Preorder is available) - Time based
+          close day  - array based on holidays dates
+         */
+        if (!empty($PreorderAllowed) && !empty($nowAvail)) {
+            //echo "Both are avalibale Show calendar";
+        } elseif (!empty($PreorderAllowed) && empty($nowAvail)) {
+            //echo "Only Preorder allowed Show calendar";
+        } elseif (empty($PreorderAllowed) && !empty($nowAvail) && empty($setPre)) {
+            //echo "Only Now allowed not to Show calendar";
+        } else {
+            //echo "None is available Store is closed";
+            return false;
+        }
+        return true;
+        //date time div end
     }
 
 }

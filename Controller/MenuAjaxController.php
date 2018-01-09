@@ -1137,12 +1137,12 @@ class ProductsController extends StoreAppController {
                             }
                             if ($rate == 0) {
                                 if ($offerType == 1) {
-                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . '</a>';
+                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . '</a>';
                                 } else {
-                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ Free </a>';
+                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ Free </a>';
                                 }
                             } else {
-                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ $' . $rate . '</a>';
+                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ $' . $rate . '</a>';
                             }
                             $offerItemUnit = $offer_array['Offer']['unit'];
                             $prefix = '<br/> ';
@@ -1302,12 +1302,12 @@ class ProductsController extends StoreAppController {
                 foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                     if ($name['offer_price'] == 0) {
                         if ($offerType == 1) {
-                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '</a>';
+                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '</a>';
                         } else {
-                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '@ Free </a>';
+                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '@ Free </a>';
                         }
                     } else {
-                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . ' @ $' . $name['quantity'] * $name['offer_price'] . '</a>';
+                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . ' @ $' . $name['quantity'] * $name['offer_price'] . '</a>';
                     }
                     $prefix = '<br/> ';
                 }
@@ -1374,12 +1374,12 @@ class ProductsController extends StoreAppController {
                     foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                         if ($name['offer_price'] == 0) {
                             if ($present_item['Item']['OfferType'] == 1) {
-                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
+                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
                             } else {
-                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
+                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
                             }
                         } else {
-                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . ' @ $' . $offer_multiply * $name['offer_price'] . '</a>';
+                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . ' @ $' . $offer_multiply * $name['offer_price'] . '</a>';
                         }
                         $prefix = '<br/> ';
                         $this->Session->write('cart.' . $_POST['index_id'] . '.Item.StoreOffer.' . $key . '.quantity', $offer_multiply);
@@ -1411,12 +1411,12 @@ class ProductsController extends StoreAppController {
                     foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                         if ($name['offer_price'] == 0) {
                             if ($present_item['Item']['OfferType'] == 1) {
-                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
+                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
                             } else {
-                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
+                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
                             }
                         } else {
-                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . ' @ $' . $offer_multiply * $name['offer_price'] . '</a>';
+                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . ' @ $' . $offer_multiply * $name['offer_price'] . '</a>';
                         }
                         $this->Session->write('cart.' . $_POST['index_id'] . '.Item.StoreOffer.' . $key . '.quantity', $offer_multiply);
                         $prefix = '<br/> ';
@@ -1441,12 +1441,12 @@ class ProductsController extends StoreAppController {
                     foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                         if ($name['offer_price'] == 0) {
                             if ($present_item['Item']['OfferType'] == 1) {
-                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
+                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
                             } else {
-                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
+                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
                             }
                         } else {
-                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . ' @ $' . $offer_multiply * $name['offer_price'] . '</a>';
+                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . ' @ $' . $offer_multiply * $name['offer_price'] . '</a>';
                         }
                         $this->Session->write('cart.' . $_POST['index_id'] . '.Item.StoreOffer.' . $key . '.quantity', $offer_multiply);
                         $prefix = '<br/> ';
@@ -1646,7 +1646,8 @@ class ProductsController extends StoreAppController {
                 $delivery_address = $this->DeliveryAddress->fetchAddress($delivery_address_id, $userid, $decrypt_storeId);
             }
             $service_fee = "";
-            $service_fee = $this->Session->read('service_fee');
+            //$service_fee = $this->Session->read('service_fee');
+            $service_fee = $this->Session->read('final_service_fee');
             if ($service_fee) {
                 $total_price = $total_price + $service_fee;
             }
@@ -1715,12 +1716,12 @@ class ProductsController extends StoreAppController {
                 foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                     if ($name['offer_price'] == 0) {
                         if ($offerType == 1) {
-                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '</a>';
+                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '</a>';
                         } else {
-                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '@ Free </a>';
+                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '@ Free </a>';
                         }
                     } else {
-                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . ' @ $' . $name['quantity'] * $name['offer_price'] . '</a>';
+                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . ' @ $' . $name['quantity'] * $name['offer_price'] . '</a>';
                     }
                     $prefix = '<br/> ';
                 }
@@ -2229,12 +2230,12 @@ class ProductsController extends StoreAppController {
                                 }
                                 if ($rate == 0) {
                                     if ($offerType == 1) {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . '</a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . '</a>';
                                     } else {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ Free </a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ Free </a>';
                                     }
                                 } else {
-                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ $' . $rate . '</a>';
+                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ $' . $rate . '</a>';
                                 }
                                 $offerItemUnit = $offer_array['Offer']['unit'];
                                 $prefix = '<br/> ';
@@ -2298,12 +2299,12 @@ class ProductsController extends StoreAppController {
                                 }
                                 if ($rate == 0) {
                                     if ($offerType == 1) {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . '</a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . '</a>';
                                     } else {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ Free </a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ Free </a>';
                                     }
                                 } else {
-                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ $' . $rate . '</a>';
+                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ $' . $rate . '</a>';
                                 }
                                 $offerItemUnit = $offer_array['Offer']['unit'];
                                 $prefix = '<br/> ';
@@ -2350,9 +2351,9 @@ class ProductsController extends StoreAppController {
                             foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                                 if ($name['offer_price'] == 0) {
                                     if ($present_item['Item']['OfferType'] == 1) {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
                                     } else {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
                                     }
                                 } else {
                                     $offerItemName .= $prefix . $offer_multiply . ' X ' . $name['Item_name'] . ' @ $' . $offer_multiply * $name['offer_price'];
@@ -2387,9 +2388,9 @@ class ProductsController extends StoreAppController {
                             foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                                 if ($name['offer_price'] == 0) {
                                     if ($present_item['Item']['OfferType'] == 1) {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
                                     } else {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
                                     }
                                 } else {
                                     $offerItemName .= $prefix . $offer_multiply . ' X ' . $name['Item_name'] . ' @ $' . $offer_multiply * $name['offer_price'];
@@ -2415,9 +2416,9 @@ class ProductsController extends StoreAppController {
                             foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                                 if ($name['offer_price'] == 0) {
                                     if ($present_item['Item']['OfferType'] == 1) {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
                                     } else {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
                                     }
                                 } else {
                                     $offerItemName .= $prefix . $offer_multiply . ' X ' . $name['Item_name'] . ' @ $' . $offer_multiply * $name['offer_price'];

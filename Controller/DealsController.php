@@ -51,15 +51,14 @@ class DealsController extends StoreAppController {
         );
         $itemOfferData = $this->ItemOffer->find('all', array('conditions' => array('ItemOffer.store_id' => $store_id, 'ItemOffer.is_active' => 1, 'ItemOffer.is_deleted' => 0, 'ItemOffer.start_date <= ' => $date, 'ItemOffer.end_date >= ' => $date)));
         $this->Offer->bindModel(
-            array(
-                'belongsTo' => array(
-                    'Item' => array(
-                        'className' => 'Item',
-                        'foreignKey' => 'item_id',
-                        'conditions' => array('Item.is_deleted' => 0, 'Item.is_active' => 1),
-                        'fields' => array('name', 'image', 'category_id', 'id', 'store_id', 'merchant_id'),
-                        'type' => 'INNER'
-                    ),
+                array(
+            'belongsTo' => array(
+                'Item' => array(
+                    'className' => 'Item',
+                    'foreignKey' => 'item_id',
+                    'conditions' => array('Item.is_deleted' => 0, 'Item.is_active' => 1),
+                    'fields' => array('name', 'image', 'category_id', 'id', 'store_id', 'merchant_id'),
+                    'type' => 'INNER'
                 ),
             ), false
         );

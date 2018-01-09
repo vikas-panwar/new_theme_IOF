@@ -1058,6 +1058,8 @@ class ProductsController extends StoreAppController {
                     }
                 }
 
+
+
                 if ($this->Session->check('cart')) {
 
                     $old_array = $this->Session->read('cart');
@@ -1102,12 +1104,12 @@ class ProductsController extends StoreAppController {
                             }
                             if ($rate == 0) {
                                 if ($offerType == 1) {
-                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . '</a>';
+                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . '</a>';
                                 } else {
-                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ Free </a>';
+                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ Free </a>';
                                 }
                             } else {
-                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ $' . $rate . '</a>';
+                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ ' . $this->Common->amount_format($rate) . '</a>';
                             }
                             $offerItemUnit = $offer_array['Offer']['unit'];
                             $prefix = '<br/> ';
@@ -1133,6 +1135,8 @@ class ProductsController extends StoreAppController {
                                         if ($offerType == 1) {
                                             $old_array[$key]['Item']['final_price'] = $offerPrice + $extracost;
                                         } else {
+                                            //$old_array[$key]['Item']['final_price'] = $old['Item']['final_price'] + $offerPrice + $extracost;
+
                                             $old_array[$key]['Item']['final_price'] = $old['Item']['final_price'] + $offerPrice;
                                         }
                                     }
@@ -1149,6 +1153,8 @@ class ProductsController extends StoreAppController {
                                         if ($offerType == 1) {
                                             $old_array[$key]['Item']['final_price'] = $offerPrice + $extracost;
                                         } else {
+                                            //$old_array[$key]['Item']['final_price'] = $old['Item']['final_price'] + $offerPrice + $extracost;
+
                                             $old_array[$key]['Item']['final_price'] = $old['Item']['final_price'] + $offerPrice;
                                         }
                                     }
@@ -1565,12 +1571,12 @@ class ProductsController extends StoreAppController {
                 foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                     if ($name['offer_price'] == 0) {
                         if ($offerType == 1) {
-                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '</a>';
+                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '</a>';
                         } else {
-                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '@ Free </a>';
+                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '@ Free </a>';
                         }
                     } else {
-                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . ' @ $' . $name['quantity'] * $name['offer_price'] . '</a>';
+                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . ' @ ' . $this->Common->amount_format($name['quantity'] * $name['offer_price']) . '</a>';
                     }
                     $prefix = '<br/> ';
                 }
@@ -1631,7 +1637,6 @@ class ProductsController extends StoreAppController {
                 $this->Session->write('cart.' . $_POST['index_id'] . '.Item.price', $present_item['Item']['final_price']);
                 $present_item['Item']['price'] = $present_item['Item']['final_price'];
             }
-
             $this->Session->write('OfferAddIndex.cartid', $_POST['index_id']);
             $this->Session->write('OfferAddIndex.cartname', 'test');
             if (isset($present_item['Item']['OfferItemPrice'])) {
@@ -1655,12 +1660,12 @@ class ProductsController extends StoreAppController {
                     foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                         if ($name['offer_price'] == 0) {
                             if ($present_item['Item']['OfferType'] == 1) {
-                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
+                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
                             } else {
-                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
+                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
                             }
                         } else {
-                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . ' @ $' . $offer_multiply * $name['offer_price'] . '</a>';
+                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . ' @ ' . $this->Common->amount_format($offer_multiply * $name['offer_price']) . '</a>';
                         }
                         $prefix = '<br/> ';
                         $this->Session->write('cart.' . $_POST['index_id'] . '.Item.StoreOffer.' . $key . '.quantity', $offer_multiply);
@@ -1696,11 +1701,11 @@ class ProductsController extends StoreAppController {
                         //$total = $present_item['Item']['OfferItemPrice'];
                     } else {
 
-                        /*$ExtrasubPrice = $present_item['Item']['price'] - $present_item['Item']['actual_price'];
-                        $ExtrasubPrice = $item * $ExtrasubPrice;
-                        $total = $item * $item_price;
-                        $total = $total + $present_item['Item']['OfferItemPrice'] + $ExtrasubPrice;*/
-			$total = $item * $present_item['Item']['price'];
+//                        $ExtrasubPrice = $present_item['Item']['price'] - $present_item['Item']['actual_price'];
+//                        $ExtrasubPrice = $item * $ExtrasubPrice;
+//                        $total = $item * $item_price;
+//                        $total = $total + $present_item['Item']['OfferItemPrice'] + $ExtrasubPrice;
+                        $total = $item * $present_item['Item']['price'];
                         $total = $total + $present_item['Item']['OfferItemPrice'];
                     }
 
@@ -1710,12 +1715,12 @@ class ProductsController extends StoreAppController {
                     foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                         if ($name['offer_price'] == 0) {
                             if ($present_item['Item']['OfferType'] == 1) {
-                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
+                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
                             } else {
-                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
+                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
                             }
                         } else {
-                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . ' @ $' . $offer_multiply * $name['offer_price'] . '</a>';
+                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . ' @ ' . $this->Common->amount_format($offer_multiply * $name['offer_price']) . '</a>';
                         }
                         $this->Session->write('cart.' . $_POST['index_id'] . '.Item.StoreOffer.' . $key . '.quantity', $offer_multiply);
                         $prefix = '<br/> ';
@@ -1750,12 +1755,12 @@ class ProductsController extends StoreAppController {
                     foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                         if ($name['offer_price'] == 0) {
                             if ($present_item['Item']['OfferType'] == 1) {
-                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
+                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
                             } else {
-                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
+                                $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
                             }
                         } else {
-                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . ' @ $' . $offer_multiply * $name['offer_price'] . '</a>';
+                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . ' @ ' . $this->Common->amount_format($offer_multiply * $name['offer_price']) . '</a>';
                         }
                         $this->Session->write('cart.' . $_POST['index_id'] . '.Item.StoreOffer.' . $key . '.quantity', $offer_multiply);
                         $prefix = '<br/> ';
@@ -1852,6 +1857,10 @@ class ProductsController extends StoreAppController {
       ---------------------------------------------------- */
 
     public function orderDetails() {
+
+        if ($this->Session->check('timeError')) {
+            $this->Session->setFlash(__('Please choose a different time for Delivery/Pickup.'), 'flash_error');
+        }
         $this->layout = $this->store_inner_pages;
         $decrypt_storeId = $this->Session->read('store_id');
         $storeSetting = $this->StoreSetting->findByStoreId($decrypt_storeId, array('order_allow'));
@@ -2019,7 +2028,13 @@ class ProductsController extends StoreAppController {
             }
             $this->set(compact('nzsafe_info'));
         } else {
-            $this->redirect(array('contoller' => 'products', 'action' => 'items', $encrypted_storeId, $encrypted_merchantId));
+            $this->redirect(array('controller' => 'products', 'action' => 'items', $encrypted_storeId, $encrypted_merchantId));
+        }
+        if (empty(AuthComponent::User('id')) && $this->Session->check('Order.delivery_address_id')) {//old layout
+            $this->loadModel('DeliveryAddress');
+            $delivery_address_id = $this->Session->read('Order.delivery_address_id');
+            $DelAddress = $this->DeliveryAddress->fetchAddress($delivery_address_id);
+            $this->set('DelAddress', $DelAddress);
         }
         $this->loadModel('StoreSetting');
         $storeSetting = $this->StoreSetting->findByStoreId($decrypt_storeId);
@@ -2047,7 +2062,7 @@ class ProductsController extends StoreAppController {
             } else {
                 $total_price = $this->Session->read('Cart.grand_total_final');
                 $total_price = $total_price - $data['Item']['final_price'];
-                $this->Session->write('Cart.grand_total_final', number_format($total_price, 2)); // It will give the final totoal with all taxes
+                $this->Session->write('Cart.grand_total_final', $total_price); // It will give the final totoal with all taxes
                 $decrypt_storeId = $this->Session->read('store_id');
                 $this->loadModel('StoreSetting');
                 $storeSetting = $this->StoreSetting->findByStoreId($decrypt_storeId);
@@ -2078,12 +2093,12 @@ class ProductsController extends StoreAppController {
                 foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                     if ($name['offer_price'] == 0) {
                         if ($offerType == 1) {
-                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '</a>';
+                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '</a>';
                         } else {
-                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '@ Free </a>';
+                            $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . '@ Free </a>';
                         }
                     } else {
-                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . ' @ $' . $name['quantity'] * $name['offer_price'] . '</a>';
+                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $name['quantity'] . ' X ' . $name['Item_name'] . ' @ ' . $this->Common->amount_format($name['quantity'] * $name['offer_price']) . '</a>';
                     }
                     $prefix = '<br/> ';
                 }
@@ -2168,7 +2183,7 @@ class ProductsController extends StoreAppController {
         if ($myOrders['Order']['is_future_order'] == 1) {
             $this->Session->write('FutureOrderId', $myOrders['Order']['id']);
         }
-        foreach ($myOrders['OrderItem'] as $order) {
+	foreach ($myOrders['OrderItem'] as $order) {
             $this->ItemPrice->bindModel(
                     array('belongsTo' => array(
                     'StoreTax' => array(
@@ -2290,6 +2305,7 @@ class ProductsController extends StoreAppController {
                     }
 
                     $top_count = 0;
+                    $total_topping = 0;
                     if (!empty($order['OrderTopping'])) {
                         foreach ($order['OrderTopping'] as $topping) {
                             $topType = $this->Topping->getToppingById($topping['topping_id'], $order['Item']['id']);
@@ -2304,25 +2320,27 @@ class ProductsController extends StoreAppController {
                                 if ($topping['topType'] == 'defaultTop') {
                                     if (in_array($topType['Topping']['id'], $default_array)) {
                                         $SessionItem[$count]['Topping'][$top_count]['topId'] = $topType['Topping']['id'];
-                                        $SessionItem[$count]['Topping'][$top_count]['topPrice'] = $topType['Topping']['price'];
+                                        $SessionItem[$count]['Topping'][$top_count]['topPrice'] = 0;
                                         $SessionItem[$count]['Topping'][$top_count]['topName'] = $topType['Topping']['name'];
                                         $SessionItem[$count]['Topping'][$top_count]['topSize'] = $topping['addon_size_id'];
                                         $SessionItem[$count]['Topping'][$top_count]['topType'] = 1;
                                     } else {
                                         $SessionItem[$count]['Topping'][$top_count]['topId'] = $topType['Topping']['id'];
-                                        $SessionItem[$count]['Topping'][$top_count]['topPrice'] = $topType['Topping']['price'];
+                                        $SessionItem[$count]['Topping'][$top_count]['topPrice'] = $topType['Topping']['price']*$topping['addon_size_id'];
                                         $SessionItem[$count]['Topping'][$top_count]['topName'] = $topType['Topping']['name'];
                                         $SessionItem[$count]['Topping'][$top_count]['topSize'] = $topping['addon_size_id'];
                                         $SessionItem[$count]['Topping'][$top_count]['topType'] = 2;
                                     }
                                 } else {
                                     $SessionItem[$count]['Topping'][$top_count]['topId'] = $topType['Topping']['id'];
-                                    $SessionItem[$count]['Topping'][$top_count]['topPrice'] = $topType['Topping']['price'];
+                                    $SessionItem[$count]['Topping'][$top_count]['topPrice'] = $topType['Topping']['price']*$topping['addon_size_id'];
                                     $SessionItem[$count]['Topping'][$top_count]['topName'] = $topType['Topping']['name'];
                                     $SessionItem[$count]['Topping'][$top_count]['topSize'] = $topping['addon_size_id'];
                                     $SessionItem[$count]['Topping'][$top_count]['topType'] = 2;
                                 }
                             }
+
+                            $total_topping +=$SessionItem[$count]['Topping'][$top_count]['topPrice'];
                             $top_count++;
                         }
                     } else {
@@ -2335,12 +2353,13 @@ class ProductsController extends StoreAppController {
 
 
                     $pre_count = 0;
+                    $total_prefrence = 0;
                     if (!empty($order['OrderPreference'])) {
                         foreach ($order['OrderPreference'] as $preference) {
                             $preData = $this->SubPreference->getSubPreferenceDetail($preference['sub_preference_id'], $this->Session->read('store_id'));
                             if ($preData) {
                                 $SessionItem[$count]['Subpreference'][$pre_count]['preId'] = $preData['SubPreference']['id'];
-                                $SessionItem[$count]['Subpreference'][$pre_count]['prePrice'] = $preData['SubPreference']['price'];
+                                $SessionItem[$count]['Subpreference'][$pre_count]['prePrice'] = $preData['SubPreference']['price']*$preference['size'];
                                 $SessionItem[$count]['Subpreference'][$pre_count]['preName'] = $preData['SubPreference']['name'];
                                 $SessionItem[$count]['Subpreference'][$pre_count]['preSize'] = $preference['size'];
                                 $SessionItem[$count]['Subpreference'][$pre_count]['preType'] = $preData['SubPreference']['type_id'];
@@ -2351,6 +2370,8 @@ class ProductsController extends StoreAppController {
                                 $SessionItem[$count]['Subpreference'][$pre_count]['preSize'] = 0;
                                 $SessionItem[$count]['Subpreference'][$pre_count]['preType'] = 0;
                             }
+
+                            $total_prefrence +=$SessionItem[$count]['Subpreference'][$pre_count]['prePrice'];
                             $pre_count++;
                         }
                     } else {
@@ -2362,10 +2383,13 @@ class ProductsController extends StoreAppController {
                     }
                 }
             }
+            $SessionItem[$count]['total_preference'] = $total_prefrence;
+            $SessionItem[$count]['total_topping'] = $total_topping;
             $count++;
         }
+
+
         //pr($SessionItem);
-        //die();
         $this->Session->write('reOrder', $SessionItem);
         $data['item'] = $activeItem;
         $data['count'] = $count;
@@ -2385,30 +2409,33 @@ class ProductsController extends StoreAppController {
             if ($this->Session->read('reOrder')) {
                 $data = $this->Session->read('reOrder');
                 $count = 0;
-                foreach ($data as $redata) {
+		foreach ($data as $redata) {
                     $this->Session->delete('Order.Item');
                     $itemId = $redata['itemId'];
                     $categoryId = $redata['categoryId'];
                     $itemName = $redata['itemName'];
                     $deliver_check = $redata['isDeliverable'];
-                    if ($redata['typeId'] != 0) {
-                        $default_price = $redata['price'] + $redata['typePrice'];
-                    } else {
-                        $default_price = $redata['price'];
+                    $default_price = $redata['price'];
+                    if ($redata['total_topping']) {
+                        $default_price = $default_price + $redata['total_topping'];
                     }
+
+                    if ($redata['total_preference']) {
+                        $default_price = $default_price + $redata['total_preference'];
+                    }
+
                     $default_quantity = 1;
                     $this->Session->write('Order.Item.SizePrice', $redata['price']);
                     $this->Session->write('Order.Item.size_id', $redata['sizeeId']);
                     $this->Session->write('Order.Item.TypePrice', $redata['typePrice']);
                     $this->Session->write('Order.Item.quantity', $default_quantity);
-                    $this->Session->write('Order.Item.actual_price', $default_price);
+                    $this->Session->write('Order.Item.actual_price', $redata['price']);
                     $this->Session->write('Order.Item.is_deliverable', $deliver_check);
                     $this->Session->write('Order.Item.id', $itemId);
                     $this->Session->write('Order.Item.name', $itemName);
                     $this->Session->write('Order.Item.categoryid', $categoryId);
                     $this->Session->write('Order.Item.price', $default_price);
                     $this->Session->write('Order.Item.final_price', $default_price);
-
                     $topping = array();
                     $this->loadModel('AddonSize');
                     $this->loadModel('Topping');
@@ -2421,7 +2448,7 @@ class ProductsController extends StoreAppController {
                     $j = 0;
                     $this->loadModel('Item');
                     $item_result = $this->Item->find('first', array('fields' => array('default_subs_price'), 'conditions' => array('id' => $this->Session->read('Order.Item.id'))));
-                    $default_subs_price = $item_result['Item']['default_subs_price'];
+		    $default_subs_price = $item_result['Item']['default_subs_price'];
                     foreach ($redata['Topping'] as $top) {
                         if ($this->Topping->getToppingById($top['topId'], $itemId)) {
                             if ($top['topId'] != 0) {
@@ -2433,8 +2460,7 @@ class ProductsController extends StoreAppController {
 
                                 $item_price = $this->Session->read('Order.Item.price');
                                 $storeId = $this->Session->read('store_id');
-
-                                if ($this->Session->check('Order.Item.size_id') && $default_subs_price == 0) {
+                                if (!empty($redata['sizeeId']) && $default_subs_price == 0) {
                                     $this->Topping->bindModel(
                                             array('hasMany' => array(
                                                     'ToppingPrice' => array(
@@ -2447,21 +2473,17 @@ class ProductsController extends StoreAppController {
                                             )
                                     );
                                     $price = $this->Topping->fetchToppingPrice($this->Session->read('Order.Item.id'), $top['topId'], $storeId);
-
                                     $price_topping = 0;
                                     if (isset($price['ToppingPrice']) && !empty($price['ToppingPrice'])) {
                                         $price_topping = $price['ToppingPrice'][0]['price'];
                                     }
                                 } else {
                                     $price = $this->Topping->fetchToppingPrice($this->Session->read('Order.Item.id'), $top['topId'], $storeId);
-
                                     $price_topping = 0;
                                     if (isset($price['Topping']['price']) && !empty($price['Topping']['price'])) {
                                         $price_topping = $price['Topping']['price'];
                                     }
                                 }
-
-
                                 //$price_topping = $top['topPrice'];
                                 $new_topping_price = $price_topping * $top['topSize'];
 
@@ -2470,8 +2492,7 @@ class ProductsController extends StoreAppController {
                                 }
 
                                 $new_price = $item_price + $new_topping_price;
-
-                                $this->Session->write('Order.Item.price', $new_price);
+				$this->Session->write('Order.Item.price', $new_price);
                                 $this->Session->write('Order.Item.final_price', $new_price);
 
                                 if ($this->Session->check('Order.Item.topping_total')) {
@@ -2505,7 +2526,6 @@ class ProductsController extends StoreAppController {
                                     $i++;
                                 }
                             }
-
                             if (!empty($default_check)) {
                                 $this->Session->write('Order.Item.default_topping', $default_check);
                             }
@@ -2526,7 +2546,8 @@ class ProductsController extends StoreAppController {
                         } else {
                             $offer_result = $this->Offer->offerOnItemSize($itemId, $redata['sizeeId']);
                         }
-                        if (!empty($offer_result)) {
+			
+			if (!empty($offer_result)) {
                             if ($redata['quantity'] >= $offer_result['Offer']['unit']) {
                                 $this->Session->write('Offer', $offer_result['Offer']);
                             }
@@ -2638,12 +2659,12 @@ class ProductsController extends StoreAppController {
                                 }
                                 if ($rate == 0) {
                                     if ($offerType == 1) {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . '</a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . '</a>';
                                     } else {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ Free </a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ Free </a>';
                                     }
                                 } else {
-                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ $' . $rate . '</a>';
+                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ ' . $this->Common->amount_format($rate) . '</a>';
                                 }
                                 $offerItemUnit = $offer_array['Offer']['unit'];
                                 $prefix = '<br/> ';
@@ -2663,8 +2684,10 @@ class ProductsController extends StoreAppController {
                                     $old_array[$key]['Item']['OfferItemUnit'] = $offerItemUnit;
                                     $old_array[$key]['Item']['StoreOffer'] = $storeOfferArray;
                                     if ($offerType == 1) {
+					$old_array[$key]['Item']['price'] = $offerPrice;
                                         $old_array[$key]['Item']['final_price'] = $offerPrice;
                                     } else {
+					$old_array[$key]['Item']['price'] = $offerPrice;
                                         $old_array[$key]['Item']['final_price'] = $old['Item']['final_price'] + $offerPrice;
                                     }
                                 }
@@ -2707,12 +2730,12 @@ class ProductsController extends StoreAppController {
                                 }
                                 if ($rate == 0) {
                                     if ($offerType == 1) {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . '</a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . '</a>';
                                     } else {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ Free </a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ Free </a>';
                                     }
                                 } else {
-                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b>x</b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ $' . $rate . '</a>';
+                                    $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $i . '><b><i class="fa fa-times"></i></b> ' . $off['quantity'] . ' X ' . $off['Item']['name'] . ' @ ' . $this->Common->amount_format . '</a>';
                                 }
                                 $offerItemUnit = $offer_array['Offer']['unit'];
                                 $prefix = '<br/> ';
@@ -2732,8 +2755,10 @@ class ProductsController extends StoreAppController {
                                     $old_array[$key]['Item']['OfferItemUnit'] = $offerItemUnit;
                                     $old_array[$key]['Item']['StoreOffer'] = $storeOfferArray;
                                     if ($offerType == 1) {
+					$old_array[$key]['Item']['price'] = $offerPrice;
                                         $old_array[$key]['Item']['final_price'] = $offerPrice;
                                     } else {
+					$old_array[$key]['Item']['price'] = $old['Item']['final_price'] + $offerPrice;
                                         $old_array[$key]['Item']['final_price'] = $old['Item']['final_price'] + $offerPrice;
                                     }
                                 }
@@ -2744,11 +2769,16 @@ class ProductsController extends StoreAppController {
                     }
                     $item = $redata['quantity'];
                     $present_item = $this->Session->read('cart.' . $count);
-
-
+		    
                     $intervalPrice = $this->getTimeIntervalPrice($present_item['Item']['id'], $present_item['Item']['size_id']);
-                    if (!empty($intervalPrice) && !empty($intervalPrice['IntervalPrice'])) {
+		    if (!empty($intervalPrice) && !empty($intervalPrice['IntervalPrice'])) {
                         $present_item['Item']['price'] = $intervalPrice['IntervalPrice']['price'];
+			if ($redata['total_topping']) {
+			    $present_item['Item']['price'] = $present_item['Item']['price'] + $redata['total_topping'];
+			    }
+			    if ($redata['total_preference']) {
+				$present_item['Item']['price'] = $present_item['Item']['price'] + $redata['total_preference'];
+			    }
                     }
 
                     if (isset($present_item['Item']['OfferItemPrice'])) {
@@ -2758,7 +2788,7 @@ class ProductsController extends StoreAppController {
                             if ($present_item['Item']['OfferType'] == 1) {
                                 $total = $offer_price;
                             } else {
-                                $total = $item * $present_item['Item']['price'];
+                                $total = $item * $present_item['Item']['actual_price'];
                                 $total = $total + $offer_price;
                             }
                             $prefix = '';
@@ -2766,12 +2796,12 @@ class ProductsController extends StoreAppController {
                             foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                                 if ($name['offer_price'] == 0) {
                                     if ($present_item['Item']['OfferType'] == 1) {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
                                     } else {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
                                     }
                                 } else {
-                                    $offerItemName .= $prefix . $offer_multiply . ' X ' . $name['Item_name'] . ' @ $' . $offer_multiply * $name['offer_price'];
+                                    $offerItemName .= $prefix . $offer_multiply . ' X ' . $name['Item_name'] . ' @ ' . $this->Common->amount_format($offer_multiply * $name['offer_price']);
                                 }
                                 $prefix = '<br/> ';
                                 $this->Session->write('cart.' . $count . '.Item.StoreOffer.' . $key . '.quantity', $offer_multiply);
@@ -2779,9 +2809,8 @@ class ProductsController extends StoreAppController {
                             $this->Session->write('cart.' . $count . '.Item.OfferItemName', $offerItemName);
                         } else if ($present_item['Item']['OfferItemUnit'] > $item) {
 
-                            $item_price = $present_item['Item']['price'];
+                            $item_price = $present_item['Item']['actual_price'];
                             $total = $item * $item_price;
-
                             $this->Session->delete('cart.' . $count . '.Item.OfferType');
                             $this->Session->delete('cart.' . $count . '.Item.OfferItemUnit');
                             $this->Session->delete('cart.' . $count . '.Item.OfferItemName');
@@ -2789,7 +2818,7 @@ class ProductsController extends StoreAppController {
                             $this->Session->delete('cart.' . $count . '.Item.StoreOffer');
                         } elseif ($present_item['Item']['OfferItemUnit'] == $item) {
                             $offer_flag = 0;
-                            $item_price = $present_item['Item']['price'];
+                            $item_price = $present_item['Item']['actual_price'];
                             if ($present_item['Item']['OfferType'] == 1) {
                                 $total = $present_item['Item']['OfferItemPrice'];
                             } else {
@@ -2803,19 +2832,19 @@ class ProductsController extends StoreAppController {
                             foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                                 if ($name['offer_price'] == 0) {
                                     if ($present_item['Item']['OfferType'] == 1) {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
                                     } else {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
                                     }
                                 } else {
-                                    $offerItemName .= $prefix . $offer_multiply . ' X ' . $name['Item_name'] . ' @ $' . $offer_multiply * $name['offer_price'];
+                                    $offerItemName .= $prefix . $offer_multiply . ' X ' . $name['Item_name'] . ' @ ' . $this->Common->amount_format($offer_multiply * $name['offer_price']);
                                 }
                                 $this->Session->write('cart.' . $count . '.Item.StoreOffer.' . $key . '.quantity', $offer_multiply);
                                 $prefix = '<br/> ';
                             }
                             $this->Session->write('cart.' . $count . '.Item.OfferItemName', $offerItemName);
                         } else {
-                            $item_price = $present_item['Item']['price'];
+                            $item_price = $present_item['Item']['actual_price'];
                             if ($present_item['Item']['OfferType'] == 1) {
                                 $offer_multiply = floor(($item) / ($present_item['Item']['OfferItemUnit']));
                                 $offer_price = $offer_multiply * $present_item['Item']['OfferItemPrice'];
@@ -2831,12 +2860,12 @@ class ProductsController extends StoreAppController {
                             foreach ($present_item['Item']['StoreOffer'] as $key => $name) {
                                 if ($name['offer_price'] == 0) {
                                     if ($present_item['Item']['OfferType'] == 1) {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '</a>';
                                     } else {
-                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b>x</b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
+                                        $offerItemName .= $prefix . '<a href="javascript:void(0)" class="singleItemRemove" value=' . $key . '><b><i class="fa fa-times"></i></b> ' . $offer_multiply . ' X ' . $name['Item_name'] . '@ Free </a>';
                                     }
                                 } else {
-                                    $offerItemName .= $prefix . $offer_multiply . ' X ' . $name['Item_name'] . ' @ $' . $offer_multiply * $name['offer_price'];
+                                    $offerItemName .= $prefix . $offer_multiply . ' X ' . $name['Item_name'] . ' @ ' . $this->Common->amount_format($offer_multiply * $name['offer_price']);
                                 }
                                 $this->Session->write('cart.' . $count . '.Item.StoreOffer.' . $key . '.quantity', $offer_multiply);
                                 $prefix = '<br/> ';
@@ -2844,18 +2873,13 @@ class ProductsController extends StoreAppController {
                             $this->Session->write('cart.' . $count . '.Item.OfferItemName', $offerItemName);
                         }
                     } else {
-                        $item_price = $present_item['Item']['price'];
+                        $item_price = $present_item['Item']['actual_price']; 
                         $total = $item * $item_price;
                     }
                     $itemprearr = array();
                     $itemsubarr = array();
                     $preferencePrice = 0;
-
-
-
-
-
-                    foreach ($redata['Subpreference'] as $key => $preference) {
+		    foreach ($redata['Subpreference'] as $key => $preference) {
                         if ($present_item['Item']['size_id'] && $default_subs_price == 0) {
                             $mainPreference = $this->getSubPrePriceBySize($present_item['Item']['size_id'], $present_item['Item']['id'], $this->Session->read('store_id'), $preference['preId']);
                             if (empty($mainPreference)) {
@@ -2868,43 +2892,48 @@ class ProductsController extends StoreAppController {
                                 $itemprearr[$preference['preId']]['id'] = $preference['preId'];
                                 $itemprearr[$preference['preId']]['type_id'] = $preference['preType'];
                                 $itemprearr[$preference['preId']]['name'] = $preference['preName'];
-                                $itemprearr[$preference['preId']]['price'] = $mainPreference['SubPreferencePrice']['price'];
+                                $itemprearr[$preference['preId']]['price'] = $mainPreference['SubPreferencePrice']['price']*$preference['preSize'];
                                 $itemprearr[$preference['preId']]['size'] = $preference['preSize'];
                                 //$itemsubarr[$preference['preId']] = $mainPreference['SubPreferencePrice']['price'];
-                                $preferencePrice = $preferencePrice + ($item * $mainPreference['SubPreferencePrice']['price']);
+                                $preferencePrice = $preferencePrice + ($item * $mainPreference['SubPreferencePrice']['price']*$preference['preSize']);
                             }
                         } else {
                             $mainPreference = $this->getSubPrePrice($present_item['Item']['id'], $this->Session->read('store_id'), $preference['preId']);
-                            if ($mainPreference) {
+			    if ($mainPreference) {
                                 $itemprearr[$preference['preId']]['id'] = $preference['preId'];
                                 $itemprearr[$preference['preId']]['type_id'] = $preference['preType'];
                                 $itemprearr[$preference['preId']]['name'] = $preference['preName'];
-                                $itemprearr[$preference['preId']]['price'] = $mainPreference['SubPreference']['price'];
+                                $itemprearr[$preference['preId']]['price'] = $mainPreference['SubPreference']['price']*$preference['preSize'];
                                 $itemprearr[$preference['preId']]['size'] = $preference['preSize'];
                                 //$itemsubarr[$preference['preId']] = $mainPreference['SubPreference']['price'];
-                                $preferencePrice = $preferencePrice + ($item * $mainPreference['SubPreference']['price']);
+                                $preferencePrice = $preferencePrice + ($item * $mainPreference['SubPreference']['price']*$preference['preSize']);
                             }
                         }
                         //echo "Preference Data";
                         //pr($preferenceData);
                     }
-
+		//     echo "total Price:". $total."\n";
                     $total = $total + $preferencePrice;
-//                    if ($this->Session->check('Order.Item.topping_total')) {
-//                        //$total = $total + $this->Session->read('Order.Item.topping_total');
-//                    }
-
+		   // echo "Actual Price :".$this->Session->read('Order.Item.actual_price')."\n";
+		  //  echo "Preference Price:". $preferencePrice/$item."\n";
+		    $price_total=$this->Session->read('Order.Item.actual_price')+$preferencePrice/$item;
+		  //  echo "Actual Price with Preference : ".$price_total."\n";
+                    if ($this->Session->check('Order.Item.topping_total')) {
+                        $total = $total + ($item * $this->Session->read('Order.Item.topping_total'));
+			 $price_total=$price_total+$this->Session->read('Order.Item.topping_total');
+                    }
+		  //  echo "Actual Price with Addon : ".$price_total."\n";  
                     $taxPrice = 0;
                     if (!empty($redata['itemTaxValue'])) {
                         $taxPrice = ($redata['itemTaxValue'] / 100) * $total;
                     }
 
                     $this->Session->write('cart.' . $count . '.Item.subpreference', $itemprearr);
-                    $this->Session->write('cart.' . $count . '.subPreferenceOld', $itemprearr);
+                    $this->Session->write('cart.' . $count . '.Item.subPreferenceOld', $itemprearr);
                     $this->Session->write('cart.' . $count . '.Item.taxamount', $taxPrice);
                     $this->Session->write('cart.' . $count . '.Item.taxvalue', $redata['itemTaxValue']);
                     $total = round($total, 2);
-
+		    $this->Session->write('cart.' . $count . '.Item.price', $price_total);
                     $this->Session->write('cart.' . $count . '.Item.final_price', $total);
                     $this->Session->write('cart.' . $count . '.Item.quantity', $item);
 
@@ -2914,6 +2943,7 @@ class ProductsController extends StoreAppController {
                 //echo "<br>===========================";
                 //pr($this->Session->read('cart'));
                 //die;
+		//pr($final_cart);
                 $this->loadModel('Store');
                 $store_result = $this->Store->fetchStoreDetail($this->Session->read('store_id'));
                 $this->Session->write('minprice', $store_result['Store']['minimum_order_price']);
@@ -3309,17 +3339,26 @@ class ProductsController extends StoreAppController {
                     }
                 }
             }
-            if ($_POST['deliveryType'] == 0) {
-                $current_date = date("Y-m-d", (strtotime($this->Common->storeTimeZoneUser('', date('Y-m-d H:i:s')))));
-                $orderType = $_POST['orderType'];
-                $today = 1;
-                $finaldata = $this->Common->getNextDayTimeRange($current_date, $today, $orderType);
-                $timearray = array_diff($finaldata['time_range'], $finaldata['time_break']);
-                $_POST['storePickupTime'] = reset($timearray);
-                $explodeVal = explode("-", $finaldata['currentdate']);
-                $finaldata['currentdate'] = $explodeVal[1] . "-" . $explodeVal[2] . "-" . $explodeVal[0];
-                $_POST['storePickupDate'] = $finaldata['currentdate'];
+
+            $nowData = $this->_checkNowTime($_POST['orderType']);
+            if (!empty($_POST['storePickupDate'])) {
+                $_POST['deliveryType'] = 1;
+            } elseif (!empty($nowData['pickup_date_time'])) {
+                if ($nowData['setPre'] == 1 && empty($_POST['storePickupDate'])) {
+                    $response['status'] = 'Error';
+                    $response['msg'] = "Please try after some time.";
+                    return json_encode($response);
+                } else {
+                    $_POST['deliveryType'] = 0;
+                    $_POST['storePickupTime'] = $nowData['pickup_time'];
+                    $_POST['storePickupDate'] = $nowData['pickup_date'];
+                }
+            } else {
+                $response['status'] = 'Error';
+                $response['msg'] = "Please try after some time.";
+                return json_encode($response);
             }
+
             if (isset($_SESSION['Order']) && !empty($_SESSION['Order'])) {
                 $this->Session->write('Order.order_type', $_POST['orderType']);
                 $this->Session->write('Order.is_preorder', $_POST['deliveryType']);
@@ -3511,8 +3550,7 @@ class ProductsController extends StoreAppController {
         if ($this->request->is('ajax')) {
             $tipamount = 0;
             $tip = abs($_POST['tip']);
-            if(strpos($_POST['tipvalue'],'$') === false)
-            {
+            if (strpos($_POST['tipvalue'], '$') === false) {
                 $tipvalue = abs(trim($_POST['tipvalue']));
             } else {
                 $tipvalue = explode('$', trim($_POST['tipvalue']));
@@ -3673,7 +3711,7 @@ class ProductsController extends StoreAppController {
         //$this->Session->write('Itemcartdata.data.subPreference', @$this->Session->read('Order.subPreference'));
         $this->Session->write('Itemcartdata.data.subPreferenceOld', @$this->Session->read('Order.subPreferenceOld'));
         $this->Session->write('Itemcartdata.data.Item.subpreference', @$_POST['data']['Item']['subpreference']);
-        $this->Session->write('Itemcartdata.data.Item.price', $_POST['data']['Item']['price']);
+        $this->Session->write('Itemcartdata.data.Item.price', @$_POST['data']['Item']['price']);
         $this->Session->write('Itemcartdata.data.Item.toppings', @$_POST['data']['Item']['toppings']);
         return 1;
     }
@@ -3720,49 +3758,6 @@ class ProductsController extends StoreAppController {
         }
     }
 
-    function checkMinAmount() {
-        $this->layout = "ajax";
-        $this->autoRender = false;
-        pr($this->Session->read());
-        die;
-    }
-
-    public function checkMendatoryItem1() {
-        $this->layout = "ajax";
-        $this->autoRender = false;
-        $cartData = $this->Session->read('cart');
-        if (!empty($cartData)) {
-            $this->loadModel('Item');
-            $mandatoryItemList = $this->Item->find('list', array('fields' => array('Item.id'), 'conditions' => array('Item.mandatory_item_units >' => 0)));
-            if (empty($mandatoryItemList)) {
-                $response['status'] = 'success';
-                $response['msg'] = 'success';
-            } else {
-                //pr($mandatoryItemList);
-                $i = 0;
-                foreach ($cartData as $data) {
-                    if (in_array($data['Item']['id'], $mandatoryItemList)) {
-                        $i++;
-                        $itemData = $this->Item->findById($data['Item']['id'], array('mandatory_item_units'));
-                        if ($data['Item']['quantity'] < $itemData['Item']['mandatory_item_units']) {
-                            $response['status'] = 'error';
-                            $response['msg'] = 'Please select mandatory item.1';
-                            break;
-                        } else {
-                            $response['status'] = 'success';
-                            $response['msg'] = 'success';
-                        }
-                    }
-                }
-            }
-            if (count($mandatoryItemList) != $i) {
-                $response['status'] = 'error';
-                $response['msg'] = 'Please select mandatory item';
-            }
-            return json_encode($response);
-        }
-    }
-
     public function checkMandatoryPrefAddons() {
         $this->layout = "ajax";
         $this->autoRender = false;
@@ -3779,6 +3774,7 @@ class ProductsController extends StoreAppController {
         $couponApplied = $this->Session->read('Coupon');
         if (!empty($couponApplied)) {
             $this->Session->delete('Coupon');
+            $this->Session->delete('Discount');
             $this->Session->setFlash(__("Coupon remove successfully."));
         }
         $this->redirect($this->referer());

@@ -528,12 +528,19 @@ class CouponsController extends StoreAppController {
                 $sheetData = $objPHPExcel->getActiveSheet()->toArray(null, true, true, true);
                 $real_data = array_values($sheetData);
                 $i = 0;
+                $storeId = $this->Session->read('admin_store_id');
+                $merchantId = $this->Session->read('admin_merchant_id');
                 foreach ($real_data as $key => $row) {
+                    $row['A'] = trim($row['A']);
+                    if (!empty($row['A'])) {
+                        $isUniqueId = $this->Coupon->checkCouponWithId($row['A']);
+                        if (!empty($isUniqueId) && $isUniqueId['Coupon']['store_id'] != $storeId) {
+                            continue;
+                        }
+                    }
                     $row = $this->Common->trimValue($row);
                     if ($key > 0) {
                         if (!empty($row['B']) && !empty($row['C']) && !empty($row['D']) && !empty($row['E']) && !empty($row['F'])) {
-                            $storeId = $this->Session->read('admin_store_id');
-                            $merchantId = $this->Session->read('admin_merchant_id');
                             if (!empty($storeId)) {
                                 $row['B'] = trim($row['B']);
                                 $row['C'] = trim($row['C']);
@@ -717,7 +724,7 @@ class CouponsController extends StoreAppController {
                 foreach ($orderDatas as $key => $orderDataAs) {
                     if (!empty($orderDataAs)) {
                         if ($orderDataAs['Order']['user_id'] == 0) {
-                            $index = $orderDataAs['DeliveryAddress']['email'];               
+                            $index = $orderDataAs['DeliveryAddress']['email'];
                             if (in_array($orderDataAs['DeliveryAddress']['email'], $guestEmail)) {
                                 $orderData[$index]['count'] = $orderData[$index]['count'] + 1;
                             } else {
@@ -725,7 +732,7 @@ class CouponsController extends StoreAppController {
                                 $guestEmail[$key] = $orderDataAs['DeliveryAddress']['email'];
                             }
                             $orderData[$index]['user_id'] = 0;
-                            $orderData[$index]['coupon_code'] = $orderDataAs['Order']['coupon_code'];                            
+                            $orderData[$index]['coupon_code'] = $orderDataAs['Order']['coupon_code'];
 
                             $orderData[$index]['name'] = $orderDataAs['DeliveryAddress']['name_on_bell'];
                             $orderData[$index]['email'] = $orderDataAs['DeliveryAddress']['email'];

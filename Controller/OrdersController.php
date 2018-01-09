@@ -161,7 +161,7 @@ class OrdersController extends StoreAppController {
         $this->OrderPreference->bindModel(array('belongsTo' => array('SubPreference' => array('fields' => array('name')))), false);
         $this->OrderTopping->bindModel(array('belongsTo' => array('Topping' => array('fields' => array('name')))), false);
         $this->OrderOffer->bindModel(array('belongsTo' => array('Item' => array('foreignKey' => 'offered_item_id', 'fields' => array('name')))), false);
-        $this->OrderItem->bindModel(array('hasOne' => array('StoreReview' => array('conditions' => array('StoreReview.is_active' => 1, 'StoreReview.is_deleted' => 0), 'fields' => array('review_rating', 'is_approved'))), 'hasMany' => array('OrderOffer' => array('fields' => array('offered_item_id', 'quantity')), 'OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id'), 'order' => array('OrderTopping.id')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id','size'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('id', 'name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('id', 'size')))), false);
+        $this->OrderItem->bindModel(array('hasOne' => array('StoreReview' => array('conditions' => array('StoreReview.is_active' => 1, 'StoreReview.is_deleted' => 0), 'fields' => array('review_rating', 'is_approved'))), 'hasMany' => array('OrderOffer' => array('fields' => array('offered_item_id', 'quantity')), 'OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id'), 'order' => array('OrderTopping.id')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id', 'size'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('id', 'name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('id', 'size')))), false);
         $this->Order->bindModel(array('hasMany' => array('OrderItem' => array('fields' => array('id', 'quantity', 'order_id', 'user_id', 'type_id', 'item_id', 'size_id', 'interval_id'))), 'belongsTo' => array('DeliveryAddress' => array('fields' => array('name_on_bell', 'city', 'address')), 'OrderStatus' => array('fields' => array('name')))), false);
         $this->Favorite->bindModel(array('belongsTo' => array('Order' => array('fields' => array('id', 'user_id', 'order_number', 'amount', 'seqment_id', 'delivery_address_id')))), false);
         $this->Store->unbindModel(array('hasOne' => array('SocialMedia'), 'belongsTo' => array('StoreTheme', 'StoreFont'), 'hasMany' => array('StoreGallery', 'StoreContent')));
@@ -265,7 +265,7 @@ class OrdersController extends StoreAppController {
         $this->OrderPreference->bindModel(array('belongsTo' => array('SubPreference' => array('fields' => array('name')))), false);
         $this->OrderTopping->bindModel(array('belongsTo' => array('Topping' => array('fields' => array('name')))), false);
         $this->OrderOffer->bindModel(array('belongsTo' => array('Item' => array('foreignKey' => 'offered_item_id', 'fields' => array('name')))), false);
-        $this->OrderItem->bindModel(array('hasOne' => array('StoreReview' => array('fields' => array('review_rating', 'is_approved'))), 'hasMany' => array('OrderOffer' => array('fields' => array('offered_item_id', 'quantity')), 'OrderTopping' => array('fields' => array('id', 'topping_id','addon_size_id'), 'order' => array('OrderTopping.id')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id','size'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('name')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('size')))), false);
+        $this->OrderItem->bindModel(array('hasOne' => array('StoreReview' => array('fields' => array('review_rating', 'is_approved'))), 'hasMany' => array('OrderOffer' => array('fields' => array('offered_item_id', 'quantity')), 'OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id'), 'order' => array('OrderTopping.id')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id', 'size'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('name')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('size')))), false);
         $this->Order->bindModel(array('hasMany' => array('OrderItem' => array('fields' => array('id', 'quantity', 'order_id', 'user_id', 'type_id', 'item_id', 'size_id', 'interval_id'))), 'belongsTo' => array('DeliveryAddress' => array('fields' => array('name_on_bell', 'city', 'address')), 'OrderStatus' => array('fields' => array('name')))), false);
         $this->Store->unbindModel(array('hasOne' => array('SocialMedia'), 'belongsTo' => array('StoreTheme', 'StoreFont'), 'hasMany' => array('StoreGallery', 'StoreContent')));
         $this->Order->bindModel(array(
@@ -350,7 +350,7 @@ class OrdersController extends StoreAppController {
         $this->OrderPreference->bindModel(array('belongsTo' => array('SubPreference' => array('fields' => array('id', 'name')))), false);
         $this->OrderOffer->bindModel(array('belongsTo' => array('Item' => array('foreignKey' => 'offered_item_id', 'fields' => array('id', 'name')))), false);
         $this->OrderTopping->bindModel(array('belongsTo' => array('Topping' => array('fields' => array('id', 'name')))), false);
-        $this->OrderItem->bindModel(array('hasOne' => array('StoreReview' => array('fields' => array('review_rating', 'is_approved'))), 'hasMany' => array('OrderOffer' => array('fields' => array('offered_item_id', 'quantity')), 'OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id'), 'order' => array('OrderTopping.id')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id','size'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('id', 'name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('id', 'size')))), false);
+        $this->OrderItem->bindModel(array('hasOne' => array('StoreReview' => array('fields' => array('review_rating', 'is_approved'))), 'hasMany' => array('OrderOffer' => array('fields' => array('offered_item_id', 'quantity')), 'OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id'), 'order' => array('OrderTopping.id')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id', 'size'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('id', 'name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('id', 'size')))), false);
         $this->Order->bindModel(array('hasMany' => array('OrderItem' => array('fields' => array('id', 'quantity', 'order_id', 'user_id', 'type_id', 'item_id', 'size_id', 'interval_id'))), 'belongsTo' => array('DeliveryAddress' => array('fields' => array('id', 'name_on_bell', 'city', 'address')), 'OrderStatus' => array('fields' => array('id', 'name')))), false);
         $this->Favorite->bindModel(array('belongsTo' => array('Order' => array('fields' => array('id', 'user_id', 'order_number', 'amount', 'seqment_id', 'delivery_address_id', 'order_status_id', 'coupon_discount', 'created', 'pickup_time', 'order_comments')))), false);
 
@@ -476,7 +476,8 @@ class OrdersController extends StoreAppController {
                 $emailSuccess = $this->EmailTemplate->storeTemplates($data['StoreReview']['store_id'], $data['StoreReview']['merchant_id'], $template_type);
                 $store = $this->Store->fetchStoreDetail($data['StoreReview']['store_id'], $data['StoreReview']['merchant_id']);
                 if ($emailSuccess) {
-                    if (($store['Store']['notification_type'] == 1 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_email']))) {
+                    $checkEmailNotificationMethod=$this->Common->checkNotificationMethod($store,'email');
+		    if ($checkEmailNotificationMethod){
                         $storeEmail = trim($store['Store']['notification_email']);
                     } else {
                         $storeEmail = trim($store['Store']['email_id']);
@@ -517,7 +518,8 @@ class OrdersController extends StoreAppController {
                         
                     }
 
-                    if (($store['Store']['notification_type'] == 2 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_number']))) {
+                    $checkPhoneNotificationMethod=$this->Common->checkNotificationMethod($store,'number');
+		    if ($checkPhoneNotificationMethod){
                         $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['notification_number']);
                     } else {
                         $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['phone']);
@@ -619,7 +621,7 @@ class OrdersController extends StoreAppController {
 
         $this->OrderOffer->bindModel(array('belongsTo' => array('Item' => array('className' => 'Item', 'foreignKey' => 'offered_item_id', 'fields' => array('id', 'name', 'category_id')), 'Size' => array('className' => 'Size', 'foreignKey' => 'offered_size_id', 'fields' => array('id', 'size')))), false);
         $this->OrderTopping->bindModel(array('belongsTo' => array('Topping' => array('className' => 'Topping', 'foreignKey' => 'topping_id', 'fields' => array('id', 'name')))), false);
-        $this->OrderItem->bindModel(array('hasMany' => array('OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id'), 'order' => array('OrderTopping.id')), 'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id','size'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name', 'category_id')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('id', 'name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('id', 'size')))), false);
+        $this->OrderItem->bindModel(array('hasMany' => array('OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id'), 'order' => array('OrderTopping.id')), 'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id', 'size'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name', 'category_id')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('id', 'name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('id', 'size')))), false);
         $this->Order->bindModel(
                 array(
             'hasMany' => array(
@@ -637,7 +639,7 @@ class OrdersController extends StoreAppController {
                 'OrderPayment' => array(
                     'className' => 'OrderPayment',
                     'foreignKey' => 'payment_id',
-                    'fields' => array('id', 'transection_id', 'amount', 'payment_gateway', 'payment_status'),
+                    'fields' => array('id', 'transection_id', 'amount', 'payment_gateway', 'payment_status', 'last_digit'),
                 ))), false);
         $orderDetails = $this->Order->getSingleOrderDetail($merchantId, $storeID, $orderId);
         $this->set('orderDetail', $orderDetails);
@@ -1585,7 +1587,8 @@ class OrdersController extends StoreAppController {
                 $emailSuccess = $this->EmailTemplate->storeTemplates($data['StoreReview']['store_id'], $data['StoreReview']['merchant_id'], $template_type);
                 $store = $this->Store->fetchStoreDetail($data['StoreReview']['store_id'], $data['StoreReview']['merchant_id']);
                 if ($emailSuccess) {
-                    if (($store['Store']['notification_type'] == 1 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_email']))) {
+                    $checkEmailNotificationMethod=$this->Common->checkNotificationMethod($store,'email');
+		    if ($checkEmailNotificationMethod){
                         $storeEmail = trim($store['Store']['notification_email']);
                     } else {
                         $storeEmail = trim($store['Store']['email_id']);
@@ -1598,7 +1601,7 @@ class OrdersController extends StoreAppController {
                     $emailData = str_replace('{RATING}', $rating, $emailData);
                     $emailData = str_replace('{ITEM_NAME}', $item_name, $emailData);
                     $emailData = str_replace('{CUSTOMER_NAME}', $customer_name, $emailData);
-                    
+
                     $storeName = $store['Store']['store_name'];
                     $storeAddress = $store['Store']['address'] . "<br>" . $store['Store']['city'] . ", " . $store['Store']['state'] . " " . $store['Store']['zipcode'];
                     $storePhone = $store['Store']['phone'];
@@ -1629,7 +1632,8 @@ class OrdersController extends StoreAppController {
                         
                     }
 
-                    if (($store['Store']['notification_type'] == 2 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_number']))) {
+                    $checkPhoneNotificationMethod=$this->Common->checkNotificationMethod($store,'number');
+		    if ($checkPhoneNotificationMethod){
                         $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['notification_number']);
                     } else {
                         $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['phone']);

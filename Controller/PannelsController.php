@@ -200,7 +200,8 @@ class PannelsController extends StoreAppController {
                 'order' => 'Booking.created DESC',
                 'limit' => 9
             );
-        } $myBookings = $this->paginate('Booking');
+        }
+        $myBookings = $this->paginate('Booking');
         $this->set("fromdate", $fromdate);
         if (empty($enddate)) {
             $enddate = $fromdate;
@@ -290,7 +291,8 @@ class PannelsController extends StoreAppController {
                 //$emailSuccess = $this->EmailTemplate->storeTemplates($decrypt_storeId, $decrypt_merchantId, $template_type);
                 $emailSuccess = $this->DefaultTemplate->find('first', array('conditions' => array('DefaultTemplate.template_code' => $template_type, 'DefaultTemplate.is_default' => 1)));
                 if ($emailSuccess) {
-                    if (($store ['Store'] ['notification_type'] == 1 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_email']))) {
+		    $checkEmailNotificationMethod=$this->Common->checkNotificationMethod($store,'email');
+		    if ($checkEmailNotificationMethod){
                         $storeEmail = $store['Store']['notification_email'];
                     } else {
                         $storeEmail = $store['Store']['email_id'];
@@ -334,11 +336,12 @@ class PannelsController extends StoreAppController {
                     try {
                         $this->Email->send();
                     } catch (Exception $e) {
-
+                        
                     }
 
-                    if (($store ['Store'] ['notification_type'] == 2 || $store['Store']['notification_type'] == 3) && (!empty($store['Store'] ['notification_number']))) {
-                        $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['notification_number']);
+                    $checkPhoneNotificationMethod=$this->Common->checkNotificationMethod($store,'number');
+		    if ($checkPhoneNotificationMethod){
+                        $mobnumber = '+91' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['notification_number']);
                     } else {
                         $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['phone']);
                     }
@@ -526,7 +529,7 @@ class PannelsController extends StoreAppController {
         $this->userLoginCheck();
         $this->autoRender = false;
         $data['Booking']['id'] = $this->Encryption->decode($encrypted_bookingId);
-        $data['Booking']['is_deleted'] = 1;
+        //$data['Booking']['is_deleted'] = 1;
         $data['Booking']['booking_status_id'] = 4;
         $decrypt_storeId = $this->Encryption->decode($encrypted_storeId);
         $decrypt_merchantId = $this->Encryption->decode($encrypted_merchantId);
@@ -562,7 +565,8 @@ class PannelsController extends StoreAppController {
             $customer_name = AuthComponent::User('fname') . " " . AuthComponent::User('lname');
             $emailSuccess = $this->EmailTemplate->storeTemplates($decrypt_storeId, $decrypt_merchantId, $template_type);
             if ($emailSuccess) {
-                if (($store ['Store'] ['notification_type'] == 1 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_email']))) {
+                $checkEmailNotificationMethod=$this->Common->checkNotificationMethod($store,'email');
+		    if ($checkEmailNotificationMethod){
                     $storeEmail = trim($store['Store']['notification_email']);
                 } else {
                     $storeEmail = trim($store['Store']['email_id']);
@@ -600,11 +604,12 @@ class PannelsController extends StoreAppController {
                 try {
                     $this->Email->send();
                 } catch (Exception $e) {
-
+                    
                 }
 
 
-                if (($store ['Store'] ['notification_type'] == 2 || $store['Store']['notification_type'] == 3) && (!empty($store ['Store']['notification_number']))) {
+                $checkPhoneNotificationMethod=$this->Common->checkNotificationMethod($store,'number');
+		if ($checkPhoneNotificationMethod){
                     $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['notification_number']);
                 } else {
                     $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['phone']);
@@ -985,7 +990,8 @@ class PannelsController extends StoreAppController {
                 $emailSuccess = $this->DefaultTemplate->find('first', array('conditions' => array('DefaultTemplate.template_code' => $template_type, 'DefaultTemplate.is_default' => 1)));
 
                 if ($emailSuccess) {
-                    if (($store ['Store'] ['notification_type'] == 1 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_email']))) {
+                    $checkEmailNotificationMethod=$this->Common->checkNotificationMethod($store,'email');
+		    if ($checkEmailNotificationMethod){
                         $storeEmail = trim($store['Store']['notification_email']);
                     } else {
                         $storeEmail = trim($store['Store']['email_id']);
@@ -1026,10 +1032,11 @@ class PannelsController extends StoreAppController {
                     try {
                         $this->Email->send();
                     } catch (Exception $e) {
-
+                        
                     }
 
-                    if (($store ['Store'] ['notification_type'] == 2 || $store['Store']['notification_type'] == 3) && (!empty($store['Store'] ['notification_number']))) {
+                    $checkPhoneNotificationMethod=$this->Common->checkNotificationMethod($store,'number');
+		    if ($checkPhoneNotificationMethod){
                         $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['notification_number']);
                     } else {
                         $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['phone']);
@@ -1343,7 +1350,7 @@ class PannelsController extends StoreAppController {
         $storeId = $this->Encryption->decode($encrypted_storeId);
         $decrypt_merchantId = $this->Encryption->decode($encrypted_merchantId);
         //$allReviewImages = $this->StoreReviewImage->getAllStoreReviewImages($decrypt_storeId);
-        $this->paginate = array('limit' => '999', 'order' => array('StoreReviewImage.created' => 'DESC'), 'conditions' => array('StoreReviewImage.store_id' => $storeId, 'StoreReviewImage.is_active' => 1, 'StoreReviewImage.is_deleted' => 0), 'fields' => array('StoreReviewImage.image'));
+        $this->paginate = array('limit' => '9', 'order' => array('StoreReviewImage.created' => 'DESC'), 'conditions' => array('StoreReviewImage.store_id' => $storeId, 'StoreReviewImage.is_active' => 1, 'StoreReviewImage.is_deleted' => 0), 'fields' => array('StoreReviewImage.image'));
         $allReviewImages = $this->paginate('StoreReviewImage');
         //prx($allReviewImages);
         $this->set(compact('encrypted_storeId', 'encrypted_merchantId', 'allReviewImages'));
@@ -1353,7 +1360,7 @@ class PannelsController extends StoreAppController {
         $this->layout = false;
         $this->loadModel('StoreReviewImage');
         $storeId = $this->Session->read('store_id');
-        $limit = 999;
+        $limit = 9;
         if (!empty($this->request->data['pageNo'])) {
             $pageNo = $this->request->data['pageNo'];
         } else {
@@ -1389,7 +1396,7 @@ class PannelsController extends StoreAppController {
     }
 
     /* ------------------------------------------------
-      Function name: reviewImages()
+      Function name: reviewImageDet()
       Description: Display the list of store reviews images in admin panel
       created:26/07/2016
       ----------------------------------------------------- */

@@ -56,16 +56,16 @@ class HqreportsController extends HqAppController {
             $yearTo = $Year;
             $dateFrom = date('Y-m-d', strtotime('last Sunday', strtotime($startdate)));
             $dateTo = date('Y-m-d', strtotime('next saturday', strtotime($dateFrom)));
-            
+
         }else{
             if(empty($this->request->data['Merchant']['store_id'])){
                 $storeId='All';
             }else{
                 $storeId = $this->request->data['Merchant']['store_id'];
             }
-            
+
         }
-        
+
         if (isset($this->params['named']) && isset($this->params['named']['store_id'])) {
             $store_id = $this->params['named']['store_id'];
             $storeId = $store_id;
@@ -94,15 +94,15 @@ class HqreportsController extends HqAppController {
                 }else{
                     $storeId = $this->request->data['Merchant']['store_id'];
                 }
-                
+
             }
         }
-        
+
         if ($storeId == 'All') {
             $this->loadModel('Store');
             $storeId = $this->Store->find('list', array('fields' => array('Store.id'), 'conditions' => array('Store.merchant_id' => $merchantId, 'Store.is_active' => 1, 'Store.is_deleted' => 0)));
         }
-        
+
         if (!empty($this->data) || !empty($this->params['named'])) {
             if (isset($this->data['Report']['type'])) {
                 $type = $this->data['Report']['type'];
@@ -152,7 +152,7 @@ class HqreportsController extends HqAppController {
                     $startFrom = date('Y-m-d 00:00:00', strtotime($startFrom));
                     $endFrom = date('Y-m-d 23:59:59', strtotime($endFrom));
                 }
-                
+
                 $expoladEndDate=  explode(" ", $endFrom);
                 $endMonth = $expoladEndDate[1];
                 $explodeEndYear = explode("-", $expoladEndDate[0]);
@@ -801,7 +801,7 @@ class HqreportsController extends HqAppController {
         $yearTo = date('Y');
         $dateFrom = date('Y-m-d', strtotime('last Sunday', strtotime($startdate)));
         $dateTo = date('Y-m-d', strtotime('next saturday', strtotime($dateFrom)));
-        
+
        if (!empty($this->request->data['Merchant']['store_id']) && $this->request->data['Merchant']['store_id']!='All') {
             $storeId = $this->request->data['Merchant']['store_id'];
             $store_id = $storeId;
@@ -829,9 +829,9 @@ class HqreportsController extends HqAppController {
             }else{
                 $storeId = $this->request->data['Merchant']['store_id'];
             }
-            
+
         }
-        
+
         if (isset($this->params['named']) && isset($this->params['named']['store_id'])) {
             $store_id = $this->params['named']['store_id'];
             $storeId = $store_id;
@@ -860,14 +860,14 @@ class HqreportsController extends HqAppController {
                 }else{
                     $storeId = $this->request->data['Merchant']['store_id'];
                 }
-                
+
             }
         }
         if ($storeId == 'All') {
             $this->loadModel('Store');
             $storeId = $this->Store->find('list', array('fields' => array('Store.id'), 'conditions' => array('Store.merchant_id' => $merchantId, 'Store.is_active' => 1, 'Store.is_deleted' => 0)));
         }
-        
+
         if (!empty($this->data) || !empty($this->params['named'])) {
             if (isset($this->data['Report']['type'])) {
                 $type = $this->data['Report']['type'];
@@ -1087,14 +1087,14 @@ class HqreportsController extends HqAppController {
             $yearTo = $Year;
             $dateFrom = date('Y-m-d', strtotime('last Sunday', strtotime($startdate)));
             $dateTo = date('Y-m-d', strtotime('next saturday', strtotime($dateFrom)));
-            
+
         }else{
             if(empty($this->request->data['Merchant']['store_id'])){
                 $storeId='All';
             }else{
                 $storeId = $this->request->data['Merchant']['store_id'];
             }
-            
+
         }
         if (isset($this->params['named']) && isset($this->params['named']['store_id'])) {
             $store_id = $this->params['named']['store_id'];
@@ -1124,7 +1124,7 @@ class HqreportsController extends HqAppController {
                 }else{
                     $storeId = $this->request->data['Merchant']['store_id'];
                 }
-                
+
             }
         }
         if ($storeId == 'All') {
@@ -1133,11 +1133,11 @@ class HqreportsController extends HqAppController {
             if(!empty($storeId)){
             $lastID=end($storeId)+1;
             $storeArry=array($lastID=>'0');
-            $storeId= array_merge($storeArry,$storeId);    
+            $storeId= array_merge($storeArry,$storeId);
             }
-            
+
         }
-        
+
         if (!empty($this->data) || !empty($this->params['named'])) {
             if (isset($this->data['Report']['type'])) {
                 $type = $this->data['Report']['type'];
@@ -1345,8 +1345,8 @@ class HqreportsController extends HqAppController {
                     $user[$key]['User']['created'] = $data['User']['created'];
                 }
              }
-            
-            
+
+
             $page = 1;
             $result = $user;
             $userdata = $this->userListing($storeId, $sdate, $edate);
@@ -1423,7 +1423,7 @@ class HqreportsController extends HqAppController {
      * ********************* */
 
     public function orderListing($storeID = null, $startDate = null, $endDate = null, $orderType = null) {
-        
+
         $criteria = "Order.is_deleted=0 AND Order.is_active=1 AND Order.is_future_order=0";
         if (!empty($storeID) && count($storeID) == 1) {
             // $criteria .= " AND Order.store_id =$storeID";
@@ -1476,7 +1476,7 @@ class HqreportsController extends HqAppController {
         }
         $this->paginate = array('recursive' => 2, 'conditions' => array_merge(array($criteria), array('Order.store_id' => $storeID)), 'order' => array('Order.created' => 'DESC'));
         $orderdetail = $this->paginate('Order');
-        
+
         return $orderdetail;
     }
 
@@ -1738,7 +1738,7 @@ class HqreportsController extends HqAppController {
 
     public function fetchWeeklyUserToday($storeId = null, $start = null, $end = null,$endYear=null) {
         $conditions = " User.is_active=1 AND User.is_deleted=0 AND WEEK(User.created) >=WEEK('" . $start . "') AND WEEK(User.created) <=WEEK('" . $end . "') AND YEAR(User.created) ='" . $endYear . "' AND User.role_id IN (4,5)";
-         
+
         $result = $this->User->find('all', array('group' => array('User.created'), 'fields' => array('WEEK(User.created) AS WEEKno', 'DATE(User.created) AS order_date', 'COUNT(User.id) as total'), 'conditions' => array_merge(array($conditions), array('User.store_id' => $storeId))));
         return $result;
     }
@@ -1842,14 +1842,14 @@ class HqreportsController extends HqAppController {
             $yearTo = $Year;
             $dateFrom = date('Y-m-d', strtotime('last Sunday', strtotime($startdate)));
             $dateTo = date('Y-m-d', strtotime('next saturday', strtotime($dateFrom)));
-            
+
         }else{
             if(empty($this->request->data['Merchant']['store_id'])){
                 $storeId='All';
             }else{
                 $storeId = $this->request->data['Merchant']['store_id'];
             }
-            
+
         }
         if (isset($this->params['named']) && isset($this->params['named']['store_id'])) {
             $store_id = $this->params['named']['store_id'];
@@ -1879,14 +1879,14 @@ class HqreportsController extends HqAppController {
                 }else{
                     $storeId = $this->request->data['Merchant']['store_id'];
                 }
-                
+
             }
         }
         if ($storeId == 'All') {
             $this->loadModel('Store');
             $storeId = $this->Store->find('list', array('fields' => array('Store.id'), 'conditions' => array('Store.merchant_id' => $merchantId, 'Store.is_active' => 1, 'Store.is_deleted' => 0)));
         }
-        
+
         if (!empty($this->data) || !empty($this->params['named'])) {
             if (isset($this->data['Report']['type'])) {
                 $type = $this->data['Report']['type'];
@@ -2087,11 +2087,11 @@ class HqreportsController extends HqAppController {
                 $this->set(compact('order', 'result', 'paginationdata'));
             }
         }
-          
+
             $this->loadModel('Item');
             $itemList = $this->Item->getallItemsByStore($storeId);
             $this->set('categoryList', $itemList);
-          
+
         $this->set(compact('store_id', 'item', 'startdate', 'enddate', 'type', 'dateFrom', 'dateTo', 'Month', 'Year', 'yearFrom', 'yearTo', 'paginationdata'));
     }
 
@@ -2536,19 +2536,68 @@ class HqreportsController extends HqAppController {
             $this->Session->setFlash(__("Permission Denied"));
             $this->redirect(array('controller' => 'hq', 'action' => 'dashboard'));
         }
+        $this->loadModel('OrderItemFree');
         $this->loadModel('Item');
         $this->layout = "hq_dashboard";
         $merchantId = $this->Session->read('merchantId');
         $orderId = $this->Encryption->decode($order_id);
+        $this->OrderItemFree->bindModel(array('belongsTo' => array('Item' => array('fields' =>array('id', 'name','category_id')))), false);
         $this->OrderPreference->bindModel(array('belongsTo' => array('SubPreference' => array('fields' => array('name')))), false);
-        $this->OrderOffer->bindModel(array('belongsTo' => array('Item' => array('className' => 'Item', 'foreignKey' => 'offered_item_id', 'fields' => array('id', 'name','category_id')), 'Size' => array('className' => 'Size', 'foreignKey' => 'offered_size_id', 'fields' => array('id', 'size')))), false);
         $this->Item->bindModel(array('belongsTo' => array('category' => array('fields' =>
                     array('id', 'name')))), false);
+        $this->OrderOffer->bindModel(array('belongsTo' => array('Item' => array('className' => 'Item', 'foreignKey' => 'offered_item_id', 'fields' => array('id', 'name','category_id')), 'Size' => array('className' => 'Size', 'foreignKey' => 'offered_size_id', 'fields' => array('id', 'size')))), false);
         $this->OrderTopping->bindModel(array('belongsTo' => array('Topping' => array('className' => 'Topping', 'foreignKey' => 'topping_id', 'fields' => array('id', 'name')))), false);
-        $this->OrderItem->bindModel(array('hasMany' => array('OrderTopping' => array('fields' => array('id', 'topping_id')), 'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name','category_id')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('size')))), false);
-        $this->Order->bindModel(array('hasMany' => array('OrderItem' => array('fields' => array('id', 'quantity', 'order_id', 'user_id', 'type_id', 'item_id', 'size_id', 'total_item_price', 'tax_price'))), 'belongsTo' => array('Segment' => array('className' => 'Segment', 'foreignKey' => 'seqment_id'), 'DeliveryAddress' => array('fields' => array('name_on_bell', 'city', 'address')), 'OrderStatus' => array('fields' => array('name')))), false);
+        $this->OrderItem->bindModel(
+                    array(
+                        'hasMany' => array(
+                            'OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id'), 'order' => array('OrderTopping.id')), 
+                            'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity')), 
+                            'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id', 'size'))
+                        ), 
+                        'belongsTo' => array(
+                            'Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name','category_id')), 
+                            'Type' => array('foreignKey' => 'type_id', 'fields' => array('name')), 
+                            'Size' => array('foreignKey' => 'size_id', 'fields' => array('size')))), false);
+        $this->Order->bindModel(
+                    array(
+                        'hasMany' => array(
+                            'OrderItem' => array('fields' => array('id', 'quantity', 'order_id', 'user_id', 'type_id', 'item_id', 'size_id', 'total_item_price', 'tax_price')),
+                            'OrderItemFree' => array('foreignKey' => 'order_id', 'fields' => array('id', 'item_id', 'order_id', 'free_quantity', 'price'))
+                        ), 
+                        'belongsTo' => array(
+                            'User' => array('className' => 'User', 'foreignKey' => 'user_id'),
+                            'Segment' => array('className' => 'Segment', 'foreignKey' => 'seqment_id'), 
+                            'DeliveryAddress' => array('fields' => array('name_on_bell', 'city', 'address')), 
+                            'OrderStatus' => array('fields' => array('name')),
+                            'OrderPayment' => array(
+                                'className' => 'OrderPayment',
+                                'foreignKey' => 'payment_id',
+                                'fields' => array('id', 'transection_id', 'amount', 'payment_gateway', 'payment_status', 'last_digit'),
+                            )
+                        )
+                    ), false);
         $orderDetails = $this->Order->getOrderInfo($orderId);
         $this->set('orderDetail', $orderDetails);
+        
+        
+        $savedStatus=array();
+        if($orderDetails['Order']['seqment_id'] == 2){
+            if(!empty($storeSetting['StoreSetting']['pickup_status'])){
+                $savedStatus=explode(',',$storeSetting['StoreSetting']['pickup_status']);
+            }
+        }
+        
+        if($orderDetails['Order']['seqment_id'] == 3){
+            if(!empty($storeSetting['StoreSetting']['delivery_status'])){
+                $savedStatus=explode(',',$storeSetting['StoreSetting']['delivery_status']);
+            }
+        }
+        
+        
+        
+        
+        $this->set(compact('savedStatus'));
+        
         $this->loadModel('OrderStatus');
         $statusList = $this->OrderStatus->OrderStatusList();
         $this->set('statusList', $statusList);
@@ -2577,7 +2626,7 @@ class HqreportsController extends HqAppController {
         $this->OrderPreference->bindModel(array('belongsTo' => array('SubPreference' => array('fields' => array('name')))), false);
         $this->OrderOffer->bindModel(array('belongsTo' => array('Item' => array('className' => 'Item', 'foreignKey' => 'offered_item_id', 'fields' => array('id', 'name')), 'Size' => array('className' => 'Size', 'foreignKey' => 'offered_size_id', 'fields' => array('id', 'size')))), false);
         $this->OrderTopping->bindModel(array('belongsTo' => array('Topping' => array('className' => 'Topping', 'foreignKey' => 'topping_id', 'fields' => array('name')))), false);
-        $this->OrderItem->bindModel(array('hasOne' => array('StoreReview' => array('fields' => array('review_rating', 'is_approved'))), 'hasMany' => array('OrderTopping' => array('fields' => array('id', 'topping_id')), 'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('name')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('size')))), false);
+        $this->OrderItem->bindModel(array('hasOne' => array('StoreReview' => array('fields' => array('review_rating', 'is_approved'))), 'hasMany' => array('OrderTopping' => array('fields' => array('id', 'topping_id'), 'order' => array('OrderTopping.id')), 'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('name')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('size')))), false);
         $this->Order->bindModel(array('hasMany' => array('OrderItem' => array('fields' => array('id', 'quantity', 'order_id', 'user_id', 'type_id', 'item_id', 'size_id', 'total_item_price', 'tax_price'))), 'belongsTo' => array('DeliveryAddress' => array('fields' => array('name_on_bell', 'city', 'address')), 'User' => array('fields' => array('fname', 'lname', 'email', 'phone', 'country', 'city', 'state', 'address')), 'OrderStatus' => array('fields' => array('name')), 'Segment' => array('className' => 'Segment', 'foreignKey' => 'seqment_id'))), false);
         $orderDetails = $this->Order->getUserOrderDetail($merchantId, $storeId, $userId);
         if (!empty($orderDetails)) {
@@ -2621,7 +2670,7 @@ class HqreportsController extends HqAppController {
             echo $data['OrderStatus']['name'];
         }
     }
-    
+
     public function getcurrentStoreTime() {
         $this->autoRender = false;
         $storeId=$this->request->data['storeId'];
@@ -2630,18 +2679,18 @@ class HqreportsController extends HqAppController {
         }else{
             $storeDate=$this->Common->getcurrentTime($storeId,2);
         }
-        
+
         return $storeDate;
         die;
-        
+
     }
-    
+
      /* ------------------------------------------------
       Function name:imageGallary()
-      Description:Upload Gallery Images 
+      Description:Upload Gallery Images
       created:21/04/2017
       ----------------------------------------------------- */
-    
+
     public function imageGallary() {
 
         $this->layout = "hq_dashboard";
@@ -2671,7 +2720,7 @@ class HqreportsController extends HqAppController {
     }
      /* ------------------------------------------------
       Function name:imageGallary()
-      Description:Upload Gallery Images 
+      Description:Upload Gallery Images
       created:21/04/2017
       ----------------------------------------------------- */
 

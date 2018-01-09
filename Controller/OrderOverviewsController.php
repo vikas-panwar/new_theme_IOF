@@ -51,8 +51,6 @@ class OrderOverviewsController extends StoreAppController {
         $this->loadModel('StoreSetting');
         $storeSetting = $this->StoreSetting->findByStoreId($storeId);
         $this->set('storeSetting', $storeSetting);
-
-
     }
 
     function getDateTime() {
@@ -158,14 +156,14 @@ class OrderOverviewsController extends StoreAppController {
             $address = trim(ucwords($this->request->data['DeliveryAddress']['address']));
             $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
             $adjuster_address2 = str_replace(' ', '+', $dlocation);
-            $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+            $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
             $output = json_decode($geocode);
             $this->request->data['DeliveryAddress']['id'] = $this->Encryption->decode($this->request->data['DeliveryAddress']['id']);
             $this->request->data['DeliveryAddress']['user_id'] = AuthComponent::User('id');
             $this->request->data['DeliveryAddress']['store_id'] = $storeId;
             $this->request->data['DeliveryAddress']['merchant_id'] = $merchantId;
             if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
-
+                
             } else {
                 $latitude = @$output->results[0]->geometry->location->lat;
                 $longitude = @$output->results[0]->geometry->location->lng;
@@ -284,13 +282,13 @@ class OrderOverviewsController extends StoreAppController {
                     $address = trim(ucwords($tmp['DeliveryAddress']['address']));
                     $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                     $adjuster_address2 = str_replace(' ', '+', $dlocation);
-                    $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+                    $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
                     $output = json_decode($geocode);
                     $tmp['DeliveryAddress']['user_id'] = $userId;
                     $tmp['DeliveryAddress']['store_id'] = $storeId;
                     $tmp['DeliveryAddress']['merchant_id'] = $merchantId;
                     if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
-
+                        
                     } else {
                         $latitude = @$output->results[0]->geometry->location->lat;
                         $longitude = @$output->results[0]->geometry->location->lng;
@@ -316,13 +314,13 @@ class OrderOverviewsController extends StoreAppController {
                     $address = trim(ucwords($tmp['DeliveryAddress1']['address']));
                     $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                     $adjuster_address2 = str_replace(' ', '+', $dlocation);
-                    $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+                    $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
                     $output = json_decode($geocode);
                     $tmp['DeliveryAddress1']['user_id'] = $userId;
                     $tmp['DeliveryAddress1']['store_id'] = $storeId;
                     $tmp['DeliveryAddress1']['merchant_id'] = $merchantId;
                     if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
-
+                        
                     } else {
                         $latitude = @$output->results[0]->geometry->location->lat;
                         $longitude = @$output->results[0]->geometry->location->lng;
@@ -348,13 +346,13 @@ class OrderOverviewsController extends StoreAppController {
                     $address = trim(ucwords($tmp['DeliveryAddress2']['address']));
                     $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                     $adjuster_address2 = str_replace(' ', '+', $dlocation);
-                    $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+                    $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
                     $output = json_decode($geocode);
                     $tmp['DeliveryAddress2']['user_id'] = $userId;
                     $tmp['DeliveryAddress2']['store_id'] = $storeId;
                     $tmp['DeliveryAddress2']['merchant_id'] = $merchantId;
                     if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
-
+                        
                     } else {
                         $latitude = @$output->results[0]->geometry->location->lat;
                         $longitude = @$output->results[0]->geometry->location->lng;
@@ -380,13 +378,13 @@ class OrderOverviewsController extends StoreAppController {
                     $address = trim(ucwords($tmp['DeliveryAddress3']['address']));
                     $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                     $adjuster_address3 = str_replace(' ', '+', $dlocation);
-                    $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address3 . '&sensor=false');
+                    $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address3 . '&sensor=false');
                     $output = json_decode($geocode);
                     $tmp['DeliveryAddress3']['user_id'] = $userId;
                     $tmp['DeliveryAddress3']['store_id'] = $storeId;
                     $tmp['DeliveryAddress3']['merchant_id'] = $merchantId;
                     if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
-
+                        
                     } else {
                         $latitude = @$output->results[0]->geometry->location->lat;
                         $longitude = @$output->results[0]->geometry->location->lng;
@@ -413,13 +411,13 @@ class OrderOverviewsController extends StoreAppController {
                     $address = trim(ucwords($tmp['DeliveryAddress4']['address']));
                     $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                     $adjuster_address4 = str_replace(' ', '+', $dlocation);
-                    $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address4 . '&sensor=false');
+                    $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address4 . '&sensor=false');
                     $output = json_decode($geocode);
                     $tmp['DeliveryAddress4']['user_id'] = $userId;
                     $tmp['DeliveryAddress4']['store_id'] = $storeId;
                     $tmp['DeliveryAddress4']['merchant_id'] = $merchantId;
                     if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
-
+                        
                     } else {
                         $latitude = @$output->results[0]->geometry->location->lat;
                         $longitude = @$output->results[0]->geometry->location->lng;
@@ -461,6 +459,12 @@ class OrderOverviewsController extends StoreAppController {
         $this->autoRender = false;
         if ($this->request->is(array('ajax', 'post', 'put'))) {
             parse_str($this->request->data['formData'], $data);
+            if (empty($data['data']['Order']['type'])) {
+                $response['status'] = 'Error';
+                $response['msg'] = "Order type is not selected, please refresh page and try again.";
+                return json_encode($response);
+            }
+            //prx($data);
             unset($data['_Token']);
             $oDetail = array();
             $userId = AuthComponent::User('id'); // Customer Id
@@ -480,6 +484,25 @@ class OrderOverviewsController extends StoreAppController {
                         return json_encode($response);
                     }
                 }
+            }
+            if (empty($this->_checkStoreStatus($data['data']['Order']['type']))) {
+                $response['status'] = 'Error';
+                $response['msg'] = "Currently store is not taking orders, please visit after some time.";
+                return json_encode($response);
+            };
+            if (!empty($data['data']['Store']['pickup_date'])) {
+                $data['data']['pickup']['type'] = 1;
+            } else {
+                $data['data']['pickup']['type'] = 0;
+                $nowData = $this->_checkNowTime($data['data']['Order']['type']);
+                $explodedData = explode(":", $nowData['pickup_time']);
+                if (strpos($nowData['pickup_time'], 'pm') !== false || strpos($nowData['pickup_time'], 'am') !== false) {
+                    $explodedData[0] = date("H", strtotime($nowData['pickup_time']));
+                    $explodedData[1] = date("i", strtotime($nowData['pickup_time']));
+                }
+                $data['data']['Store']['pickup_date'] = $nowData['pickup_date'];
+                $data['data']['Store']['pickup_hour'] = $explodedData[0];
+                $data['data']['Store']['pickup_minute'] = $explodedData[1];
             }
             if (!empty($userId)) {//For login user
                 if (!empty($data['data'])) {
@@ -530,10 +553,10 @@ class OrderOverviewsController extends StoreAppController {
                     $address = trim(ucwords($data['data']['DeliveryAddress']['address']));
                     $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                     $adjuster_address = str_replace(' ', '+', $dlocation);
-                    $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address . '&sensor=false');
+                    $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address . '&sensor=false');
                     $output = json_decode($geocode);
                     if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
-
+                        
                     } else {
                         $latitude = @$output->results[0]->geometry->location->lat;
                         $longitude = @$output->results[0]->geometry->location->lng;
@@ -581,11 +604,7 @@ class OrderOverviewsController extends StoreAppController {
                         }
                     }
                 }
-                if(DESIGN == 1) {
-                    $this->render('/Elements/design/aaron/orderoverview/guest_order_detail');
-                } else {
-                    $this->render('/Elements/orderoverview/guest_order_detail');
-                }
+                $this->render('/Elements/orderoverview/guest_order_detail');
             }
         }
     }
@@ -596,11 +615,7 @@ class OrderOverviewsController extends StoreAppController {
             $this->loadModel('CountryCode');
             $countryCode = $this->CountryCode->fetchAllCountryCode();
             $this->set(compact('countryCode'));
-            if (DESIGN == 1) {
-                $this->render('/Elements/design/aaron/orderoverview/edit_guest_order_detail');
-            } else {
-                $this->render('/Elements/orderoverview/edit_guest_order_detail');
-            }
+            $this->render('/Elements/orderoverview/edit_guest_order_detail');
         }
     }
 
@@ -759,7 +774,6 @@ class OrderOverviewsController extends StoreAppController {
             return $responsOAC;
         }
         $cartData = $this->Session->read('cart');
-        //pr($cartData);
         $response['status'] = 'Success';
         if (!empty($cartData)) {
             $userId = AuthComponent::User('id');
@@ -838,7 +852,9 @@ class OrderOverviewsController extends StoreAppController {
                     }
                 }
             }
-
+            $in = false;
+            $response = array();
+            $response['msg'] = '';
             if (!empty($categoryList)) {
                 $cartItemIds = $cartDataNew = $matchedCartItemIds = array();
                 foreach ($cartData as $key => $data) {
@@ -850,9 +866,7 @@ class OrderOverviewsController extends StoreAppController {
                         $cartDataNew[$data['Item']['id']]['Item']['quantity'] += $data['Item']['quantity'];
                     }
                 }
-                $in = false;
-                $response = array();
-                $response['msg'] = '';
+
                 if (!empty($cartDataNew)) {
                     //Category Mandatory Items list
                     $mandatoryItemList = $this->Item->find('list', array('fields' => array('Item.id'), 'conditions' => array('Item.mandatory_item_units >' => 1, 'Item.store_id' => $storeId, 'Item.is_active' => 1, 'Item.is_deleted' => 0, 'Item.category_id' => $categoryList)));
@@ -897,17 +911,17 @@ class OrderOverviewsController extends StoreAppController {
                         }
                     }
                 }
-                if ($in) {
-                    $response['status'] = 'Error';
+            }
+            if ($in) {
+                $response['status'] = 'Error';
+            } else {
+                $responsCA = $this->checkAmount();
+                $responsCAD = json_decode($responsCA, true);
+                if ($responsCAD["status"] == 'Error') {
+                    return $responsCA;
                 } else {
-                    $responsCA = $this->checkAmount();
-                    $responsCAD = json_decode($responsCA, true);
-                    if ($responsCAD["status"] == 'Error') {
-                        return $responsCA;
-                    } else {
-                        $response['status'] = 'Success';
-                        $response['msg'] = 'Success';
-                    }
+                    $response['status'] = 'Success';
+                    $response['msg'] = 'Success';
                 }
             }
             return json_encode($response);
@@ -947,14 +961,10 @@ class OrderOverviewsController extends StoreAppController {
             return json_encode($response);
         } else {
             $total_price = 0;
-            $finalItem = $this->Session->read('cart');
-            foreach ($finalItem as $total) {
-                $total_price = $total_price + $total['Item']['final_price'];
-            }
-            //$service_fee = $this->Session->read('service_fee');
+            $cartDetail = $this->Session->read('totals');
             $service_fee = $this->Session->read('final_service_fee');
-            $total_price = $total_price + $service_fee;
-            $total_price = number_format($total_price, 2);
+            $total_price = $_SESSION['Cart']['grand_total_final'];
+            $total_price = $total_price - $service_fee;
             // It will give the final totoal with all taxes
         }
         $order_type = $totaltaxPrice = $minimum_price = $total = 0;
@@ -965,46 +975,37 @@ class OrderOverviewsController extends StoreAppController {
             $order_type = $_SESSION['ordersummary']['order_type'];
         }
         if ($order_type == 3) {
-            if ($this->Session->check('Zone.fee')) {
-                $total_price = $total_price + $this->Session->read('Zone.fee');
+            if (!empty($cartDetail['delivery_fee'])) {
+                $total_price = $total_price - $cartDetail['delivery_fee'];
             }
         }
-        if (isset($_SESSION['taxPrice'])) {
-            $total_price = $total_price + $_SESSION['taxPrice'];
-        }
         if (isset($_SESSION['Cart']['tip'])) {
-            $total_price = $total_price + $_SESSION['Cart']['tip'];
+            $total_price = $total_price - $_SESSION['Cart']['tip'];
         }
-        $this->Session->write('Cart.grand_total_final', number_format($total_price,2));
         $this->loadModel('Store');
         $storeInfo = $this->Store->fetchStoreDetail($this->Session->read('store_id'));
-        $gross_amount = $_SESSION['Cart']['grand_total_final'];
+        $gross_amount = $total_price;
         $totalwithoutTax = $gross_amount;
         $response = array();
         $response['status'] = 'Success';
         $response['msg'] = 'Success';
-        if (isset($_SESSION['taxPrice'])) {
-            $totaltaxPrice = $_SESSION['taxPrice'];
+        if (isset($cartDetail['Total_tax_amount'])) {
+            $totaltaxPrice = $cartDetail['Total_tax_amount'];
         }
         if ($order_type == 2) {
             if ($storeInfo['Store']['is_pick_beftax']) {
-                $totalwithoutTax = $gross_amount - $totaltaxPrice;
+                $total_price = $total_price - $totaltaxPrice;
             }
             $minimum_price = $storeInfo['Store']['minimum_takeaway_price'];
         } else {
             if ($storeInfo['Store']['is_delivery_beftax']) {
-                $totalwithoutTax = $gross_amount - $totaltaxPrice;
+                $total_price = $total_price - $totaltaxPrice;
             }
             $minimum_price = $storeInfo['Store']['minimum_order_price'];
         }
-
-        $total = $totalwithoutTax + $service_fee;
-        if (!empty($gross_amount) && !empty($service_fee) && !empty($_SESSION['cart'])) {
-            if ($order_type == 3) {
-                if ($this->Session->check('Zone.fee')) {
-                    $total = $total - $this->Session->read('Zone.fee');
-                }
-            }
+        $total = $total_price;
+        if (!empty($total) && !empty($_SESSION['cart'])) {
+            //$total = $totalwithoutTax - $service_fee;
             if ($total < 0) {
                 $response['status'] = 'Error';
                 $response['msg'] = "Order amount is not sufficient";
@@ -1087,16 +1088,13 @@ class OrderOverviewsController extends StoreAppController {
         return json_encode($response);
     }
 
-    public function deleteAllCart() {
-        $this->Session->delete('Cart');
-        $this->Session->delete('CartOffer');
-        $this->Session->delete('cart');
-        $this->Session->delete('ordersummary');
-        $this->Session->delete('Order');
-        $this->Session->delete('isEndPatment');
-        $response['status'] = 'Success';
-        $response['msg'] = 'Success';
-        return json_encode($response);
+    public function getCurrentDateTime() {
+        $this->layout = false;
+        $this->autoRender = false;
+        if ($this->request->is('ajax') && !empty($this->request->data['orderType'])) {
+            $nowData = $this->_checkNowTime($this->request->data['orderType']);
+            echo (!empty($nowData['pickup_date_time'])) ? 'Order Time : ' . $nowData['pickup_date_time'] : '';
+        }
     }
 
 }

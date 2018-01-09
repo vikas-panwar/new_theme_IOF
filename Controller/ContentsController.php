@@ -229,4 +229,30 @@ class ContentsController extends StoreAppController {
         }
     }
 
+    public function contentPage($encrypted_contentId = null, $contentType = null) {
+        $this->layout = $this->store_inner_pages;
+        if (!empty($encrypted_contentId) && !empty($contentType) || $contentType == 'cp' || $contentType == 'pp') {
+            $contentId = $this->Encryption->decode($encrypted_contentId);
+            $fields = '';
+            if ($contentType == 'cp') {
+                $fields = 'terms_and_conditions';
+                $heading = 'CANCELLATION POLICY';
+            } elseif ($contentType == 'pp') {
+                $fields = 'privacy_policy';
+                $heading = 'PRIVACY POLICY';
+            }
+
+            $this->loadModel('TermsAndPolicy');
+            $storeId = $this->Session->read('store_id');
+            $content = $this->TermsAndPolicy->find('first', array('conditions' => array('id' => $contentId, 'store_id' => $storeId), 'fields' => array($fields)));
+            $content = (!empty($content['TermsAndPolicy'][$fields]) ? $content['TermsAndPolicy'][$fields] : '');
+            if (empty($content)) {
+                $this->redirect(array('controller' => 'users', 'action' => 'login'));
+            }
+            $encrypted_storeId = $this->Encryption->encode($storeId);
+            $encrypted_merchantId = $this->Encryption->encode($this->Session->read('merchant_id_id'));
+            $this->set(compact('content', 'contentType', 'heading', 'encrypted_storeId', 'encrypted_merchantId'));
+        }
+    }
+
 }

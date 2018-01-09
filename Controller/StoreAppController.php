@@ -11,6 +11,7 @@ class StoreAppController extends AppController {
 
     public function beforeFilter() {
         parent::beforeFilter();
+        $this->mainDomain();
         //echo "Start of Store App Controller<br>";
         $nzsafe_data_app = $this->NZSafe();
         $this->set(compact('nzsafe_data_app'));
@@ -33,7 +34,6 @@ class StoreAppController extends AppController {
         $this->loadModel('CountryCode');
         $countryCode = $this->CountryCode->fetchAllCountryCode();
         $this->set(compact('countryCode'));
-
         if ($this->params['controller'] == 'users' && $this->params['action'] == 'store') {
 
             $this->setFrontStore($this->params->url);
@@ -138,7 +138,6 @@ class StoreAppController extends AppController {
             if (isset($timeZoneInfo['Store']['service_fee'])) {
                 $this->Session->write('service_fee', $timeZoneInfo['Store']['service_fee']);
             }
-            
             if (isset($timeZoneInfo['Store']['service_fee_type'])) {
                 $this->Session->write('service_fee_type', $timeZoneInfo['Store']['service_fee_type']);
             }
@@ -166,6 +165,9 @@ class StoreAppController extends AppController {
 
         $this->assignAuth();
         //echo "End of Store App Controller<br>";
+        if (empty(AuthComponent::User('id')) && $this->params['action'] != 'login' && $this->params['controller'] != 'stores') {
+            $this->loginToBoth();
+        }
     }
 
     function cartCount() {
@@ -216,7 +218,7 @@ class StoreAppController extends AppController {
             $cityName = ucwords($cityName);
             $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
             $adjuster_address2 = str_replace(' ', '+', $dlocation);
-            $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+            $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
             $output = json_decode($geocode);
             if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
                 echo 2;
@@ -233,11 +235,11 @@ class StoreAppController extends AppController {
         }
     }
 
-    public function getStoreData($storeUrl) { 
+    public function getStoreData($storeUrl) {
         $this->loadModel('Store');
         $this->Store->bindModel(array('belongsTo' => array('StoreTheme')), false);
         $this->Store->bindModel(array('belongsTo' => array('StoreFont')), false);
-        $this->Store->bindModel(array('hasOne' => array('SocialMedia')), false);
+        $this->Store->bindModel(array('hasOne' => array('SocialMedia', 'TermsAndPolicy' => array('conditions' => array('TermsAndPolicy.is_active' => 1, 'TermsAndPolicy.is_deleted' => 0)))), false);
         $this->Store->bindModel(array('hasMany' => array('StoreGallery' => array('conditions' => array('is_active' => 1, 'is_deleted' => 0), 'order' => array('StoreGallery.position' => 'ASC')), 'StoreContent' => array('fields' => array('name', 'id', 'page_position', 'position'), 'conditions' => array('is_active' => 1, 'is_deleted' => 0), 'order' => array('StoreContent.position' => 'ASC')))), false);
         $store_result = $this->Store->fetchStoreImage($storeUrl);
         return $store_result;
@@ -358,6 +360,7 @@ class StoreAppController extends AppController {
     }
 
     public function orderAllowedCheck() {
+        $orderType = '';
         $this->loadModel('StoreSetting');
         $storeId = $this->Session->read('store_id');
         $storeSetting = $this->StoreSetting->findByStoreId($storeId, array('order_allow'));
@@ -365,6 +368,28 @@ class StoreAppController extends AppController {
             $response['status'] = 'Error';
             $response['msg'] = 'Store is currently not taking orders.';
             return json_encode($response);
+        }
+        $deliveryAddessId = $this->Session->read('Order.delivery_address_id');
+        if (empty($deliveryAddessId)) {
+            $deliveryAddessId = $this->Session->read('ordersummary.delivery_address_id');
+        }
+        $orderType = $this->Session->read('Order.order_type');
+        if (empty($orderType)) {
+            $orderType = $this->Session->read('ordersummary.order_type');
+        }
+        if (!empty($deliveryAddessId) && $orderType == 3) {
+            $this->loadModel('DeliveryAddress');
+            $DelAddress = $this->DeliveryAddress->fetchAddress($deliveryAddessId);
+            $this->Common->setZonefee($DelAddress);
+            $zoneData = $this->Session->read('Zone.id');
+            if (empty($zoneData)) {
+                unset($_SESSION['Zone']);
+                $this->Session->delete('Zone');
+                $this->Session->delete("ordersummary.delivery_address_id");
+                $response['status'] = 'Error';
+                $response['msg'] = "Order cannot be delivered to this address, Please update address or choose another address.";
+                return json_encode($response);
+            }
         }
     }
 

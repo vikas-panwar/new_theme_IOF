@@ -30,7 +30,7 @@ class CronJobsController extends AppController {
                     if ($news['Newsletter']['added_from'] == 1) {//Store
                         $currentDateTime = $this->Webservice->getcurrentTime($news['Newsletter']['store_id'], 1);
                     } else {//Hq
-                        $currentDateTime = date("Y-m-d H:i:s");
+                        $currentDateTime = $this->Common->getHqCurrentTime($news['Newsletter']['merchant_id'], 1);
                     }
                     $currentDateTimeArr = explode(' ', $currentDateTime);
                     $cDate = $currentDateTimeArr[0]; //Y-m-d
@@ -114,7 +114,7 @@ class CronJobsController extends AppController {
                                         try {
                                             $this->Email->send();
                                         } catch (Exception $e) {
-
+                                            
                                         }
                                     }
                                 }
@@ -151,7 +151,7 @@ class CronJobsController extends AppController {
                                         try {
                                             $this->Email->send();
                                         } catch (Exception $e) {
-
+                                            
                                         }
                                     }
                                 }
@@ -358,7 +358,7 @@ class CronJobsController extends AppController {
                             try {
                                 $this->Email->send();
                             } catch (Exception $e) {
-
+                                
                             }
                         }
                     }
@@ -467,7 +467,7 @@ class CronJobsController extends AppController {
                                 try {
                                     $this->Email->send();
                                 } catch (Exception $e) {
-
+                                    
                                 }
                             }
                         }
@@ -807,7 +807,7 @@ class CronJobsController extends AppController {
                                     if ($userSelectedMinute > 0) {
                                         $minRange = $userSelectedMinute - 3;
                                         $maxRange = $userSelectedMinute + 3;
-                                        if ($minutes >= $minRange && $minutes <= $maxRange) {  //$minutes - >differnce between store time and order time
+                                        if ($minutes >= $minRange && $minutes <= $maxRange) {  //$minutes - >differnce between store time and order time 
                                             if ($deviceNotification['UserDevice']['device_type'] == 'android') {
                                                 $deviceTokenAndroidIds[$a] = $deviceNotification['UserDevice']['device_token'];
                                                 $this->hitCurl($deviceTokenAndroidIds, $message, $orderNotification_type); //Android
@@ -1027,10 +1027,10 @@ class CronJobsController extends AppController {
             try {
                 // Initiate a new outbound call
                 $call = $client->account->calls->create(
-                        // Step 4: Change the 'To' number below to whatever number you'd like
+                        // Step 4: Change the 'To' number below to whatever number you'd like 
                         // to call.
                         "+919808117322",
-                        // Step 5: Change the 'From' number below to be a valid Twilio number
+                        // Step 5: Change the 'From' number below to be a valid Twilio number 
                         // that you've purchased or verified with Twilio.
                         $tApiNumber,
                         // Step 6: Set the URL Twilio will request when the call is answered.
@@ -1074,8 +1074,8 @@ class CronJobsController extends AppController {
         configure::Write('debug', 2);
         $this->layout = false;
         $this->autoRender = false;
-        $from = "+18552271882";
-        $callee = "+919808113883";
+        $from = "8552271882";
+        $callee = "9808117322";
         $tApikey = "AC954e5b4acdc29986f96b44dd371eaf48";
         $tApiToken = "1407cf1cd0273cbbfd097392228d93c9";
         App::import('Vendor', 'Twilio', array('file' => 'Twilio' . DS . 'Services' . DS . 'Twilio.php'));
@@ -1098,7 +1098,7 @@ class CronJobsController extends AppController {
         if ($this->CronJob->checkCronCurrentStatus('group_notification') == 0) {
             # Cron Status is set to 1 for active
             $this->CronJob->activateCron('send_newsletter');
-            $orderDetail = $this->Order->find('all', array('recursive' => 2, 'conditions' => array('Order.is_active' => 1, 'Order.is_deleted' => 0, 'Order.group_notification_flag' => 0), 'order' => array('Order.created' => 'DESC')));
+            $orderDetail = $this->Order->find('all', array('recursive' => 2, 'conditions' => array('Order.is_active' => 1, 'Order.is_deleted' => 0, 'Order.group_notification_flag' => 0, 'Order.is_future_order' => 0), 'order' => array('Order.created' => 'DESC')));
             //prx($orderDetail);
             if (!empty($orderDetail)) {
                 foreach ($orderDetail as $orderData) {
@@ -1176,6 +1176,7 @@ class CronJobsController extends AppController {
                         }
                         $emailSuccess = $this->EmailTemplate->storeTemplates($store_id, $merchant_id, $template_type);
                         if (!empty($emailSuccess)) {
+                            $printdata = $this->Common->getOrderFaxFormat($orderId, $store_id, $merchant_id);
                             if ($emailSend == 1) {//email to user for order placed detail
                                 //prx($emailSuccess);
                                 $emailData = $emailSuccess['EmailTemplate']['template_message'];
@@ -1192,7 +1193,7 @@ class CronJobsController extends AppController {
                                 }
                                 //echo $result_order['Order']['pickup_time']."<br>";
                                 //echo $preorderDateTime;die;
-                                $printdata = $this->Common->getOrderFaxFormat($orderId, $store_id, $merchant_id);
+
                                 $emailData = str_replace('{PRE_ORDER_DATE_TIME}', $preorderDateTime, $emailData);
                                 $emailData = str_replace('{ORDER_DETAIL}', $printdata, $emailData);
                                 $emailData = str_replace('Order Id:', '', $emailData);
@@ -1230,7 +1231,7 @@ class CronJobsController extends AppController {
                                 try {
                                     $this->Email->send();
                                 } catch (Exception $e) {
-
+                                    
                                 }
                                 if ($smsNotification == 1) {//msg to user
                                     $mobnumber = $country_code['CountryCode']['code'] . str_replace(array('(', ')', ' ', '-'), '', $phone);
@@ -1257,26 +1258,28 @@ class CronJobsController extends AppController {
                                 $storeEmailData = $emailTemplate['DefaultTemplate']['template_message'];
                                 $storesmsData = $emailTemplate['DefaultTemplate']['sms_template'];
                                 //Store ORder Email Notification
-                                if (($storeEmail['Store']['notification_type'] == 1 || $storeEmail['Store']['notification_type'] == 3) && (!empty($storeEmail['Store']['notification_email']))) {
+				$checkEmailNotificationMethod=$this->Common->checkNotificationMethod($storeEmail,'email');
+				if ($checkEmailNotificationMethod){
                                     $EncorderID = $this->Encryption->encode($orderId);
-                                    $surl = HTTP_ROOT . 'orders/confirmOrder/' . $EncorderID;
+                                    $url = "http://" . $storeEmail['Store']['store_url'];
+                                    $surl = $url . '/orders/confirmOrder/' . $EncorderID;
                                     $orderconHtml = '<table style="width: 550px; height: 100px; margin :0 auto;" border="0" cellpadding="10" cellspacing="0"><tbody><tr><td style="text-align:center;">';
                                     $orderconHtml .= '<a href="' . $surl . '" style="padding:15px 15px;background-color:#F1592A;color:#FFFFFF;font-weight:bold;text-decoration: none;border:1px solid #000000;">CONFIRM ORDER</a></td></tr></tbody></table> ';
                                     $storeEmailData = ''
-                                        . ''
-                                        . '<table style="width: 100%; border: none; font-size: 14px;">'
+                                            . ''
+                                            . '<table style="width: 100%; border: none; font-size: 14px;">'
                                             . '<tr>'
-                                                . '<td style="width: 100%;">'
-                                                    . '<table style="border:2px solid #000; margin :0 auto;">'
-                                                        . '<tr>'
-                                                            . '<td>'
-                                                                . $orderconHtml . $printdata
-                                                            . '</td>'
-                                                        . '</tr>'
-                                                    . '</table>'
-                                                . '</td>'
+                                            . '<td style="width: 100%;">'
+                                            . '<table style="border:2px solid #000; margin :0 auto;">'
+                                            . '<tr>'
+                                            . '<td>'
+                                            . $orderconHtml . $printdata
+                                            . '</td>'
                                             . '</tr>'
-                                        . '</table>';
+                                            . '</table>'
+                                            . '</td>'
+                                            . '</tr>'
+                                            . '</table>';
                                     $subject = ucwords(str_replace('_', ' ', $emailTemplate['DefaultTemplate']['template_subject']));
                                     $this->Email->to = $storeEmail['Store']['notification_email'];
                                     $this->Email->subject = $subject;
@@ -1296,7 +1299,8 @@ class CronJobsController extends AppController {
                                 }
 
                                 // STore Order Notification via SMS
-                                if (($storeEmail['Store']['notification_type'] == 2 || $storeEmail['Store']['notification_type'] == 3) && (!empty($storeEmail['Store']['notification_number']))) {
+                                $checkPhoneNotificationMethod=$this->Common->checkNotificationMethod($storeEmail,'number');
+				if ($checkPhoneNotificationMethod){
                                     $storemobnumber = $country_code['CountryCode']['code'] . str_replace(array('(', ')', ' ', '-'), '', $storeEmail['Store']['notification_number']);
                                     if ($storesmsData) {
                                         $storesmsData = str_replace('{ORDER_NUMBER}', $result_order['Order']['order_number'], $storesmsData);
@@ -1308,36 +1312,41 @@ class CronJobsController extends AppController {
                                         //prx($storesmsData);
                                         $this->Common->sendSmsNotificationFront($storemobnumber, $storesmsData, $store_id);
                                     }
-                                    //sms notification to admin using call
-                                    $this->loadModel('StoreSetting');
-                                    $storeSetting = $this->StoreSetting->findByStoreId($store_id);
-                                    if (!empty($storeSetting['StoreSetting']['twilio_voice_allow'])) {
-                                        $this->loadModel('MainSiteSetting');
-                                        $configInfo = $this->MainSiteSetting->getSiteSettings();
-                                        if (!empty($configInfo['MainSiteSetting']['twilio_api_key']) && !empty($configInfo['MainSiteSetting']['twilio_api_token']) && !empty($configInfo['MainSiteSetting']['twilio_number']) && !empty($storeEmail['Store']['notification_number'])) {
-                                            //file_put_contents('order_notification.xml', '');
-                                            $date = date("MdY");
-                                            $target_dir = WWW_ROOT . '/Notification/' . $date;
-                                            if (!file_exists($target_dir)) {
-                                                (new Folder($target_dir, true, 0777));
-                                            }
-                                            $target_file = $target_dir . '/' . $orderData['Order']['order_number'] . '.xml';
-                                            $file = fopen($target_file, "w");
-                                            $totalAmountS = ($orderData['Order']['amount'] - $orderData['Order']['coupon_discount']);
-                                            $text = '<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="alice">Dear store owner,</Say> <Pause length="1"></Pause> <Say voice="alice">you have received an order</Say> <Pause length="1"></Pause> <Say voice="alice">order id ' . implode(',', str_split($orderData['Order']['order_number'])) . '</Say> <Pause length="1"></Pause> <Say voice="alice">order total $' . $totalAmountS . '. Thank you!</Say></Response>';
-                                            fwrite($file, $text);
-                                            fclose($file);
-                                            App::import('Vendor', 'Twilio', array('file' => 'Twilio' . DS . 'Services' . DS . 'Twilio.php'));
-                                            $to = $callee = str_replace(array('(', ')', ' ', '-'), '', $storeEmail['Store']['notification_number']);
-                                            $tApikey = $configInfo['MainSiteSetting']['twilio_api_key'];
-                                            $tApiToken = $configInfo['MainSiteSetting']['twilio_api_token'];
-                                            $from = $tApiNumber = $configInfo['MainSiteSetting']['twilio_number'];
-                                            $client = new Services_Twilio($tApikey, $tApiToken);
-                                            $folderName = $date;
-                                            $fileName = $orderData['Order']['order_number'] . '.xml';
+                                }
 
-                                            $call = $client->account->calls->create($from, $to, "https://twillo.iorderfoods.com/order_notification.php?folderName=" . $folderName . "&fileName=" . urlencode($fileName), array());
+
+
+                                //sms notification to admin using call
+                                $this->loadModel('StoreSetting');
+                                $storeSetting = $this->StoreSetting->findByStoreId($store_id);
+                                if (!empty($storeSetting['StoreSetting']['twilio_voice_allow'])) {
+                                    $this->loadModel('MainSiteSetting');
+                                    $configInfo = $this->MainSiteSetting->getSiteSettings();
+                                    if (!empty($configInfo['MainSiteSetting']['twilio_api_key']) && !empty($configInfo['MainSiteSetting']['twilio_api_token']) && !empty($configInfo['MainSiteSetting']['twilio_number']) && !empty($storeEmail['Store']['notification_voice'])) {
+				$checkVoiceNotificationMethod=$this->Common->checkNotificationMethod($storeEmail,'voice');
+				if ($checkVoiceNotificationMethod){
+                                        //file_put_contents('order_notification.xml', '');
+                                        $date = date("MdY");
+                                        $target_dir = WWW_ROOT . '/Notification/' . $date;
+                                        if (!file_exists($target_dir)) {
+                                            (new Folder($target_dir, true, 0777));
                                         }
+                                        $target_file = $target_dir . '/' . $orderData['Order']['order_number'] . '.xml';
+                                        $file = fopen($target_file, "w");
+                                        $totalAmountS = ($orderData['Order']['amount'] - $orderData['Order']['coupon_discount']);
+                                        $text = '<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="alice">Dear store owner,</Say> <Pause length="1"></Pause> <Say voice="alice">you have received an order</Say> <Pause length="1"></Pause> <Say voice="alice">order id ' . implode(',', str_split($orderData['Order']['order_number'])) . '</Say> <Pause length="1"></Pause> <Say voice="alice">order total $' . $totalAmountS . '. Thank you!</Say></Response>';
+                                        fwrite($file, $text);
+                                        fclose($file);
+                                        App::import('Vendor', 'Twilio', array('file' => 'Twilio' . DS . 'Services' . DS . 'Twilio.php'));
+                                        $to = $callee = str_replace(array('(', ')', ' ', '-'), '', $storeEmail['Store']['notification_voice']);
+                                        $tApikey = $configInfo['MainSiteSetting']['twilio_api_key'];
+                                        $tApiToken = $configInfo['MainSiteSetting']['twilio_api_token'];
+                                        $from = $tApiNumber = $configInfo['MainSiteSetting']['twilio_number'];
+                                        $client = new Services_Twilio($tApikey, $tApiToken);
+                                        $folderName = $date;
+                                        $fileName = $orderData['Order']['order_number'] . '.xml';
+                                        $call = $client->account->calls->create($from, $to, HTTP_ROOT . "order_notification.php?folderName=" . $folderName . "&fileName=" . $fileName, array());
+				    }
                                     }
                                 }
                             } catch (Exception $e) {

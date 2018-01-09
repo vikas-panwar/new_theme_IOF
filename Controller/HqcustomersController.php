@@ -244,7 +244,7 @@ class HqcustomersController extends HqAppController {
                 'OrderPayment' => array(
                     'className' => 'OrderPayment',
                     'foreignKey' => 'payment_id',
-                    'fields' => array('id', 'transection_id', 'amount', 'payment_gateway', 'payment_status'),
+                    'fields' => array('id', 'transection_id', 'amount', 'payment_gateway', 'payment_status', 'last_digit'),
                 ))), false);
         $orderDetails = $this->Order->getsuperSingleOrderDetail(null, null, $orderId);
         $this->set('orderDetail', $orderDetails);

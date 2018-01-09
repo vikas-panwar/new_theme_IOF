@@ -3,15 +3,13 @@ App::uses('StoreAppController', 'Controller');
 
 //App::import('Sanitize');
 
-class UsersController extends StoreAppController
-{
+class UsersController extends StoreAppController {
 
     public $components = array('Session', 'Cookie', 'Email', 'RequestHandler', 'Encryption', 'Dateform', 'Common', 'NZGateway');
     public $helper = array('Encryption', 'Common');
     public $uses = array('User', 'NzsafeUser', 'StoreHoliday');
 
-    public function beforeFilter()
-    {
+    public function beforeFilter() {
         parent::beforeFilter();
         $this->Auth->allow('guestUserSignUp', 'popuplogin', 'user_guest', 'setDefaultStoreTime', 'clearsession', 'checkStoreEndUserEmail', 'city', 'zip', 'logout');
         $roleId = AuthComponent::User('role_id');
@@ -34,7 +32,7 @@ class UsersController extends StoreAppController
                     'foreignKey' => 'store_availablity_id',
                     'conditions' => array('StoreBreak.is_deleted' => 0, 'StoreBreak.is_active' => 1, 'StoreBreak.store_id' => $storeId),
                 )
-                )
+            )
                 ), false
         );
         $availabilityInfo = $this->StoreAvailability->getStoreAvailabilityDetails($storeId);
@@ -65,6 +63,7 @@ class UsersController extends StoreAppController
 
         if (!empty($storeavaibilityInfo)) {
             foreach ($storeavaibilityInfo as $key => $value) {
+
                 if (!empty($value)) {
                     $day = strtolower($value['StoreAvailability']['day_name']);
                     if (array_key_exists($day, $daysarray)) {
@@ -84,8 +83,7 @@ class UsersController extends StoreAppController
         $this->set(compact('encrypted_storeId', 'encrypted_merchantId'));
     }
 
-    public function store()
-    {
+    public function store() {
         $this->autoRender = false;
         $this->redirect(array('controller' => 'users', 'action' => 'login'));
     }
@@ -96,8 +94,7 @@ class UsersController extends StoreAppController
       created:22/7/2015
       ----------------------------------------------------- */
 
-    public function registration()
-    {
+    public function registration() {
         $this->layout = $this->store_layout;
         $this->loadModel('CountryCode');
         $this->Session->delete('Order');
@@ -109,6 +106,7 @@ class UsersController extends StoreAppController
         $countryCode = $this->CountryCode->fetchAllCountryCode();
         $this->set(compact('countryCode'));
         if ($this->request->is('post')) {
+
             $this->User->set($this->request->data);
             if ($this->User->validates()) {
                 $storeId = "";
@@ -136,7 +134,7 @@ class UsersController extends StoreAppController
                 $this->request->data['User']['state_id'] = 0;
                 $this->request->data['User']['city_id'] = 0;
                 $this->request->data['User']['zip_id'] = 0;
-                
+
                 // Activate User
                 $this->request->data['User']['is_active'] = 1;
                 $this->request->data['User']['activation_token'] = 1;
@@ -172,8 +170,7 @@ class UsersController extends StoreAppController
       created:21/8/2015
       ----------------------------------------------------- */
 
-    public function accountActivation($token = null)
-    {
+    public function accountActivation($token = null) {
         $this->layout = false;
         $this->autoRender = false;
         $user = $this->User->find('first', array('conditions' => array('User.activation_token' => $token)));
@@ -197,8 +194,7 @@ class UsersController extends StoreAppController
       created:22/7/2015
       ----------------------------------------------------- */
 
-    public function login($layout_type = null)
-    {
+    public function login($layout_type = null) {
         $this->layout = $this->store_layout;
         $this->set('title', 'Store Login');
 
@@ -215,6 +211,7 @@ class UsersController extends StoreAppController
         $encrypted_merchantId = $this->Encryption->encode($decrypt_merchantId);
         $avalibilty_status = $this->Common->checkStoreAvalibility($decrypt_storeId);
         if ($avalibilty_status == 1) {
+            
         } else {
             $this->set(compact('avalibilty_status'));
         }
@@ -227,7 +224,6 @@ class UsersController extends StoreAppController
         $today = 1;
         $orderType = 2;
         $finaldata = $this->Common->getNextDayTimeRange($current_date, $today, $orderType);
-
         $pickcurrent_date = $finaldata['currentdate'];
         $explodeVal = explode("-", $pickcurrent_date);
         $pickcurrentDateVar = $explodeVal[1] . "-" . $explodeVal[2] . "-" . $explodeVal[0];
@@ -254,8 +250,10 @@ class UsersController extends StoreAppController
         $storeBreak = $finaldata['storeBreak'];
         $time_range = $finaldata['time_range'];
         $setPre = $finaldata['setPre'];
+        //check today holiday
+        $todayHolidayDetail = $this->StoreHoliday->storeCurrentHolidayDetail($current_date, $decrypt_storeId);
 
-        $this->set(compact('storeBreak', 'countryCode', 'time_break', 'time_range', 'store_data', 'encrypted_storeId', 'encrypted_merchantId', 'setPre'));
+        $this->set(compact('storeBreak', 'countryCode', 'time_break', 'time_range', 'store_data', 'encrypted_storeId', 'encrypted_merchantId', 'setPre', 'todayHolidayDetail'));
 
         $this->loadModel('StoreAvailability');
         $this->StoreAvailability->bindModel(
@@ -266,7 +264,7 @@ class UsersController extends StoreAppController
                     'foreignKey' => 'store_availablity_id',
                     'conditions' => array('StoreBreak.is_deleted' => 0, 'StoreBreak.is_active' => 1, 'StoreBreak.store_id' => $decrypt_storeId),
                 )
-                )
+            )
                 ), false
         );
         $availabilityInfo = $this->StoreAvailability->getStoreAvailabilityDetails($decrypt_storeId);
@@ -279,7 +277,6 @@ class UsersController extends StoreAppController
             if ($storeId) {
                 $this->request->data['User']['store_id'] = $storeId;
             }
-
             $this->User->set($this->request->data);
             if ($this->User->validates()) {
                 if (isset($this->data['User']['remember'])) {
@@ -305,6 +302,9 @@ class UsersController extends StoreAppController
                         if ($user['User']['is_active'] == 1) {
                             if ($this->Auth->login()) {
                                 $roleId = AuthComponent::User('role_id');
+                                $this->Cookie->write('_ME_E', $this->Encryption->encode($this->data['User']['email']), false, 7200);
+                                $this->Cookie->write('_MST_E', $this->Encryption->encode($this->request->data['User']['password']), false, 7200);
+                                $this->Cookie->write('_MF_E', '1', false, 7200);
                                 $this->Session->write('login_date_time', $this->Common->gettodayDate(3));
                                 $encrypted_storeId = $this->Encryption->encode($this->Session->read('store_id'));
                                 $encypted_merchantId = $this->Encryption->encode(AuthComponent::User('merchant_id'));
@@ -351,8 +351,7 @@ class UsersController extends StoreAppController
       created:22/7/2015
       ----------------------------------------------------- */
 
-    public function popuplogin($layout_type = null)
-    {
+    public function popuplogin($layout_type = null) {
         $this->layout = 'ajax';
         $this->autoRender = false;
         if ($this->request->is('post')) {
@@ -365,6 +364,7 @@ class UsersController extends StoreAppController
             $this->User->set($this->request->data);
 
             if ($this->User->validates()) {
+
                 if (DESIGN != 4) {
                     $this->request->data['User']['password'] = $this->request->data['password'];
                     $this->request->data['User']['email'] = $this->request->data['email'];
@@ -374,7 +374,6 @@ class UsersController extends StoreAppController
                     $this->request->data['User']['email'] = $this->request->data['email'];
                 }
                 $password = AuthComponent::password($this->request->data['User']['password']);
-
                 $user = $this->User->find("first", array("conditions" => array("User.email" => $this->data['User']['email'], "User.password" => $password, "User.role_id" => array('4', '5'), "User.merchant_id" => $merchantId, 'User.is_active' => 1, 'User.is_deleted' => 0)));
                 if (!empty($user)) {
                     if (!empty($this->data['User']['remember'])) {
@@ -388,6 +387,7 @@ class UsersController extends StoreAppController
                     if ($user['User']['is_deleted'] == 0) {
                         if ($user['User']['is_active'] == 1) {
                             if ($this->Auth->login()) {
+
                                 $roleId = AuthComponent::User('role_id');
                                 $this->Session->write('login_date_time', $this->Common->gettodayDate(3));
                                 $encrypted_storeId = $this->Encryption->encode($this->Session->read('store_id'));
@@ -418,8 +418,7 @@ class UsersController extends StoreAppController
         return json_encode($response);
     }
 
-    public function signIn($layout_type = null)
-    {
+    public function signIn($layout_type = null) {
         $this->layout = $this->store_layout;
         $this->set('title', 'Store Login');
         if ($this->request->is('post')) {
@@ -452,6 +451,9 @@ class UsersController extends StoreAppController
                         if ($user['User']['is_active'] == 1) {
                             if ($this->Auth->login()) {
                                 $roleId = AuthComponent::User('role_id');
+                                $this->Cookie->write('_ME_E', $this->Encryption->encode($this->data['User']['email']), false, 7200);
+                                $this->Cookie->write('_MST_E', $this->Encryption->encode($this->request->data['User']['password']), false, 7200);
+                                $this->Cookie->write('_MF_E', '1', false, 7200);
                                 $this->Session->write('login_date_time', $this->Common->gettodayDate(3));
                                 $encrypted_storeId = $this->Encryption->encode($this->Session->read('store_id'));
                                 $encypted_merchantId = $this->Encryption->encode(AuthComponent::User('merchant_id'));
@@ -484,8 +486,7 @@ class UsersController extends StoreAppController
       created:22/7/2015
       ----------------------------------------------------- */
 
-    public function customerDashboard($encrypted_storeId, $encrypted_merchantId, $orderId = null)
-    {
+    public function customerDashboard($encrypted_storeId, $encrypted_merchantId, $orderId = null) {
 
         $this->layout = $this->store_inner_pages;
         $this->loadModel('Store');
@@ -508,11 +509,6 @@ class UsersController extends StoreAppController
         $userID = AuthComponent::User('id');
         $defaultAddress = $this->DeliveryAddress->fetchDefaultAddress($userID);
         $this->set(compact('defaultAddress', 'store_data', 'encrypted_storeId', 'encrypted_merchantId', 'orderId'));
-
-        if(DESIGN == 1) {
-            $this->redirect(array('controller' => 'users', 'action' => 'login'));
-        }
-
     }
 
     /* ------------------------------------------------
@@ -521,8 +517,7 @@ class UsersController extends StoreAppController
       created:22/7/2015
       ----------------------------------------------------- */
 
-    public function logout()
-    {
+    public function logout() {
         $this->Session->delete('orderOverview');
         $this->Session->delete('Order');
         $this->Session->delete('Cart');
@@ -536,10 +531,10 @@ class UsersController extends StoreAppController
         $this->Session->delete('delivery_fee');
         $this->Session->delete('checkForZone');
         $this->Session->delete('Zone');
-        /* Hq user logout start */
-        $this->Session->delete('Auth.hqusers');
-        /* Hq user logout end */
-
+        $this->Cookie->delete('_ME_E');
+        $this->Cookie->delete('_MST_E');
+        $this->Cookie->delete('_MF_E');
+        $this->Cookie->write('logoutCookie', '1', false, 7200);
         $this->redirect(array('controller' => 'users', 'action' => 'login'));
         // return $this->redirect($this->Auth->logout());
     }
@@ -550,8 +545,7 @@ class UsersController extends StoreAppController
       created:22/7/2015
       ----------------------------------------------------- */
 
-    public function checkEmail($roleId = null)
-    {
+    public function checkEmail($roleId = null) {
         $this->autoRender = false;
         if ($_GET) {
             $emailEntered = $_GET['data']['User']['email'];
@@ -572,8 +566,7 @@ class UsersController extends StoreAppController
       created:22/7/2015
       ----------------------------------------------------- */
 
-    public function checkStoreEndUserEmail()
-    {
+    public function checkStoreEndUserEmail() {
         $this->autoRender = false;
         if ($_GET) {
             $emailEntered = $_GET['data']['User']['email'];
@@ -593,8 +586,7 @@ class UsersController extends StoreAppController
       created:22/7/2015
       ----------------------------------------------------- */
 
-    public function forgetPassword()
-    {
+    public function forgetPassword() {
         $this->layout = $this->store_layout;
         $this->autorender = false;
         $this->Session->delete('Order');
@@ -682,8 +674,7 @@ class UsersController extends StoreAppController
       created:29/09/2015
       ----------------------------------------------------- */
 
-    public function resetPassword($token = null, $adminType = null)
-    {
+    public function resetPassword($token = null, $adminType = null) {
         if (isset($adminType)) {
             if ($adminType == 1) {
                 $this->layout = "super_login";
@@ -698,6 +689,7 @@ class UsersController extends StoreAppController
         }
 
         if ($this->data) {
+
             $records = $this->User->find('first', array('fields' => array('User.forgot_token', 'User.store_id'), 'conditions' => array('User.id' => $this->data['User']['id'])));
             if (empty($records['User']['forgot_token'])) {
                 $this->Session->setFlash("Token has been expired.Please request another one", 'flash_error');
@@ -728,14 +720,16 @@ class UsersController extends StoreAppController
             } else {
                 $this->Session->setFlash('Unable to save password', 'flash_error');
             }
-        } elseif (!empty($token)) {
+        } else if (!empty($token)) {
             $record = $this->User->find('first', array('conditions' => array('User.forgot_token' => $token)));
             if ($record) {
                 if ($adminType == 3) {
                     $this->set('adminrecord', $record);
                 } elseif ($adminType == 2) {
+
                     $this->set('hqadminrecord', $record);
                 } elseif ($adminType == 1) {
+
                     $this->set('superadminrecord', $record);
                 } else {
                     $this->set('record', $record);
@@ -756,8 +750,7 @@ class UsersController extends StoreAppController
       created:22/7/2015
       ----------------------------------------------------- */
 
-    public function myProfile($encrypted_storeId, $encrypted_merchantId)
-    {
+    public function myProfile($encrypted_storeId, $encrypted_merchantId) {
         $this->layout = $this->store_inner_pages;
 //        $this->Session->delete('Order');
 //        $this->Session->delete('Cart');
@@ -871,6 +864,7 @@ class UsersController extends StoreAppController
                         try {
                             $this->Email->send();
                         } catch (Exception $e) {
+                            
                         }
                     }
                 }
@@ -911,6 +905,7 @@ class UsersController extends StoreAppController
                         try {
                             $this->Email->send();
                         } catch (Exception $e) {
+                            
                         }
                     }
                 }
@@ -951,6 +946,7 @@ class UsersController extends StoreAppController
                         try {
                             $this->Email->send();
                         } catch (Exception $e) {
+                            
                         }
                     }
                 }
@@ -996,8 +992,7 @@ class UsersController extends StoreAppController
       created:27/7/2015
       ----------------------------------------------------- */
 
-    public function deliveryAddress($encrypted_storeId = null, $encrypted_merchantId = null, $orderId = null)
-    {
+    public function deliveryAddress($encrypted_storeId = null, $encrypted_merchantId = null, $orderId = null) {
         $this->layout = $this->store_inner_pages;
 //        $decrypt_storeId = $this->Encryption->decode($encrypted_storeId);
 //        $decrypt_merchantId = $this->Encryption->decode($encrypted_merchantId);
@@ -1025,7 +1020,6 @@ class UsersController extends StoreAppController
         $time_range = $finaldata['time_range'];
         $current_date = $finaldata['currentdate'];
         $setPre = $finaldata['setPre'];
-
         $this->loadModel('DeliveryAddress');
         $userId = AuthComponent::User('id'); // Customer Id
         $roleId = AuthComponent::User('role_id');
@@ -1036,12 +1030,11 @@ class UsersController extends StoreAppController
         }
         $explodeVal = explode("-", $current_date);
         $currentDateVar = $explodeVal[1] . "-" . $explodeVal[2] . "-" . $explodeVal[0];
-
-        $this->set(compact('storeBreak', 'setPre', 'time_break', 'orderId', 'checkaddress', 'encrypted_storeId', 'encrypted_merchantId', 'time_range', 'currentDateVar', 'store_data'));
+        $nowData = $this->_checkNowTime($orderType);
+        $this->set(compact('storeBreak', 'setPre', 'time_break', 'orderId', 'checkaddress', 'encrypted_storeId', 'encrypted_merchantId', 'time_range', 'currentDateVar', 'store_data', 'nowData'));
     }
 
-    public function myDeliveryAddress($encrypted_storeId = null, $encrypted_merchantId = null)
-    {
+    public function myDeliveryAddress($encrypted_storeId = null, $encrypted_merchantId = null) {
         $this->layout = $this->store_inner_pages;
         $decrypt_storeId = (empty($encrypted_storeId)) ? $this->Session->read('store_id') : $this->Encryption->decode($encrypted_storeId);
         $decrypt_merchantId = (empty($decrypt_merchantId)) ? $this->Session->read('merchant_id') : $this->Encryption->decode($encrypted_merchantId);
@@ -1120,8 +1113,7 @@ class UsersController extends StoreAppController
       created:27/7/2015
       ----------------------------------------------------- */
 
-    public function addAddress($encrypted_storeId = null, $encrypted_merchantId = null)
-    {
+    public function addAddress($encrypted_storeId = null, $encrypted_merchantId = null) {
         $this->layout = $this->store_inner_pages;
 //        $decrypt_storeId = $this->Encryption->decode($encrypted_storeId);
 //        $decrypt_merchantId = $this->Encryption->decode($encrypted_merchantId);
@@ -1168,12 +1160,13 @@ class UsersController extends StoreAppController
                 $address = trim(ucwords($tmp['DeliveryAddress']['address']));
                 $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                 $adjuster_address2 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
                 $output = json_decode($geocode);
                 $tmp['DeliveryAddress']['user_id'] = AuthComponent::User('id');
                 $tmp['DeliveryAddress']['store_id'] = $decrypt_storeId;
                 $tmp['DeliveryAddress']['merchant_id'] = $decrypt_merchantId;
                 if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
+                    
                 } else {
                     $latitude = @$output->results[0]->geometry->location->lat;
                     $longitude = @$output->results[0]->geometry->location->lng;
@@ -1198,12 +1191,13 @@ class UsersController extends StoreAppController
                 $address = trim(ucwords($tmp['DeliveryAddress1']['address']));
                 $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                 $adjuster_address2 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
                 $output = json_decode($geocode);
                 $tmp['DeliveryAddress1']['user_id'] = AuthComponent::User('id');
                 $tmp['DeliveryAddress1']['store_id'] = $decrypt_storeId;
                 $tmp['DeliveryAddress1']['merchant_id'] = $decrypt_merchantId;
                 if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
+                    
                 } else {
                     $latitude = @$output->results[0]->geometry->location->lat;
                     $longitude = @$output->results[0]->geometry->location->lng;
@@ -1228,12 +1222,13 @@ class UsersController extends StoreAppController
                 $address = trim(ucwords($tmp['DeliveryAddress2']['address']));
                 $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                 $adjuster_address2 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
                 $output = json_decode($geocode);
                 $tmp['DeliveryAddress2']['user_id'] = AuthComponent::User('id');
                 $tmp['DeliveryAddress2']['store_id'] = $decrypt_storeId;
                 $tmp['DeliveryAddress2']['merchant_id'] = $decrypt_merchantId;
                 if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
+                    
                 } else {
                     $latitude = @$output->results[0]->geometry->location->lat;
                     $longitude = @$output->results[0]->geometry->location->lng;
@@ -1258,12 +1253,13 @@ class UsersController extends StoreAppController
                 $address = trim(ucwords($tmp['DeliveryAddress3']['address']));
                 $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                 $adjuster_address3 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address3 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address3 . '&sensor=false');
                 $output = json_decode($geocode);
                 $tmp['DeliveryAddress3']['user_id'] = AuthComponent::User('id');
                 $tmp['DeliveryAddress3']['store_id'] = $decrypt_storeId;
                 $tmp['DeliveryAddress3']['merchant_id'] = $decrypt_merchantId;
                 if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
+                    
                 } else {
                     $latitude = @$output->results[0]->geometry->location->lat;
                     $longitude = @$output->results[0]->geometry->location->lng;
@@ -1289,12 +1285,13 @@ class UsersController extends StoreAppController
                 $address = trim(ucwords($tmp['DeliveryAddress4']['address']));
                 $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                 $adjuster_address4 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address4 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address4 . '&sensor=false');
                 $output = json_decode($geocode);
                 $tmp['DeliveryAddress4']['user_id'] = AuthComponent::User('id');
                 $tmp['DeliveryAddress4']['store_id'] = $decrypt_storeId;
                 $tmp['DeliveryAddress4']['merchant_id'] = $decrypt_merchantId;
                 if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
+                    
                 } else {
                     $latitude = @$output->results[0]->geometry->location->lat;
                     $longitude = @$output->results[0]->geometry->location->lng;
@@ -1330,8 +1327,7 @@ class UsersController extends StoreAppController
       created:27/7/2015
       ----------------------------------------------------- */
 
-    public function checkusersadddress()
-    {
+    public function checkusersadddress() {
         $this->autoRender = false;
         if ($this->request->is('ajax')) {
             $result_address = $this->checkaddress($_POST['address'], $_POST['city'], $_POST['state'], $_POST['zip']);
@@ -1344,8 +1340,7 @@ class UsersController extends StoreAppController
       created:27/7/2015
       ----------------------------------------------------- */
 
-    public function updateAddress($encrypted_storeId = null, $encrypted_merchantId = null, $encrypt_deliveryAddressId = null)
-    {
+    public function updateAddress($encrypted_storeId = null, $encrypted_merchantId = null, $encrypt_deliveryAddressId = null) {
         $this->layout = $this->store_inner_pages;
 //        $decrypt_storeId = $this->Encryption->decode($encrypted_storeId);
 //        $decrypt_merchantId = $this->Encryption->decode($encrypted_merchantId);
@@ -1370,12 +1365,13 @@ class UsersController extends StoreAppController
             $address = trim(ucwords($this->request->data['DeliveryAddress']['address']));
             $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
             $adjuster_address2 = str_replace(' ', '+', $dlocation);
-            $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+            $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
             $output = json_decode($geocode);
             $this->request->data['DeliveryAddress']['user_id'] = AuthComponent::User('id');
             $this->request->data['DeliveryAddress']['store_id'] = $decrypt_storeId;
             $this->request->data['DeliveryAddress']['merchant_id'] = $decrypt_merchantId;
             if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
+                
             } else {
                 $latitude = @$output->results[0]->geometry->location->lat;
                 $longitude = @$output->results[0]->geometry->location->lng;
@@ -1417,8 +1413,7 @@ class UsersController extends StoreAppController
       created:27/7/2015
       ----------------------------------------------------- */
 
-    public function getDeliveryAddress()
-    {
+    public function getDeliveryAddress() {
         $this->layout = false;
         $this->loadModel('DeliveryAddress');
         $encrypted_storeId = $_POST['storeId'];
@@ -1440,8 +1435,7 @@ class UsersController extends StoreAppController
       created:28/09/2015
       ----------------------------------------------------- */
 
-    public function deleteDeliveryAddress($encrypted_storeId = null, $encrypted_merchantId = null, $encrypted_deliveryaddressId = null)
-    {
+    public function deleteDeliveryAddress($encrypted_storeId = null, $encrypted_merchantId = null, $encrypted_deliveryaddressId = null) {
         $this->autoRender = false;
         $this->loadModel('DeliveryAddress');
         $data['DeliveryAddress']['id'] = $this->Encryption->decode($encrypted_deliveryaddressId);
@@ -1461,8 +1455,7 @@ class UsersController extends StoreAppController
       created:27/7/2015
       ----------------------------------------------------- */
 
-    public function orderType($orderId = null)
-    {
+    public function orderType($orderId = null) {
         if ($this->Session->check('Auth.User.Order')) {
             $this->Session->delete('Auth.User.Order');
         }
@@ -1492,34 +1485,36 @@ class UsersController extends StoreAppController
       created:27/7/2015
       ----------------------------------------------------- */
 
-    public function ordercatCheck($orderId = null)
-    {
+    public function ordercatCheck($orderId = null) {
         $this->autoRender = false; // It will check either the order is pre-order  or Now
         // pr(AuthComponent::User()); die;
         $encrypted_storeId = $this->Encryption->encode($this->Session->read('store_id'));
         $encrypted_merchantId = $this->Encryption->encode(AuthComponent::User('merchant_id'));
         if ($this->request->is('post')) {
-            $this->Session->write('selectedAddress', $this->request->data['DeliveryAddress']['id']);
-            $type = $this->Session->read('Order.order_type');
-            if ($this->data['DeliveryAddress']['type'] == 0) {
-                $current_date = date("Y-m-d", (strtotime($this->Common->storeTimeZoneUser('', date('Y-m-d H:i:s')))));
-                $orderType = $type;
-                $today = 1;
-
-                $finaldata = $this->Common->getNextDayTimeRange($current_date, $today, $orderType);
-
-                $timearray = array_diff($finaldata['time_range'], $finaldata['time_break']);
-                $this->request->data['Store']['pickup_time'] = reset($timearray);
-                $explodeVal = explode("-", $finaldata['currentdate']);
-                $finaldata['currentdate'] = $explodeVal[1] . "-" . $explodeVal[2] . "-" . $explodeVal[0];
-                $this->request->data['Store']['pickup_date'] = $finaldata['currentdate'];
+            if (!empty($this->request->data['DeliveryAddress']['id'])) {
+                $this->Session->write('selectedAddress', $this->request->data['DeliveryAddress']['id']);
             } else {
+                $this->Session->delete('selectedAddress');
+            }
+            $type = $this->Session->read('Order.order_type');
+
+            $nowData = $this->_checkNowTime();
+            if (!empty($nowData['pickup_date_time'])) {
+                if (!empty($this->request->data['Store']['pickup_date'])) {
+                    $this->request->data['DeliveryAddress']['type'] = 1;
+                    $this->request->data['Store']['pickup_time'] = $this->request->data['Store']['pickup_hour'] . ':' . $this->request->data['Store']['pickup_minute'] . ':00';
+                } else {
+                    $this->request->data['DeliveryAddress']['type'] = 0;
+                    $this->request->data['Store']['pickup_time'] = $nowData['pickup_time'];
+                    $this->request->data['Store']['pickup_date'] = $nowData['pickup_date'];
+                }
+            } elseif (!empty($this->request->data['Store']['pickup_date'])) {
+                $this->request->data['DeliveryAddress']['type'] = 1;
                 $this->request->data['Store']['pickup_time'] = $this->request->data['Store']['pickup_hour'] . ':' . $this->request->data['Store']['pickup_minute'] . ':00';
             }
-            //pr($this->data);die;
             $pickupTime = $this->Common->storeTimeFormateUser($this->request->data['Store']['pickup_time']);
             if ($type == 2) {
-                $order_cattype = $this->data['DeliveryAddress']['type'];
+                $order_cattype = $this->request->data['DeliveryAddress']['type'];
                 $this->Session->write('Order.is_preorder', $order_cattype);
                 if ($this->data['DeliveryAddress']['type'] == 0) { //Now
                     if ($this->Session->check('Auth.User.Order.delivery_address_id')) {
@@ -1547,7 +1542,7 @@ class UsersController extends StoreAppController
             } elseif ($type == 3) {
                 if ($this->request->is('post')) {
                     $this->loadModel('DeliveryAddress');
-                    $DelAddress = $this->DeliveryAddress->fetchAddress($this->data['DeliveryAddress']['id']);
+                    $DelAddress = $this->DeliveryAddress->fetchAddress($this->request->data['DeliveryAddress']['id']);
                     $this->Common->setZonefee($DelAddress);
                     $zoneData = $this->Session->read('Zone.id');
                     if (empty($zoneData)) {
@@ -1557,8 +1552,6 @@ class UsersController extends StoreAppController
                     $this->Session->write('Order.store_pickup_time', $pickupTime); // Pick up time of Store
                     $this->Session->write('Order.store_pickup_date', $this->request->data['Store']['pickup_date']); // Pick up date of
                 }
-
-
                 $order_cattype = $this->data['DeliveryAddress']['type'];
                 $this->Session->write('Order.is_preorder', $order_cattype);
                 $this->Session->write('Order.delivery_address_id', $this->data['DeliveryAddress']['id']);
@@ -1574,9 +1567,7 @@ class UsersController extends StoreAppController
       created:27/7/2015
       ----------------------------------------------------- */
 
-    public function pickUp($encrypted_storeId = null, $encrypted_merchantId = null, $orderId = null)
-    {
-   // It will check either the order is pre-order  or Now
+    public function pickUp($encrypted_storeId = null, $encrypted_merchantId = null, $orderId = null) {   // It will check either the order is pre-order  or Now
         $this->layout = $this->store_inner_pages;
         $decrypt_storeId = $this->Encryption->decode($encrypted_storeId);
         $decrypt_merchantId = $this->Encryption->decode($encrypted_merchantId);
@@ -1602,7 +1593,8 @@ class UsersController extends StoreAppController
 
         $explodeVal = explode("-", $current_date);
         $currentDateVar = $explodeVal[1] . "-" . $explodeVal[2] . "-" . $explodeVal[0];
-        $this->set(compact('storeBreak', 'setPre', 'orderId', 'time_break', 'time_range', 'store_data', 'encrypted_storeId', 'encrypted_merchantId', 'currentDateVar'));
+        $nowData = $this->_checkNowTime($orderType);
+        $this->set(compact('storeBreak', 'setPre', 'orderId', 'time_break', 'time_range', 'store_data', 'encrypted_storeId', 'encrypted_merchantId', 'currentDateVar', 'nowData'));
     }
 
     /* ------------------------------------------------
@@ -1611,9 +1603,7 @@ class UsersController extends StoreAppController
       created:27/7/2015
       ----------------------------------------------------- */
 
-    public function dineIn($encrypted_storeId = null, $encrypted_merchantId = null)
-    {
-   // It will check either the order is pre-order  or Now
+    public function dineIn($encrypted_storeId = null, $encrypted_merchantId = null) {   // It will check either the order is pre-order  or Now
         $this->layout = $this->store_inner_pages;
         $decrypt_storeId = $this->Encryption->decode($encrypted_storeId);
         $decrypt_merchantId = $this->Encryption->decode($encrypted_merchantId);
@@ -1663,6 +1653,7 @@ class UsersController extends StoreAppController
             $this->request->data['Booking']['reservation_date'] = $reservationDateTime;
             $save_result = $this->Booking->saveBookingDetails($this->data); // call on model to save data
             if ($save_result) {
+
                 if ($store['Store']['is_dinein_printer'] == 1) {
                     $last_id = $this->Booking->getLastInsertId();
                     $aPrintData = array();
@@ -1683,12 +1674,12 @@ class UsersController extends StoreAppController
                 $fullName = "Admin";
                 $number_person = $this->data['Booking']['number_person']; //no of person
                 $start_date = $this->data['Booking']['start_date'];
-                
+
                 $start_date = $this->Common->storeTimeFormateUser($start_date, true, $this->Session->read('store_id'));
                 $start_date = explode(' ', $start_date);
                 $start_date = $start_date[0];
                 $start_time = $start_date[1];
-                
+
                 //$start_time = date('H:i a', strtotime($ResTime));
                 $customer_name = AuthComponent::User('fname') . " " . AuthComponent::User('lname');
                 if ($this->data['Booking']['special_request']) {
@@ -1698,7 +1689,8 @@ class UsersController extends StoreAppController
                 }
                 if ($emailSuccess) {
                     $storeEmail = $this->Store->fetchStoreDetail($decrypt_storeId);
-                    if (($store['Store']['notification_type'] == 1 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_email']))) {
+                    $checkEmailNotificationMethod = $this->Common->checkNotificationMethod($store, 'email');
+                    if ($checkEmailNotificationMethod) {
                         $storeEmailid = trim($store['Store']['notification_email']);
                     } else {
                         $storeEmailid = trim($store['Store']['email_id']);
@@ -1740,9 +1732,11 @@ class UsersController extends StoreAppController
                     try {
                         $this->Email->send();
                     } catch (Exception $e) {
+                        
                     }
 
-                    if (($store['Store']['notification_type'] == 2 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_number']))) {
+                    $checkPhoneNotificationMethod = $this->Common->checkNotificationMethod($store, 'number');
+                    if ($checkPhoneNotificationMethod) {
                         $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['notification_number']);
                     } else {
                         $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['phone']);
@@ -1775,15 +1769,13 @@ class UsersController extends StoreAppController
       created: 12/8/2015
       ----------------------------------------------------- */
 
-    public function getStoreTime()
-    {
-   // It will check either the order is pre-order  or Now
+    public function getStoreTime() {   // It will check either the order is pre-order  or Now
         $this->layout = 'ajax';
         if ($this->request->is('ajax')) {
             $type1 = $_POST['type1'];
             $type2 = $_POST['type2'];
             $type3 = @$_POST['type3'];
-            $orderType = $_POST['orderType'];
+            $orderType = @$_POST['orderType'];
             $storeId = $this->Session->read('store_id'); //$this->Encryption->decode($_POST['storeId']);
             $merchantId = $this->Session->read('merchant_id'); //$this->Encryption->decode($_POST['merchantId']);
             $this->loadModel('StoreAvailability');
@@ -1808,8 +1800,8 @@ class UsersController extends StoreAppController
                     $StoreCutOff = $this->Store->fetchStoreCutOff($storeId);
                     $cutTime = '-' . $StoreCutOff['Store']['cutoff_time'] . ' minutes';
                     $end = date("H:i:s", strtotime("$cutTime", strtotime($end)));
-                    $orderType = $this->request->data['orderType'];
-                    $preOrder = $this->request->data['preOrder'];
+                    $orderType = @$this->request->data['orderType'];
+                    $preOrder = null; //$this->request->data['preOrder'];
 
                     if (strtotime(str_replace('-', '/', $_POST['date'])) == strtotime(str_replace('-', '/', $todayDate))) {
                         $start = $this->Common->getStartTime($start, true, $orderType, $preOrder, $end);
@@ -1851,8 +1843,7 @@ class UsersController extends StoreAppController
         }
     }
 
-    public function selectStore()
-    {
+    public function selectStore() {
         $this->layout = false;
     }
 
@@ -1862,8 +1853,7 @@ class UsersController extends StoreAppController
       created: 19/8/2015
       ----------------------------------------------------- */
 
-    public function guestOrdering()
-    {
+    public function guestOrdering() {
         if ($this->request->is(array('post', 'put')) && (!empty($this->request->data['DeliveryAddress']['email']) || !empty($this->request->data['PickUpAddress']['email']))) {
             //prx($this->request->data);
             $this->loadModel('DeliveryAddress');
@@ -1871,6 +1861,7 @@ class UsersController extends StoreAppController
             $encrypted_merchantId = $this->Encryption->encode($this->Session->read('merchant_id'));
             $order_type = $this->data['Order']['type'];
             $this->Session->write('Order.order_type', $order_type);
+            $this->Session->write('Cart.segment_type', $order_type);
             $preOrderallowed = $this->Store->checkPreorder($this->Session->read('store_id'), $this->Session->read('merchant_id'));
             if (empty($preOrderallowed)) {
                 //$pickupTime=$this->Common->getNowDelayTime($type);
@@ -1925,9 +1916,10 @@ class UsersController extends StoreAppController
 
                 $dlocation = $data['DeliveryAddress']['address'] . " " . $data['DeliveryAddress']['city'] . " " . $data['DeliveryAddress']['state'] . " " . $data['DeliveryAddress']['zipcode'];
                 $adjuster_address2 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
                 $output = json_decode($geocode);
                 if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
+                    
                 } else {
                     $latitude = @$output->results[0]->geometry->location->lat;
                     $longitude = @$output->results[0]->geometry->location->lng;
@@ -1964,8 +1956,7 @@ class UsersController extends StoreAppController
       created: 19/8/2015
       ----------------------------------------------------- */
 
-    public function storeLocation($encrypted_storeId = null, $encrypted_merchantId = null)
-    {
+    public function storeLocation($encrypted_storeId = null, $encrypted_merchantId = null) {
         $this->layout = $this->store_layout;
         $this->loadModel('Store');
         $decrypt_storeId = $this->Encryption->decode($encrypted_storeId);
@@ -1982,7 +1973,7 @@ class UsersController extends StoreAppController
                     'foreignKey' => 'store_availablity_id',
                     'conditions' => array('StoreBreak.is_deleted' => 0, 'StoreBreak.is_active' => 1, 'StoreBreak.store_id' => $decrypt_storeId),
                 )
-                )
+            )
                 ), false
         );
         $displayContactUsForm = $this->StoreSetting->findByStoreId($decrypt_storeId, array('display_contact_us_form'));
@@ -1996,16 +1987,14 @@ class UsersController extends StoreAppController
       created: 19/8/2015
       ----------------------------------------------------- */
 
-    public function storePhoto($encrypted_storeId = null, $encrypted_merchantId = null)
-    {
+    public function storePhoto($encrypted_storeId = null, $encrypted_merchantId = null) {
         $this->layout = $this->store_layout;
         $decrypt_storeId = $this->Encryption->decode($encrypted_storeId);
         $decrypt_merchantId = $this->Encryption->decode($encrypted_merchantId);
         $this->set(compact('encrypted_storeId', 'encrypted_merchantId'));
     }
 
-    public function myBillingInfo($encrypted_storeId = null, $encrypted_merchantId = null)
-    {
+    public function myBillingInfo($encrypted_storeId = null, $encrypted_merchantId = null) {
 //        $this->autoRender = false;
         if (AuthComponent::User()) {
             $userId = AuthComponent::User('id');
@@ -2049,17 +2038,15 @@ class UsersController extends StoreAppController
                 $nzsafe_info['cc_number'] = $response['cc_number'];
                 $nzsafe_info['customer_vault_id'] = $response['customer_vault_id'];
                 $ccexp = $response['cc_exp'];
-                if ($ccexp) {
+                if ($ccexp)
                     $ccexp = substr($ccexp, 0, 2) . '/20' . substr($ccexp, 2, 4);
-                }
                 $nzsafe_info['cc_exp'] = $ccexp;
             }
         }
         $this->set(compact('nzsafe_info', 'encrypted_storeId', 'encrypted_merchantId'));
     }
 
-    public function deleteBillingInfo($encrypted_storeId, $encrypted_merchantId, $id)
-    {
+    public function deleteBillingInfo($encrypted_storeId, $encrypted_merchantId, $id) {
 
         if (AuthComponent::User()) {
             $userId = AuthComponent::User('id');
@@ -2090,8 +2077,7 @@ class UsersController extends StoreAppController
         }
     }
 
-    public function dologin()
-    {
+    public function dologin() {
         $this->autoRender = false;
         $this->Session->delete('orderOverview');
         $this->Session->delete('Order');
@@ -2121,8 +2107,7 @@ class UsersController extends StoreAppController
         return 1;
     }
 
-    public function guestUserSignUp()
-    {
+    public function guestUserSignUp() {
         $this->layout = 'ajax';
         $this->autoRender = false;
         if ($this->request->is('ajax')) {
@@ -2142,8 +2127,7 @@ class UsersController extends StoreAppController
         return json_encode($response);
     }
 
-    public function city()
-    {
+    public function city() {
         $this->layout = false;
         $this->autoRender = false;
         $this->loadModel('City');
@@ -2154,8 +2138,7 @@ class UsersController extends StoreAppController
         }
     }
 
-    public function zip()
-    {
+    public function zip() {
         $this->layout = false;
         $this->autoRender = false;
         $this->loadModel('Zip');
@@ -2166,8 +2149,7 @@ class UsersController extends StoreAppController
         }
     }
 
-    private function _featuredItemData($store_id = null, $merchant_id = null)
-    {
+    private function _featuredItemData($store_id = null, $merchant_id = null) {
         $this->loadModel('StoreFeaturedSection');
         $this->loadModel('FeaturedItem');
         $this->StoreFeaturedSection->bindModel(
@@ -2181,7 +2163,7 @@ class UsersController extends StoreAppController
                     'limit' => 4,
                     'order' => array('FeaturedItem.position' => 'asc')
                 )
-                )
+            )
                 ), false
         );
         $this->FeaturedItem->bindModel(
@@ -2193,7 +2175,7 @@ class UsersController extends StoreAppController
                     'conditions' => array('Item.is_deleted' => 0, 'Item.is_active' => 1, 'Item.store_id' => $store_id),
                     'fields' => array('Item.name', 'Item.image', 'Item.is_seasonal_item', 'Item.start_date', 'Item.end_date')
                 )
-                )
+            )
                 ), false
         );
         $fields = array('StoreFeaturedSection.id', 'StoreFeaturedSection.featured_name', 'StoreFeaturedSection.image', 'StoreFeaturedSection.background_image');
@@ -2203,14 +2185,13 @@ class UsersController extends StoreAppController
         $this->set('feturedData', $sfData);
     }
 
-    private function _deal_page($store_id = null)
-    {
+    private function _deal_page($store_id = null) {
         $this->loadModel('Coupon');
         $this->loadModel('ItemOffer');
         $this->loadModel('Offer');
         $this->loadModel('OfferDetail');
         $date = date("Y-m-d", (strtotime($this->Common->storeTimeZoneUser('', date('Y-m-d H:i:s')))));
-        $couponsData = $this->Coupon->find('all', array('conditions' => array('Coupon.store_id' => $store_id, 'Coupon.is_active' => 1, 'Coupon.is_deleted' => 0, 'Coupon.number_can_use > Coupon.used_count', 'Coupon.start_date <= ' => $date, 'Coupon.end_date >= ' => $date), 'fields' => array('id', 'name', 'coupon_code', 'discount', 'discount_type', 'image', 'store_id', 'merchant_id')));
+        $couponsData = $this->Coupon->find('all', array('conditions' => array('Coupon.store_id' => $store_id, 'Coupon.is_active' => 1, 'Coupon.is_deleted' => 0, 'Coupon.number_can_use > Coupon.used_count', 'Coupon.start_date <= ' => $date, 'Coupon.end_date >= ' => $date), 'fields' => array('id', 'name', 'coupon_code', 'discount', 'discount_type', 'image')));
         $this->ItemOffer->bindModel(
                 array(
             'belongsTo' => array(
@@ -2221,24 +2202,34 @@ class UsersController extends StoreAppController
                     'fields' => array('id', 'name', 'image'),
                     'type' => "INNER"
                 )
-                )
+            )
                 ), false
         );
-        $itemOfferData = $this->ItemOffer->find('all', array('conditions' => array('ItemOffer.store_id' => $store_id, 'ItemOffer.is_active' => 1, 'ItemOffer.is_deleted' => 0, 'ItemOffer.start_date <= ' => $date, 'ItemOffer.end_date >= ' => $date)));
+        $itemOfferData = $this->ItemOffer->find('all', array('conditions' => array('ItemOffer.store_id' => $store_id, 'ItemOffer.is_active' => 1, 'ItemOffer.is_deleted' => 0, 'ItemOffer.start_date <= ' => $date, 'ItemOffer.end_date >= ' => $date), 'fields' => array()));
+        $this->loadModel('Item');
+        $this->Item->bindModel(array(
+            'belongsTo' => array('Category' => array(
+                    'className' => 'Category',
+                    'foreignKey' => 'category_id',
+                    'conditions' => array('Category.is_deleted' => 0, 'Category.is_active' => 1),
+                    'fields' => array('id', 'name'),
+                    'type' => 'INNER'
+                )
+            )
+        ));
         $this->Offer->bindModel(
-            array(
-                'belongsTo' => array(
-                    'Item' => array(
-                        'className' => 'Item',
-                        'foreignKey' => 'item_id',
-                        'conditions' => array('Item.is_deleted' => 0, 'Item.is_active' => 1),
-                        'fields' => array('name', 'image', 'category_id', 'id', 'store_id', 'merchant_id'),
-                        'type' => 'INNER'
-                    ),
-                ),
-            ), false
-        );
-        $promotionalOfferData = $this->Offer->find('all', array('recursive' => 2, 'conditions' => array('Offer.store_id' => $store_id, 'Offer.is_active' => 1, 'Offer.is_deleted' => 0, 'OR' => array(array('Offer.offer_start_date <= ' => $date, 'Offer.offer_end_date >= ' => $date), array('Offer.offer_start_date' => null, 'Offer.offer_end_date' => null))), 'fields' => array('item_id', 'description', 'offerImage')));
+                array(
+                    'belongsTo' => array(
+                        'Item' => array(
+                            'className' => 'Item',
+                            'foreignKey' => 'item_id',
+                            'conditions' => array('Item.is_deleted' => 0, 'Item.is_active' => 1),
+                            'fields' => array('name', 'image', 'category_id'),
+                            'type' => 'INNER'
+                        ),
+                    )
+        ));
+        $promotionalOfferData = $this->Offer->find('all', array('recursive' => 2, 'conditions' => array('Offer.store_id' => $store_id, 'Offer.is_active' => 1, 'Offer.is_deleted' => 0, 'OR' => array(array('Offer.offer_start_date <= ' => $date, 'Offer.offer_end_date >= ' => $date), array('Offer.offer_start_date' => NULL, 'Offer.offer_end_date' => NULL))), 'fields' => array('item_id', 'description', 'offerImage')));
         $deals = 0;
         if (!empty($couponsData) || !empty($itemOfferData) || !empty($promotionalOfferData)) {
             $deals = 1;
@@ -2247,4 +2238,5 @@ class UsersController extends StoreAppController
         $storeDealData = $this->StoreDeals->findByStoreId($store_id);
         $this->set(compact('storeDealData', 'couponsData', 'itemOfferData', 'promotionalOfferData', 'deals'));
     }
+
 }

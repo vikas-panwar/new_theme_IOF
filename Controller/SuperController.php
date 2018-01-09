@@ -636,8 +636,7 @@ class SuperController extends SupersAppController {
         $transactionDetail = $this->paginate('MerchantPayment');
         $this->set('list', $transactionDetail);
     }
-    
-    
+
     public function getSearchValues() {
         $this->layout = false;
         $this->autoRender = false;
@@ -649,8 +648,8 @@ class SuperController extends SupersAppController {
                 $criteria .= " AND (Merchant.name LIKE '%" . $value . "%' OR Plan.name LIKE '%" . $value . "%' OR Merchant.company_name LIKE '%" . $value . "%' OR Merchant.address LIKE '%" . $value . "%' OR Merchant.phone LIKE '%" . $value . "%' OR Merchant.email LIKE '%" . $value . "%' OR Merchant.domain_name LIKE '%" . $value . "%')";
             }
             $this->MerchantPayment->bindModel(array('belongsTo' => array(
-                'Plan' => array('fields' => array('name'), 'className' => 'Plan', 'foreignKey' => 'plan_id'), 'Merchant' => array('fields' => array('name', 'address', 'phone', 'email'), 'className' => 'Merchant', 'foreignKey' => 'merchant_id'))), false);
-            
+                    'Plan' => array('fields' => array('name'), 'className' => 'Plan', 'foreignKey' => 'plan_id'), 'Merchant' => array('fields' => array('name', 'address', 'phone', 'email'), 'className' => 'Merchant', 'foreignKey' => 'merchant_id'))), false);
+
             $searchData = $this->MerchantPayment->find('all', array('conditions' => array($criteria), 'order' => array('MerchantPayment.created' => 'DESC')));
             $new_array = array();
             if (!empty($searchData)) {
@@ -658,7 +657,7 @@ class SuperController extends SupersAppController {
                     $new_array[] = array('label' => $val['Merchant']['name'], 'value' => $val['Merchant']['name'], 'desc' => $val['Merchant']['name'] . '-' . $val['Plan']['name'] . '-' . $val['Merchant']['address'] . '-' . $val['Merchant']['phone'] . '-' . $val['Merchant']['email']);
                 };
             }
-            echo json_encode($new_array);/**/
+            echo json_encode($new_array); /**/
         } else {
             exit;
         }
@@ -740,18 +739,13 @@ class SuperController extends SupersAppController {
         $this->set('plan', $plan);
     }
 
-
-    public function getMerchantUrl()
-    {
+    public function getMerchantUrl() {
         $this->layout = false;
         $this->autoRender = false;
         $merchant = array();
-        if ($this->request->is(array('ajax'))) 
-        {
-            if(isset($this->request->data))
-            {
-                if(isset($this->request->data['merchantId']) && $this->request->data['merchantId'] != '')
-                {
+        if ($this->request->is(array('ajax'))) {
+            if (isset($this->request->data)) {
+                if (isset($this->request->data['merchantId']) && $this->request->data['merchantId'] != '') {
                     $merchantId = $this->request->data['merchantId'];
                     $this->loadModel('Merchant');
                     $merchant = $this->Merchant->find('first', array('fields' => array('id', 'domain_name'), 'conditions' => array('Merchant.id' => $merchantId)));
@@ -761,7 +755,6 @@ class SuperController extends SupersAppController {
         $merchant = json_encode($merchant);
         return $merchant;
     }
-
 
     public function updateMerchantPayment($merchantPaymentId = null) {
         $loginuserid = $this->Session->read('Auth.Super.id');
@@ -878,13 +871,19 @@ class SuperController extends SupersAppController {
                                 $data['owner_name'] = $this->request->data['User']['fname'] . ' ' . $this->request->data['User']['lname'];
                                 $data['user_id'] = $userID;
                                 $this->Merchant->saveMerchant($data);
-                                // Permission for admin user
+                                // Permission for admin user start
                                 $tabid = $this->Tab->getTabData('Hq Staff Management', null, null, $roleId);
                                 $data['tab_id'] = $tabid;
                                 $data['user_id'] = $userID;
                                 $data['is_deleted'] = 0;
                                 $this->Permission->savePermission($data);
-                                // Permission for admin user
+                                // Permission for admin user end
+                                //TermsAndPolicy for merchant start
+                                $this->loadModel('TermsAndPolicy');
+                                $termAndPolicy['TermsAndPolicy']['merchant_id'] = $merchantID;
+                                $this->TermsAndPolicy->create();
+                                $this->TermsAndPolicy->save($termAndPolicy);
+                                //TermsAndPolicy for merchant end
                                 // Entry in Module table for Routes
                                 /*  HQ FrontPage    */
                                 $routedata['id'] = "";
@@ -977,17 +976,13 @@ class SuperController extends SupersAppController {
         }
     }
 
-
-
-
     /* ------------------------------------------------
       Function name:merchantStoreList()
       Description:Display merchants store list
       created:25/09/2017
       ----------------------------------------------------- */
 
-    public function merchantStoreList($merchantId = null, $clearAction = null) 
-    {
+    public function merchantStoreList($merchantId = null, $clearAction = null) {
         $loginuserid = $this->Session->read('Auth.Super.id');
         if (!$this->Common->checkPermissionByaction($this->params['controller'], 'merchantPaymentList', $loginuserid)) {
             $this->Session->setFlash(__("Permission Denied"));
@@ -996,12 +991,11 @@ class SuperController extends SupersAppController {
         $this->layout = "super_dashboard";
         $storeIds = '';
         $merchantDecodeId = $this->Encryption->decode($merchantId);
-        if($merchantDecodeId != null && !empty($merchantDecodeId)) 
-        {
+        if ($merchantDecodeId != null && !empty($merchantDecodeId)) {
             $this->loadModel('Store');
             $this->loadModel('Merchant');
             $merchant = $this->Merchant->find('first', array('fields' => array('Merchant.id', 'Merchant.name'), 'conditions' => array('Merchant.id' => $merchantDecodeId)));
-            
+
             $this->loadModel('Store');
             $criteria = "Store.is_deleted=0 AND Store.merchant_id = " . $merchantDecodeId;
 
@@ -1021,23 +1015,21 @@ class SuperController extends SupersAppController {
             $this->paginate = array('conditions' => array($criteria), 'order' => array('Store.created' => 'DESC'));
             $transactionDetail = $this->paginate('Store');
             $this->set('list', $transactionDetail);
-            
+
             $this->set('merchantDetail', $merchant);
             $this->set('merchantId', $merchantId);
         } else {
             $this->redirect(array('controller' => 'super', 'action' => 'merchantPaymentList'));
         }
     }
-    
-    
+
     /* ------------------------------------------------
       Function name:merchantStorePaymentList()
       Description:Display merchants store payment list
       created:25/09/2017
       ----------------------------------------------------- */
 
-    public function merchantStorePaymentList($storeId = null, $clearAction = null) 
-    {
+    public function merchantStorePaymentList($storeId = null, $clearAction = null) {
         $loginuserid = $this->Session->read('Auth.Super.id');
         if (!$this->Common->checkPermissionByaction($this->params['controller'], 'merchantPaymentList', $loginuserid)) {
             $this->Session->setFlash(__("Permission Denied"));
@@ -1046,12 +1038,12 @@ class SuperController extends SupersAppController {
         $this->layout = "super_dashboard";
         $storeIds = '';
         $storeDecodeId = $this->Encryption->decode($storeId);
-        if($storeDecodeId != null && !empty($storeDecodeId)) {
+        if ($storeDecodeId != null && !empty($storeDecodeId)) {
             $this->loadModel('Store');
             $storeDetail = $this->Store->find('first', array('fields' => array('Store.id', 'Store.merchant_id', 'Store.store_name'), 'conditions' => array('Store.id' => $storeDecodeId)));
             $this->loadModel('Merchant');
             $merchant = $this->Merchant->find('first', array('fields' => array('Merchant.id', 'Merchant.name'), 'conditions' => array('Merchant.id' => $storeDetail['Store']['merchant_id'])));
-            
+
             $this->loadModel('StorePayment');
             $criteria = "StorePayment.is_deleted=0 AND StorePayment.store_id = " . $storeDecodeId;
             if ($this->Session->read('MerchantStorePaymentListSearch') && $clearAction != 'clear' && !$this->request->is('post')) {
@@ -1082,7 +1074,7 @@ class SuperController extends SupersAppController {
             $this->paginate = array('conditions' => array($criteria), 'order' => array('StorePayment.created' => 'DESC'));
             $transactionDetail = $this->paginate('StorePayment');
             $this->set('list', $transactionDetail);
-            
+
             $this->set('merchantDetail', $merchant);
             $this->set('storeDetail', $storeDetail);
             $this->set('storeId', $storeId);
@@ -1090,8 +1082,6 @@ class SuperController extends SupersAppController {
             $this->redirect(array('controller' => 'super', 'action' => 'merchantPaymentList'));
         }
     }
-
-
 
     /* ------------------------------------------------
       Function name:addStore()
@@ -1130,10 +1120,10 @@ class SuperController extends SupersAppController {
                     if (trim($this->request->data['Store']['address']) && trim($this->request->data['Store']['city']) && trim($this->request->data['Store']['state']) && trim($this->request->data['Store']['zipcode'])) {
                         $dlocation = trim($this->request->data['Store']['address']) . " " . trim($this->request->data['Store']['city']) . " " . trim($this->request->data['Store']['state']) . " " . trim($this->request->data['Store']['zipcode']);
                         $address2 = str_replace(' ', '+', $dlocation);
-                        $geocode = file_get_contents('http://maps.google.com/maps/api/geocode/json?address=' . urlencode($address2) . '&sensor=false');
+                        $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . urlencode($address2) . '&sensor=false');
                         $output = json_decode($geocode);
                         if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
-
+                            
                         } else {
                             $latitude = @$output->results[0]->geometry->location->lat;
                             $longitude = @$output->results[0]->geometry->location->lng;
@@ -1150,6 +1140,18 @@ class SuperController extends SupersAppController {
                             $this->MerchantStoreRequest->saveField("request_status", $status);
                         }
                         $storeId = $this->Store->getInsertID();
+                        //create default store setting and module permission 
+                        $this->loadModel('StoreSetting');
+                        $settingData = $this->StoreSetting->findByStoreId($storeId);
+                        if (empty($settingData)) {
+                            $data['store_id'] = $storeId;
+                            $this->loadModel('StoreSetting');
+                            $this->StoreSetting->create();
+                            $this->StoreSetting->save($data);
+                            $this->loadModel('ModulePermission');
+                            $this->ModulePermission->create();
+                            $this->ModulePermission->save($data);
+                        }
                         $this->request->data['User']['store_id'] = $storeId;
                         $this->request->data['User']['merchant_id'] = $this->request->data['Merchant']['id'];
                         $this->request->data['User']['role_id'] = $roleId;
@@ -1296,7 +1298,7 @@ class SuperController extends SupersAppController {
                                     try {
                                         $this->Email->send();
                                     } catch (Exception $e) {
-
+                                        
                                     }
                                 }
                             }
@@ -1613,7 +1615,7 @@ class SuperController extends SupersAppController {
         $this->set('list', $transactionDetail);
     }
 
-    public function getStoreSearchValues() {
+    public function getStoreSearchValues($merchantId = null) {
         $this->layout = false;
         $this->autoRender = false;
         if ($this->request->is(array('get'))) {
@@ -1631,9 +1633,11 @@ class SuperController extends SupersAppController {
                 )
                     ), false
             );
-            $criteria = "";
+
+            $merchantDecodeId = $this->Encryption->decode($merchantId);
+
             if (!empty($_GET['term'])) {
-                $criteria = "Store.is_deleted=0";
+                $criteria = "Store.is_deleted=0 AND Store.merchant_id=$merchantDecodeId";
                 $value = trim($_GET['term']);
                 $criteria .= " AND (Store.store_name LIKE '%" . $value . "%' OR Store.store_url LIKE '%" . $value . "%' OR Merchant.name LIKE '%" . $value . "%' OR Store.email_id LIKE '%" . $value . "%' OR Store.phone LIKE '%" . $value . "%')";
             }
@@ -1827,16 +1831,16 @@ class SuperController extends SupersAppController {
                                     /*  HQ Login    */
                                     // Entry in Module table for Routes
                                     // Entry in Routes File
-                                    $hqUrl = trim($this->request->data['Merchant']['domain_name']);
-                                    $filepath = $_SERVER['DOCUMENT_ROOT'] . DS . APP_DIR . DS . 'Config' . DS . 'custom_routes.php';
-                                    $stringToReplace1 = "/hq/" . $merchantDetail['Merchant']['domain_name'];
-                                    $stringToReplace2 = "##" . $merchantDetail['Merchant']['domain_name'] . "##";
-                                    $stringfromReplace1 = "/hq/" . $hqUrl;
-                                    $stringfromReplace2 = "##" . $hqUrl . "##";
-                                    $str = file_get_contents($filepath);
-                                    $str = str_replace($stringToReplace1, $stringfromReplace1, $str);
-                                    $str = str_replace($stringToReplace2, $stringfromReplace2, $str);
-                                    file_put_contents($filepath, $str);
+//                                    $hqUrl = trim($this->request->data['Merchant']['domain_name']);
+//                                    $filepath = $_SERVER['DOCUMENT_ROOT'] . DS . APP_DIR . DS . 'Config' . DS . 'custom_routes.php';
+//                                    $stringToReplace1 = "/hq/" . $merchantDetail['Merchant']['domain_name'];
+//                                    $stringToReplace2 = "##" . $merchantDetail['Merchant']['domain_name'] . "##";
+//                                    $stringfromReplace1 = "/hq/" . $hqUrl;
+//                                    $stringfromReplace2 = "##" . $hqUrl . "##";
+//                                    $str = file_get_contents($filepath);
+//                                    $str = str_replace($stringToReplace1, $stringfromReplace1, $str);
+//                                    $str = str_replace($stringToReplace2, $stringfromReplace2, $str);
+//                                    file_put_contents($filepath, $str);
                                     // Entry in Routes File
                                 }
                                 $this->Session->setFlash(__("Merchant Details successfully updated"), 'alert_success');
@@ -1896,10 +1900,10 @@ class SuperController extends SupersAppController {
                         if (trim($this->request->data['Store']['address']) && trim($this->request->data['Store']['city']) && trim($this->request->data['Store']['state']) && trim($this->request->data['Store']['zipcode'])) {
                             $dlocation = trim($this->request->data['Store']['address']) . " " . trim($this->request->data['Store']['city']) . " " . trim($this->request->data['Store']['state']) . " " . trim($this->request->data['Store']['zipcode']);
                             $address2 = str_replace(' ', '+', $dlocation);
-                            $geocode = file_get_contents('http://maps.google.com/maps/api/geocode/json?key='.GOOGLE_MAP_API_KEY.'&address=' . urlencode($address2) . '&sensor=false');
+                            $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . urlencode($address2) . '&sensor=false');
                             $output = json_decode($geocode);
                             if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
-
+                                
                             } else {
                                 $latitude = @$output->results[0]->geometry->location->lat;
                                 $longitude = @$output->results[0]->geometry->location->lng;
@@ -2103,7 +2107,7 @@ class SuperController extends SupersAppController {
         $this->OrderPreference->bindModel(array('belongsTo' => array('SubPreference' => array('fields' => array('name')))), false);
         $this->OrderOffer->bindModel(array('belongsTo' => array('Item' => array('className' => 'Item', 'foreignKey' => 'offered_item_id', 'fields' => array('id', 'name')), 'Size' => array('className' => 'Size', 'foreignKey' => 'offered_size_id', 'fields' => array('id', 'size')))), false);
         $this->OrderTopping->bindModel(array('belongsTo' => array('Topping' => array('className' => 'Topping', 'foreignKey' => 'topping_id', 'fields' => array('id', 'name')))), false);
-        $this->OrderItem->bindModel(array('hasMany' => array('OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id')), 'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('id', 'name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('id', 'size')))), false);
+        $this->OrderItem->bindModel(array('hasMany' => array('OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id'), 'order' => array('OrderTopping.id')), 'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id', 'size'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('id', 'name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('id', 'size')))), false);
         $this->Order->bindModel(
                 array(
             'hasMany' => array(
@@ -2121,7 +2125,7 @@ class SuperController extends SupersAppController {
                 'OrderPayment' => array(
                     'className' => 'OrderPayment',
                     'foreignKey' => 'payment_id',
-                    'fields' => array('id', 'transection_id', 'amount', 'payment_gateway', 'payment_status'),
+                    'fields' => array('id', 'transection_id', 'amount', 'payment_gateway', 'payment_status', 'last_digit'),
                 ))), false);
         $orderDetails = $this->Order->getsuperSingleOrderDetail(null, null, $orderId);
         $this->set('orderDetail', $orderDetails);
@@ -2173,8 +2177,9 @@ class SuperController extends SupersAppController {
         $objPHPExcel->getActiveSheet()->setCellValue('B1', 'Merchant Name');
         $objPHPExcel->getActiveSheet()->setCellValue('C1', 'Subscription Type');
         $objPHPExcel->getActiveSheet()->setCellValue('D1', 'Payment Date');
-        $objPHPExcel->getActiveSheet()->setCellValue('E1', 'Amount($)');
-        $objPHPExcel->getActiveSheet()->setCellValue('F1', 'Status');
+        $objPHPExcel->getActiveSheet()->setCellValue('E1', 'Payment Type');
+        $objPHPExcel->getActiveSheet()->setCellValue('F1', 'Amount($)');
+        $objPHPExcel->getActiveSheet()->setCellValue('G1', 'Status');
 
         $objPHPExcel->getActiveSheet()->getStyle('A1')->applyFromArray($styleArray);
         $objPHPExcel->getActiveSheet()->getStyle('B1')->applyFromArray($styleArray);
@@ -2182,6 +2187,7 @@ class SuperController extends SupersAppController {
         $objPHPExcel->getActiveSheet()->getStyle('D1')->applyFromArray($styleArray);
         $objPHPExcel->getActiveSheet()->getStyle('E1')->applyFromArray($styleArray);
         $objPHPExcel->getActiveSheet()->getStyle('F1')->applyFromArray($styleArray);
+        $objPHPExcel->getActiveSheet()->getStyle('G1')->applyFromArray($styleArray);
 
         $i = 2;
         foreach ($list as $data) {
@@ -2190,8 +2196,17 @@ class SuperController extends SupersAppController {
             $objPHPExcel->getActiveSheet()->setCellValue("B$i", $data['Merchant']['name']);
             $objPHPExcel->getActiveSheet()->setCellValue("C$i", $data['Plan']['name']);
             $objPHPExcel->getActiveSheet()->setCellValue("D$i", date('m-d-Y', strtotime($data['MerchantPayment']['payment_date'])));
-            $objPHPExcel->getActiveSheet()->setCellValue("E$i", $data['MerchantPayment']['amount']);
-            $objPHPExcel->getActiveSheet()->setCellValue("F$i", $data['MerchantPayment']['payment_status']);
+            $paymentType = '';
+            if ($data['MerchantPayment']['payment_type'] == 1) {
+                $paymentType = 'One-Time';
+            } else if ($data['MerchantPayment']['payment_type'] == 2) {
+                $paymentType = 'Recurring';
+            } else {
+                $paymentType = '-';
+            }
+            $objPHPExcel->getActiveSheet()->setCellValue("E$i", $paymentType);
+            $objPHPExcel->getActiveSheet()->setCellValue("F$i", $data['MerchantPayment']['amount']);
+            $objPHPExcel->getActiveSheet()->setCellValue("G$i", $data['MerchantPayment']['payment_status']);
 
             $i++;
         }
@@ -2410,33 +2425,255 @@ class SuperController extends SupersAppController {
 
         $this->request->data = $templateDetail;
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    /* ------------------------------------------------
+      Function name:addSubscriptionType()
+      Description:Add subscription type
+      created:30/10/2017
+      ----------------------------------------------------- */
 
-    public function viewStorePrinter($clearAction = null) {
+    public function addSubscriptionType() {
         $loginuserid = $this->Session->read('Auth.Super.id');
-        if (!$this->Common->checkPermissionByaction($this->params['controller'], 'addStore', $loginuserid)) {
+        if (!$this->Common->checkPermissionByaction($this->params['controller'], 'merchantPaymentList', $loginuserid)) {
             $this->Session->setFlash(__("Permission Denied"));
             $this->redirect(array('controller' => 'super', 'action' => 'dashboard'));
         }
         $this->layout = "super_dashboard";
-        $this->loadModel('StorePrinterStatus');
-        $this->StorePrinterStatus->bindModel(array('belongsTo' =>
-            array('Merchant' => array('className' => 'Merchant', 'foreignKey' => 'merchant_id', 'fields' => array('Merchant.name')),
-            'Store' => array('className' => 'Store', 'foreignKey' => 'store_id', 'fields' => array('Store.store_name','Store.id')))
-        ), false);
-        $result = $this->paginate('StorePrinterStatus');
-        $date1 = new DateTime(date('Y-m-d H:i:s'));
-        for($i=0; $i<count($result); $i++) {
-            $update_date = $result[$i]['StorePrinterStatus']['modified'];
-            $date = date('Y-m-d H:i:s', strtotime($update_date));
-            $date2 = new DateTime(date('Y-m-d H:i:s', strtotime($update_date)));
-            $interval = $date1->diff($date2);
-            if($interval->s <= PRINTER_CHECK_INTERVAL && $interval->i == 0) {
-                $result[$i]['StorePrinterStatus']['is_active'] = 1;
+        
+        if ($this->request->is('post') && !empty($this->request->data['Plan']['name'])) {
+            
+            $this->Plan->create();
+            if($this->Plan->savePlan($this->Common->trimValue($this->request->data))){
+                $this->Session->setFlash(__("Category Successfully Created"), 'alert_success');
             } else {
-                $result[$i]['StorePrinterStatus']['is_active'] = 0;
+                $this->Session->setFlash(__("Some problem occured"), 'alert_failed');
+            }
+                
+        }
+        
+        $this->_subscriptionTypeList();
+    }
+    
+    private function _subscriptionTypeList($clearAction = null) {
+        if (!empty($this->params->pass[0])) {
+            $clearAction = $this->params->pass[0];
+        }
+        $criteria = "Plan.is_deleted=0";
+        if ($this->Session->read('SubscriptionTypeSearchData') && $clearAction != 'clear' && !$this->request->is('post')) {
+            $this->request->data = json_decode($this->Session->read('SubscriptionTypeSearchData'), true);
+        } else {
+            $this->Session->delete('SubscriptionTypeSearchData');
+            if (isset($this->params->pass[0]) && !empty($this->params->pass[0])) {
+                if ($this->params->pass[0] == 'clear') {
+                    $this->redirect($this->referer());
+                }
             }
         }
-        $this->set('list', $result);
+        if (!empty($this->request->data)) {
+
+            $this->Session->write('SubscriptionTypeSearchData', json_encode($this->request->data));
+            if (!empty($this->request->data['Plan']['search'])) {
+                $search = trim($this->request->data['Plan']['search']);
+                $criteria .= " AND (Plan.name LIKE '%" . $search . "%')";
+            }
+        }
+        $this->paginate = array('conditions' => array($criteria), 'order' => array('Plan.created' => 'DESC'));
+        $planDetail = $this->paginate('Plan');
+        $this->set('list', $planDetail);
+    }
+    
+    /* ------------------------------------------------
+      Function name:activateSubscriptionType()
+      Description:Active/Deactive subscription type
+      created:31/10/2017
+      ----------------------------------------------------- */
+
+    public function activateSubscriptionType($EncryptSubscriptionTypeID = null, $status = 0) {
+        $this->layout = "super_dashboard";
+        $data['Plan']['id'] = $this->Encryption->decode($EncryptSubscriptionTypeID);
+        $data['Plan']['is_active'] = $status;
+        if ($this->Plan->savePlan($data)) {
+            if ($status) {
+                $SuccessMsg = "Category Activated Successfully";
+            } else {
+                $SuccessMsg = "Category Deactivated Successfully";
+            }
+            $this->Session->setFlash(__($SuccessMsg), 'alert_success');
+            $this->redirect($this->referer());
+        } else {
+            $this->Session->setFlash(__("Some problem occured"), 'alert_failed');
+            $this->redirect($this->referer());
+        }
     }
 
+    /* ------------------------------------------------
+      Function name:deleteSubscriptionType()
+      Description:Delete subscription type from list
+      created:31/10/2017
+      ----------------------------------------------------- */
+
+    public function deleteSubscriptionType($EncryptSubscriptionTypeID = null) {
+        $this->autoRender = false;
+        $this->layout = "super_dashboard";
+        $data['Plan']['id'] = $this->Encryption->decode($EncryptSubscriptionTypeID);
+        $data['Plan']['is_deleted'] = 1;
+        if ($this->Plan->savePlan($data)) {
+            $this->Session->setFlash(__("Category deleted"), 'alert_success');
+            $this->redirect(array('controller' => 'super', 'action' => 'addSubscriptionType'));
+        } else {
+            $this->Session->setFlash(__("Some problem occured"), 'alert_failed');
+            $this->redirect(array('controller' => 'super', 'action' => 'addSubscriptionType'));
+        }
+    }
+    
+    
+    /* ------------------------------------------------
+      Function name:editSubscriptionType()
+      Description:Edit subscription type contents
+      created:31/10/2017
+      ----------------------------------------------------- */
+    public function editSubscriptionType($EncryptSubscriptionTypeID = null) {
+        $this->layout = "super_dashboard";
+        $merchantId = $this->Session->read('merchantId');
+        $data['Plan']['id'] = $this->Encryption->decode($EncryptSubscriptionTypeID);
+        $newsletterDetail = $this->Plan->findById($data['Plan']['id']);
+        if ($this->request->is(array('post', 'put')) && $this->request->data) {
+            $this->request->data = $this->Common->trimValue($this->request->data);
+            if ($this->Plan->savePlan( $this->request->data)) {
+                $this->Session->setFlash(__("Category Successfully Updated."), 'alert_success');
+            } else {
+                $this->Session->setFlash(__("Some problem occured"), 'alert_failed');
+            }
+            $this->redirect(array('controller' => 'super', 'action' => 'addSubscriptionType'));    
+        }
+        $this->request->data = $newsletterDetail;
+    }
+    
+    /* ------------------------------------------------
+      Function name:uploadSubscriptionType()
+      Description:upload subscription type contents
+      created:31/10/2017
+      ----------------------------------------------------- */
+    public function uploadSubscriptionType() {
+        $this->layout = 'super_dashboard';
+        if (!empty($this->request->data)) {
+            $tmp = $this->request->data;
+            if ($tmp['Plan']['file']['error'] == 4) {
+                $this->Session->setFlash(__('Your file contains error. Please retry uploading.'), 'alert_failed');
+                $this->redirect($this->referer());
+            }
+            $valid = array('application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            if (!in_array($tmp['Plan']['file']['type'], $valid)) {
+                $this->Session->setFlash(__('You can only upload Excel file.'), 'alert_failed');
+            } else if ($tmp['Plan']['file']['error'] != 0) {
+                $this->Session->setFlash(__('The file you uploaded contains errors.'), 'alert_failed');
+            } else if ($tmp['Plan']['file']['size'] > 20000000) {
+                $this->Session->setFlash(__('The file size must be Max 20MB'), 'alert_failed');
+            } else {
+                ini_set('max_execution_time', 600); //increase max_execution_time to 10 min if data set is very large
+                App::import('Vendor', 'PHPExcel');
+                $objPHPExcel = new PHPExcel;
+                $objPHPExcel = PHPExcel_IOFactory::load($tmp['Plan']['file']['tmp_name']);
+                $sheetData = $objPHPExcel->getActiveSheet()->toArray(null, true, true, true);
+                $real_data = array_values($sheetData);
+                $i = 0;
+                foreach ($real_data as $key => $row) {
+                    $row = $this->Common->trimValue($row);
+                    if ($key > 0) {
+                        if (!empty($row['B']) && !empty($row['C'])) {
+                            $row['B'] = trim($row['B']);
+                            $row['C'] = trim($row['C']);
+                            if (!empty($row['A'])) {
+                                $isUniqueName = $this->Plan->checkPlanUniqueName($row['B'], $row['A']);
+                            } else {
+                                $isUniqueName = $this->Plan->checkPlanUniqueName($row['B']);
+                            }
+                            if ($isUniqueName) {
+                                $categorydata['name'] = $row['B'];
+                                if (!empty($row['C'])) {
+                                    $categorydata['is_active'] = $row['C'];
+                                } else {
+                                    $categorydata['is_active'] = 0;
+                                }
+
+                                if (!empty($row['A'])) {
+                                    $categorydata['id'] = $row['A'];
+                                } else {
+                                    $categorydata['id'] = "";
+                                    $this->Plan->create();
+                                }
+                                $this->Plan->savePlan($categorydata);
+                                $i++;
+                            }
+                        }
+                    }
+                }
+                $this->Session->setFlash(__($i . ' ' . 'Category has been saved'), 'alert_success');
+                $this->redirect(array('controller' => 'super', 'action' => 'addSubscriptionType'));
+            }
+        }
+    }
+    
+    
+    
+    
+    /* ------------------------------------------------
+      Function name:downloadSubscriptionType()
+      Description:download subscription type contents
+      created:31/10/2017
+      ----------------------------------------------------- */
+    public function downloadSubscriptionType() {
+        $result = $this->Plan->fetchPlanList();
+        Configure::write('debug', 0);
+        App::import('Vendor', 'PHPExcel');
+        $objPHPExcel = new PHPExcel;
+        $styleArray = array(
+            'font' => array(
+                'name' => 'Arial',
+                'size' => '10',
+                'color' => array('rgb' => 'ffffff'),
+                'bold' => true,
+            ),
+            'fill' => array(
+                'type' => PHPExcel_Style_Fill::FILL_SOLID,
+                'color' => array('rgb' => '0295C9'),
+            ),
+        );
+        ini_set('max_execution_time', 600); //increase max_execution_time to 10 min if data set is very large
+        $filename = 'Category_' . date("Y-m-d") . ".xls"; //create a file
+        $objPHPExcel->getDefaultStyle()->getFont()->setName('Arial')->setSize(10);
+        $objPHPExcel->getDefaultStyle()->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+        $objPHPExcel->getDefaultStyle()->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+        $objPHPExcel->getActiveSheet()->setTitle('Categories');
+
+        $objPHPExcel->getActiveSheet()->setCellValue('A1', 'Id');
+        $objPHPExcel->getActiveSheet()->setCellValue('B1', 'Category');
+        $objPHPExcel->getActiveSheet()->setCellValue('C1', 'Active');
+        
+        $objPHPExcel->getActiveSheet()->getStyle('A1')->applyFromArray($styleArray);
+        $objPHPExcel->getActiveSheet()->getStyle('B1')->applyFromArray($styleArray);
+        $objPHPExcel->getActiveSheet()->getStyle('C1')->applyFromArray($styleArray);
+
+        $i = 2;
+        foreach ($result as $data) {
+            $data = $this->Common->trimValue($data);
+            $objPHPExcel->getActiveSheet()->setCellValue("A$i", $data['Plan']['id']);
+            $objPHPExcel->getActiveSheet()->setCellValue("B$i", $data['Plan']['name']);
+            $objPHPExcel->getActiveSheet()->setCellValue("C$i", $data['Plan']['is_active']);
+            $i++;
+        }
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename=' . $filename);
+        header('Cache-Control: max-age=0');
+        $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
+        $objWriter->save('php://output');
+        exit;
+    }
 }

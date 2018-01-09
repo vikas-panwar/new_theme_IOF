@@ -6,6 +6,7 @@ class HqAppController extends AppController {
 
     public function beforeFilter() {
         parent::beforeFilter();
+        $this->mainDomain();
         //$this->_loginToBoth();
         if ($this->params['controller'] == 'hq' || $this->Session->read('Auth.Admin.role_id') == 2) {
             if ($this->params['action'] == 'merchant') {
@@ -21,7 +22,8 @@ class HqAppController extends AppController {
             //$this->_loginToBoth();
         } elseif (!$this->Session->check('Auth.hq.id') && !$this->Session->check('Auth.hqusers.id')) {
             if (!$this->Session->check('hq_id') && !$this->Session->check('merchantId')) {
-                header('Location:' . 'http://' . env('SERVER_NAME'));
+                //header('Location:' . 'http://' . env('SERVER_NAME'));
+                header('Location:' . Router::fullbaseUrl());
                 exit;
             } else {
                 $this->setDefaultPage();
@@ -38,6 +40,9 @@ class HqAppController extends AppController {
         $this->loadModel('MerchantDesign');
         $layoutCss = $this->MerchantDesign->find('first', array('conditions' => array('merchant_id' => $this->Session->read('hq_id')), 'fields' => array('merchant_css')));
         $this->set(compact('layoutCss'));
+        if (!$this->Session->check('Auth.hqusers.id')  && $this->params['action'] != 'login' && $this->params['controller'] != 'hq') {
+            $this->loginToBoth();
+        }
     }
 
     /* Assign Login auth to HQ Back Panel */

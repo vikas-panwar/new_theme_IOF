@@ -276,7 +276,7 @@ class CustomersController extends StoreAppController {
 
         $this->OrderOffer->bindModel(array('belongsTo' => array('Item' => array('className' => 'Item', 'foreignKey' => 'offered_item_id', 'fields' => array('id', 'name')), 'Size' => array('className' => 'Size', 'foreignKey' => 'offered_size_id', 'fields' => array('id', 'size')))), false);
         $this->OrderTopping->bindModel(array('belongsTo' => array('Topping' => array('className' => 'Topping', 'foreignKey' => 'topping_id', 'fields' => array('id', 'name')))), false);
-        $this->OrderItem->bindModel(array('hasMany' => array('OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id'), 'order' => array('OrderTopping.id')), 'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name', 'category_id')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('id', 'name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('id', 'size')))), false);
+        $this->OrderItem->bindModel(array('hasMany' => array('OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id'), 'order' => array('OrderTopping.id')), 'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id', 'size'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name', 'category_id')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('id', 'name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('id', 'size')))), false);
         $this->Order->bindModel(
                 array(
             'hasMany' => array(
@@ -294,7 +294,7 @@ class CustomersController extends StoreAppController {
                 'OrderPayment' => array(
                     'className' => 'OrderPayment',
                     'foreignKey' => 'payment_id',
-                    'fields' => array('id', 'transection_id', 'amount', 'payment_gateway', 'payment_status'),
+                    'fields' => array('id', 'transection_id', 'amount', 'payment_gateway', 'payment_status', 'last_digit'),
                 ))), false);
         $orderDetails = $this->Order->getSingleOrderDetail($merchantId, $storeId, $orderId);
         $this->set('orderDetail', $orderDetails);
@@ -347,7 +347,8 @@ class CustomersController extends StoreAppController {
                 if ($emailSuccess) {
                     $this->Store->recursive = -1;
                     $store = $this->Store->fetchStoreDetail($storeId);
-                    if (($store ['Store'] ['notification_type'] == 1 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_email']))) {
+		    $checkNotificationMethod=$this->Common->checkNotificationMethod($store,'email');
+		    if ($checkNotificationMethod) {
                         $emailData = $emailSuccess['DefaultTemplate']['template_message'];
                         $emailData = str_replace('{STORE_NAME}', $store['Store']['store_name'], $emailData);
                         $subject = ucwords(str_replace('_', ' ', $emailSuccess['DefaultTemplate']['template_subject']));
@@ -403,7 +404,8 @@ class CustomersController extends StoreAppController {
             if ($emailSuccess) {
                 $this->Store->recursive = -1;
                 $store = $this->Store->fetchStoreDetail($storeId);
-                if (($store ['Store'] ['notification_type'] == 1 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_email']))) {
+                $checkNotificationMethod=$this->Common->checkNotificationMethod($store,'email');
+		    if ($checkNotificationMethod) {
                     $emailData = $emailSuccess['EmailTemplate']['template_message'];
                     $emailData = str_replace('{FULL_NAME}', $storeInquiryDetail['StoreInquiries']['name'], $emailData);
                     $emailData = str_replace('{MESSAGE}', $this->request->data['StoreInquiries']['admin_message'], $emailData);

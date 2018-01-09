@@ -5,7 +5,7 @@ App::uses('StoreAppController', 'Controller');
 class PaymentsController extends StoreAppController {
 
     public $components = array('Session', 'Cookie', 'Email', 'RequestHandler', 'Encryption', 'Dateform', 'Common', 'AuthorizeNet', 'Paypal', 'NZGateway', 'Webservice');
-    public $helper = array('Encryption', 'Common');
+    public $helper = array('Encryption', 'Common', 'Session');
     public $uses = array('User', 'OrderItem');
 
     public function beforeFilter() {
@@ -121,15 +121,15 @@ class PaymentsController extends StoreAppController {
                     } else {
                         if ($use_paymemt_vault) { // vault payment only
                             $this->request->data['OrderPayment']['payment_gateway'] = 'NZGateway Vault';
-			    if ($this->Session->check('Cart.credit_mask')) {
+                            if ($this->Session->check('Cart.credit_mask')) {
                                 $this->request->data['OrderPayment']['last_digit'] = $this->Session->read('Cart.credit_mask');
                             }
                             $response = $this->NZGateway->useVault($vault_id, $amount);
                         } else { // vault update and  payment
                             $response = $this->NZGateway->doSale($amount, $card_num, $exp_date, $card_cvv);
-			    if ($this->Session->check('Cart.credit_mask')) {
+                            if ($this->Session->check('Cart.credit_mask')) {
                                 $this->request->data['OrderPayment']['last_digit'] = $this->Session->read('Cart.credit_mask');
-                            }	
+                            }
                             if ($response['response_code'] == '100') {
                                 if ($vault_id)
                                     $this->NZGateway->delVault($vault_id);
@@ -138,7 +138,7 @@ class PaymentsController extends StoreAppController {
                                 if ($initresponse['response_code'] == 100) {
                                     $NzsafeUser = $this->_getPayItem('NzsafeUser');
                                     $NzsafeUser['customer_vault_id'] = $initresponse['customer_vault_id'];
-                                    $this->request->data['OrderPayment']['last_digit'] = $NzsafeUser['NzsafeUser']['credit_mask']; //save card mask
+                                     $this->request->data['OrderPayment']['last_digit'] = (!empty($NzsafeUser['NzsafeUser']['credit_mask']))?$NzsafeUser['NzsafeUser']['credit_mask']:$NzsafeUser['credit_mask']; //save card mask
                                     $this->NzsafeUser->saveUser($NzsafeUser);
                                 } else {
                                     throw new Exception("NZ Gateway Valult Update Error : " . $response['responsetext'], 400);
@@ -149,7 +149,6 @@ class PaymentsController extends StoreAppController {
                             }
                         }
                     }
-
                     if ($response['response_code'] == 100) {
                         $success = $this->savePayment($this->_getPayItem('OrderPayment', $response, "NZGateway", "PAID by credit card"));
                         if ($success) {
@@ -222,7 +221,7 @@ class PaymentsController extends StoreAppController {
         switch ($type) {
             case 'VaultId' : // NZ Gateway vault id
                 $nzsafe_info = $this->NzsafeUser->getUser($userId);
-		$this->Session->write('Cart.credit_mask', $nzsafe_info['NzsafeUser']['credit_mask']);
+                $this->Session->write('Cart.credit_mask', $nzsafe_info['NzsafeUser']['credit_mask']);
                 $this->request->data['NzsafeUser']['id'] = $nzsafe_info['NzsafeUser']['id'];
                 $this->request->data['NzsafeUser']['customer_vault_id'] = $nzsafe_info['NzsafeUser']['customer_vault_id'];
                 return $nzsafe_info['NzsafeUser']['customer_vault_id'];
@@ -314,9 +313,9 @@ class PaymentsController extends StoreAppController {
         }
 
 
-        if ($aResult['seqment_id'] == 3)
+        if ($aResult['seqment_id'] == 3) {
             $aResult['delivery_amount'] = $this->Session->check('delivery_fee') ? $this->Session->read('delivery_fee') : "";
-
+        }
         $aResult['amount'] = $this->Session->check('Cart.grand_total_final') ? $this->Session->read('Cart.grand_total_final') : "";
 
 
@@ -331,9 +330,9 @@ class PaymentsController extends StoreAppController {
         }
 
         if ($this->Session->check('Cart.tip')) {
-            $aResult['tip']           = $this->Session->read('Cart.tip');
-            $aResult['tip_option']    = ($this->Session->check('Cart.tip_option') ? $this->Session->read('Cart.tip_option') : 0);
-            $aResult['tip_percent']   = ($this->Session->check('Cart.tip_select') ? $this->Session->read('Cart.tip_select') : 0);
+            $aResult['tip'] = $this->Session->read('Cart.tip');
+            $aResult['tip_option'] = ($this->Session->check('Cart.tip_option') ? $this->Session->read('Cart.tip_option') : 0);
+            $aResult['tip_percent'] = ($this->Session->check('Cart.tip_select') ? $this->Session->read('Cart.tip_select') : 0);
         }
         $aResult['order_number'] = "";
         if ($paymemt_type != 4) {
@@ -361,24 +360,24 @@ class PaymentsController extends StoreAppController {
 
         switch ($type) {
             case 'OrderItem' :
-                $temp['order_id']       = $this->Order->getLastInsertId();
-                $temp['quantity']       = array_key_exists('quantity', $item) ? $item['quantity'] : 0;
-                $temp['tax_price']      = array_key_exists('taxamount', $item) ? $item['taxamount'] : 0;
-                $temp['service_price']  = array_key_exists('serviceamount', $item) ? $item['serviceamount'] : 0;
-                $temp['item_id']        = array_key_exists('id', $item) ? $item['id'] : 0;
-                $temp['size_id']        = array_key_exists('size_id', $item) ? $item['size_id'] : 0;
-                $temp['type_id']        = array_key_exists('type_id', $item) ? $item['type_id'] : 0;
-                $temp['interval_id']    = array_key_exists('interval_id', $item) ? $item['interval_id'] : 0;
+                $temp['order_id'] = $this->Order->getLastInsertId();
+                $temp['quantity'] = array_key_exists('quantity', $item) ? $item['quantity'] : 0;
+                $temp['tax_price'] = array_key_exists('taxamount', $item) ? $item['taxamount'] : 0;
+                $temp['service_price'] = array_key_exists('serviceamount', $item) ? $item['serviceamount'] : 0;
+                $temp['item_id'] = array_key_exists('id', $item) ? $item['id'] : 0;
+                $temp['size_id'] = array_key_exists('size_id', $item) ? $item['size_id'] : 0;
+                $temp['type_id'] = array_key_exists('type_id', $item) ? $item['type_id'] : 0;
+                $temp['interval_id'] = array_key_exists('interval_id', $item) ? $item['interval_id'] : 0;
 
-                $temp['item_price']     = array_key_exists('actual_price', $item) ? $item['actual_price'] : 0;
+                $temp['item_price'] = array_key_exists('actual_price', $item) ? $item['actual_price'] : 0;
                 $temp['total_item_price'] = array_key_exists('final_price', $item) ? $item['final_price'] : 0;
-                $temp['discount']       = 0; // Flow is not known for now for this particual field
-                $temp['user_id']        = $userId;
-                $temp['store_id']       = $store_id;
-                $temp['merchant_id']    = $merchant_id;
-                $result['OrderItem']    = $temp;
+                $temp['discount'] = 0; // Flow is not known for now for this particual field
+                $temp['user_id'] = $userId;
+                $temp['store_id'] = $store_id;
+                $temp['merchant_id'] = $merchant_id;
+                $result['OrderItem'] = $temp;
                 if ($paymentType == 4) {
-                    $result['is_future']    = 1;
+                    $result['is_future'] = 1;
                 }
                 break;
 
@@ -409,7 +408,7 @@ class PaymentsController extends StoreAppController {
                 $temp['order_item_id'] = $this->OrderItem->getLastInsertId();
                 $temp['topping_id'] = $item['id'];
                 $temp['addon_size_id'] = $item['size'];
-                $temp['price'] = array_key_exists('price', $item) ? $item['price'] : 0; 
+                $temp['price'] = array_key_exists('price', $item) ? $item['price'] : 0;
                 $temp['topType'] = "defaultTop";
                 $temp['store_id'] = $store_id;
                 $temp['merchant_id'] = $merchant_id;
@@ -485,7 +484,7 @@ class PaymentsController extends StoreAppController {
         $orderSucess = false;
         $orderInfo = $this->_getSessionOrder($paymemt_type);
         try {
-	    if (!empty($orderInfo['order_number'])) {
+            if (!empty($orderInfo['order_number'])) {
                 if ($this->Order->checkorderNumber($orderInfo['order_number'])) {
                     $fString = substr($orderInfo['order_number'], 0, strrpos($orderInfo['order_number'], '-'));
                     $lString = substr($orderInfo['order_number'], strrpos($orderInfo['order_number'], '-') + 1);
@@ -496,6 +495,7 @@ class PaymentsController extends StoreAppController {
             $orderSucess = $this->Order->saveOrder($orderInfo);
         } catch (Exception $e) {
             $this->Session->setFlash(__('Please choose a different time for Delivery/Pickup.'), 'flash_error');
+            $this->Session->Write('timeError', 'Please choose a different time for Delivery/Pickup.');
             $this->redirect(array('controller' => 'Products', 'action' => 'orderDetails'));
         }
 
@@ -552,7 +552,10 @@ class PaymentsController extends StoreAppController {
             // TODO : throw new Exception('Item key is null');
             if (!array_key_exists('Item', $result))
                 return false;
-
+            // TODO : throw new Exception('Item id is null or empty');
+            if (empty($result['Item']['id'])) {
+                return false;
+            }
             //----------------------------------------------------------------------//
             // 3: Save OrderItem
             //----------------------------------------------------------------------//
@@ -599,8 +602,8 @@ class PaymentsController extends StoreAppController {
             //----------------------------------------------------------------------//
             if (!empty($result['Item']['subPreferenceOld'])) {//subpreference//subPreferenceOld
                 foreach ($result['Item']['subPreferenceOld'] as $item) {
-                    	$this->OrderPreference->create();
-                    	$this->OrderPreference->saveSubpreference($this->_getOrderItem('OrderPreference', $item));
+                    $this->OrderPreference->create();
+                    $this->OrderPreference->saveSubpreference($this->_getOrderItem('OrderPreference', $item));
                 }
             }
         }
@@ -678,6 +681,7 @@ class PaymentsController extends StoreAppController {
                 try {
                     $this->Email->send();
                 } catch (Exception $e) {
+                    
                 }
             }
             if ($smsNotification == 1) {
@@ -853,14 +857,30 @@ class PaymentsController extends StoreAppController {
                     $storesmsData = $emailTemplate['DefaultTemplate']['sms_template'];
 
                     //Store ORder Email Notification
-                    if (($storeEmail['Store']['notification_type'] == 1 || $storeEmail['Store']['notification_type'] == 3) && (!empty($storeEmail['Store']['notification_email']))) {
-
-
+		    $checkEmailNotificationMethod=$this->Common->checkNotificationMethod($storeEmail,'email');
+		    if ($checkEmailNotificationMethod){
                         $EncorderID = $this->Encryption->encode($orderId);
                         $surl = HTTP_ROOT . 'orders/confirmOrder/' . $EncorderID;
-                        $orderconHtml = '<table style="width:100%;height:100px;" border="0" cellpadding="10" cellspacing="0"><tbody><tr><td style="text-align:center;">';
+                        $orderconHtml = '<table style="width: 550px; height: 100px; margin :0 auto;" border="0" cellpadding="10" cellspacing="0"><tbody><tr><td style="text-align:center;">';
                         $orderconHtml .= '<a href="' . $surl . '" style="padding:15px 15px;background-color:#F1592A;color:#FFFFFF;font-weight:bold;text-decoration: none;border:1px solid #000000;">CONFIRM ORDER</a></td></tr></tbody></table> ';
-                        $storeEmailData = $orderconHtml . $printdata;
+                        //$storeEmailData = $orderconHtml . $printdata;
+
+                        $storeEmailData = ''
+                                . ''
+                                . '<table style="width: 100%; border: none; font-size: 14px;">'
+                                . '<tr>'
+                                . '<td style="width: 100%;">'
+                                . '<table style="border:2px solid #000; margin :0 auto;">'
+                                . '<tr>'
+                                . '<td>'
+                                . $orderconHtml . $printdata
+                                . '</td>'
+                                . '</tr>'
+                                . '</table>'
+                                . '</td>'
+                                . '</tr>'
+                                . '</table>';
+
                         $subject = ucwords(str_replace('_', ' ', $emailTemplate['DefaultTemplate']['template_subject']));
 
                         $this->Email->to = $storeEmail['Store']['notification_email'];
@@ -880,7 +900,8 @@ class PaymentsController extends StoreAppController {
                     }
                     // Store ORder Email Notification
                     // STore Order Notification via SMS
-                    if (($storeEmail['Store']['notification_type'] == 2 || $storeEmail['Store']['notification_type'] == 3) && (!empty($storeEmail['Store']['notification_number']))) {
+                    $checkPhoneNotificationMethod=$this->Common->checkNotificationMethod($storeEmail,'number');
+		    if ($checkPhoneNotificationMethod){
                         $storemobnumber = $country_code['CountryCode']['code'] . str_replace(array('(', ')', ' ', '-'), '', $storeEmail['Store']['notification_number']);
                         if ($storesmsData) {
                             $storesmsData = str_replace('{ORDER_NUMBER}', $result_order['Order']['order_number'], $storesmsData);
@@ -894,7 +915,7 @@ class PaymentsController extends StoreAppController {
                     }
                     //STore Order Notification via SMS
                 } catch (Exception $e) {
-
+                    
                 }
                 if ($smsNotification == 1) {
                     $mobnumber = $country_code['CountryCode']['code'] . str_replace(array('(', ')', ' ', '-'), '', $phone);
@@ -919,7 +940,7 @@ class PaymentsController extends StoreAppController {
             try {
                 $this->orderFaxrelay($orderId, $this->Session->read('store_id'));
             } catch (Exception $e) {
-
+                
             }
         }
     }
@@ -931,8 +952,6 @@ class PaymentsController extends StoreAppController {
       ----------------------------------------------------- */
 
     public function success($data = null) {
-        $this->Session->write('isEndPatment', true);
-
         if ($this->Session->read('Coupon')) {
             $this->loadModel('Coupon');
             $data['Coupon']['id'] = $this->Session->read('Coupon.Coupon.id');
@@ -1073,8 +1092,7 @@ class PaymentsController extends StoreAppController {
         $this->OrderPayment->bindModel(array('belongsTo' => array(
                 'Order' => array('className' => 'Order', 'foreignKey' => 'order_id'))), false);
         $transactions = $this->OrderPayment->find('all', array('conditions' => array($criteria), 'order' => array('OrderPayment.created' => 'DESC')));
-        if(!empty($transactions))
-        {
+        if (!empty($transactions)) {
             Configure::write('debug', 0);
             App::import('Vendor', 'PHPExcel');
             $objPHPExcel = new PHPExcel;
@@ -1103,7 +1121,7 @@ class PaymentsController extends StoreAppController {
 
             $objPHPExcel->getActiveSheet()->setCellValue('A1', 'Order Id');
             $objPHPExcel->getActiveSheet()->setCellValue('B1', 'Transaction Id');
-            $objPHPExcel->getActiveSheet()->setCellValue('C1', 'Product Price');
+            $objPHPExcel->getActiveSheet()->setCellValue('C1', 'Sub Total');
             $objPHPExcel->getActiveSheet()->setCellValue('D1', 'Tax($)');
             $objPHPExcel->getActiveSheet()->setCellValue('E1', 'Tip');
             $objPHPExcel->getActiveSheet()->setCellValue('F1', 'Discount');
@@ -1129,72 +1147,66 @@ class PaymentsController extends StoreAppController {
             foreach ($transactions as $key => $data) {
                 // Order No 
                 $objPHPExcel->getActiveSheet()->setCellValue("A$i", $data['Order']['order_number']);
-                
+
                 // Transaction No 
                 $objPHPExcel->getActiveSheet()->setCellValue("B$i", (($data['OrderPayment']['transection_id'] != 0) ? $data['OrderPayment']['transection_id'] : ''));
-                
+
                 // Product Price
                 $orderDetail = $this->Common->orderItemDetail($data['OrderPayment']['order_id']);
                 $totalItemPrice = 0;
-                if($orderDetail)
-                {
-                    foreach ($orderDetail as $itemKey => $itemVal)
-                    {
+                if ($orderDetail) {
+                    foreach ($orderDetail as $itemKey => $itemVal) {
                         if ($itemVal['OrderItem']['total_item_price']) {
                             $totalItemPrice += $itemVal['OrderItem']['total_item_price'];
                         }
                     }
                 }
                 $objPHPExcel->getActiveSheet()->setCellValue("C$i", $this->Common->amount_format($totalItemPrice));
-                
+
                 // Tax
                 $objPHPExcel->getActiveSheet()->setCellValue("D$i", $this->Common->amount_format($data['Order']['tax_price']));
-                
+
                 // Tip
                 $tipValue = (($data['Order']['tip'] && $data['Order']['tip'] > 0) ? $this->Common->amount_format($data['Order']['tip']) : '-');
                 $objPHPExcel->getActiveSheet()->setCellValue("E$i", $tipValue);
-                
+
                 // Discount
                 $discountData = '';
                 $showcount = 0;
-                if($data['Order']['coupon_code'] != null)
-                {
+                if ($data['Order']['coupon_code'] != null) {
                     $coupon_amount = $this->Common->amount_format($data['Order']['coupon_discount']);
                     $discountData .= $coupon_amount . "\n\r";
                 }
-                
-                $promotionCount = $this->Common->usedOfferDetailCount($data['OrderPayment']['order_id']);       
-                if($promotionCount > 0)
-                {
+
+                $promotionCount = $this->Common->usedOfferDetailCount($data['OrderPayment']['order_id']);
+                if ($promotionCount > 0) {
                     $discountData .= "Promotions\n\r";
                 }
-                
+
                 $extendedOffersCount = $this->Common->usedItemOfferDetailCount($data['OrderPayment']['order_id']);
-                if($extendedOffersCount > 0)
-                {
+                if ($extendedOffersCount > 0) {
                     $discountData .= "Extended Offers\n\r";
                 }
                 $discountData = trim($discountData, "\n\r");
-                if($discountData == '')
-                {
+                if ($discountData == '') {
                     $discountData = '-';
                 }
                 $objPHPExcel->getActiveSheet()->setCellValue("F$i", $discountData);
                 $objPHPExcel->getActiveSheet()->getStyle("F$i")->getAlignment()->setWrapText(true);
-                
+
                 // Total Sales Amount ($)
                 $totalPrice = $this->Common->amount_format(($data['OrderPayment']['amount'] - $data['Order']['coupon_discount']));
                 $objPHPExcel->getActiveSheet()->setCellValue("G$i", $totalPrice);
-                
+
                 // Date
                 $objPHPExcel->getActiveSheet()->setCellValue("H$i", $this->Dateform->us_format($this->Common->storeTimezone('', $data['OrderPayment']['created'])));
-                
+
                 // Payment Type
                 $objPHPExcel->getActiveSheet()->setCellValue("I$i", $data['OrderPayment']['payment_gateway']);
-                
+
                 // Payment Status
                 $objPHPExcel->getActiveSheet()->setCellValue("J$i", $data['OrderPayment']['payment_status']);
-                
+
                 // Reason
                 $sReason = $data['OrderPayment']['response'];
                 if ($sReason) {
@@ -1205,11 +1217,11 @@ class PaymentsController extends StoreAppController {
                     $sReason = "-";
                 }
                 $objPHPExcel->getActiveSheet()->setCellValue("K$i", $sReason);
-                
+
                 // Response Code
                 $response = (($data['OrderPayment']['response_code']) ? $data['OrderPayment']['response_code'] : '-');
                 $objPHPExcel->getActiveSheet()->setCellValue("L$i", $response);
-                
+
                 $i++;
             }
             $filename = 'Transactions' . date("Y-m-d") . ".xls"; //create a file
@@ -1218,19 +1230,13 @@ class PaymentsController extends StoreAppController {
             header('Cache-Control: max-age=0');
             $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
             $objWriter->save('php://output');
-        }
-        else {
+        } else {
             $this->Session->setFlash(__('Record not Found.'), 'alert_failed');
             $this->redirect('/payments/paymentList/');
         }
         exit;
     }
-    
-    
-    
-    
-    
-    
+
     /* ------------------------------------------------
       Function name: orderDetail()
       Description: Dispaly the detail of perticular order
@@ -1277,8 +1283,7 @@ class PaymentsController extends StoreAppController {
             )), false);
         $orderDetails = $this->Order->getSingleOrderDetail($merchantId, $storeID, $orderId);
         $orderPayment = $this->OrderPayment->find(
-                'first', array('fields' => array('store_id', 'merchant_id', 'user_id', 'order_id', 'payment_gateway', 'amount', 'transection_id', 'response_code'),
-            'conditions' => array('id' => $paymentId)
+                'first', array('fields' => array('store_id', 'merchant_id', 'user_id', 'order_id', 'payment_gateway', 'amount', 'transection_id', 'response_code', 'last_digit'), 'conditions' => array('id' => $paymentId)
         ));
         if (empty($orderPayment['OrderPayment'])) {
             $orderPayment['OrderPayment'] = '';
@@ -1381,6 +1386,7 @@ class PaymentsController extends StoreAppController {
         }
         if (empty($orderTime)) {
             $this->Session->setFlash(__('Please choose a different time for Delivery/Pickup.'), 'flash_error');
+            $this->Session->Write('timeError', 'Please choose a different time for Delivery/Pickup.');
             $this->redirect(array('controller' => 'Products', 'action' => 'orderDetails'));
         }
 
@@ -1441,6 +1447,7 @@ class PaymentsController extends StoreAppController {
             $this->Paypal->token = $this->request->query['token'];
             $this->Paypal->payerId = $this->request->query['PayerID'];
             $customer_details = $this->Paypal->getExpressCheckoutDetails();
+
             $this->_completeExpressCheckout($customer_details['TOKEN'], $customer_details['PAYERID'], $customer_details['AMT']);
         } catch (Exception $e) {
             $this->Session->setFlash($e->getMessage(), 'flash_error');
@@ -1628,8 +1635,27 @@ class PaymentsController extends StoreAppController {
                 $curr_orderTime = $this->Session->read('ordersummary.pickup_hour') . ':' . $this->Session->read('ordersummary.pickup_minute') . ":00";
                 $orderTime = $curr_orderDate . ' ' . $curr_orderTime;
             }
-            if (strtotime($orderTime) < strtotime($currentTime) || empty($orderTime)) {
+            $storeInfo = $this->Store->find('first', array('conditions' => array("Store.id" => $this->Session->read('store_id')), 'fields' => array('Store.time_formate', 'Store.delivery_delay', 'Store.pick_up_delay')));
+            $orderType = $this->Session->read('ordersummary.order_type');
+            if ($orderType == 3) {//delivery
+                if (!empty($storeInfo['Store']['delivery_delay'])) {
+                    $delayTime = '+' . $storeInfo['Store']['delivery_delay'] . ' minutes';
+                    $currentTime = strtotime($delayTime, strtotime($currentTime));
+                } else {
+                    $currentTime = strtotime($currentTime);
+                }
+            } else {//pick up
+                if (!empty($storeInfo['Store']['pick_up_delay'])) {
+                    $delayTime = '+' . $storeInfo['Store']['pick_up_delay'] . ' minutes';
+                    $currentTime = strtotime($delayTime, strtotime($currentTime));
+                } else {
+                    $currentTime = strtotime($currentTime);
+                }
+            }
+
+            if (strtotime($orderTime) < $currentTime || empty($orderTime)) {
                 $this->Session->setFlash(__('Please choose a different time for Delivery/Pickup.'), 'flash_error');
+                $this->Session->Write('timeError', 'Please choose a different time for Delivery/Pickup.');
                 $this->redirect(array('controller' => 'Products', 'action' => 'orderDetails'));
             }
             return $orderTime;
@@ -1654,15 +1680,16 @@ class PaymentsController extends StoreAppController {
     function checkOrderTimeOld() {
         if ($this->Session->check('store_id')) {
             $orderTime = '';
-            if ($this->Session->check('cart.0.store_pickup_time')) {
+            $orderType = $this->Session->read('Order.order_type');
+            if ($this->Session->check('Order.store_pickup_time')) {
                 $this->loadModel('Store');
-                $storeInfo = $this->Store->find('first', array('conditions' => array("Store.id" => $this->Session->read('store_id')), 'fields' => array('Store.time_formate')));
+                $storeInfo = $this->Store->find('first', array('conditions' => array("Store.id" => $this->Session->read('store_id')), 'fields' => array('Store.time_formate', 'Store.delivery_delay', 'Store.pick_up_delay')));
                 if ($storeInfo['Store']['time_formate'] == 1) {
-                    $orderhours = date("H:i", strtotime($this->Session->read('cart.0.store_pickup_time')));
+                    $orderhours = date("H:i", strtotime($this->Session->read('Order.store_pickup_time')));
                 } else {
-                    $orderhours = $this->Session->read('cart.0.store_pickup_time');
+                    $orderhours = $this->Session->read('Order.store_pickup_time');
                 }
-                $orderDate = $this->reformatDate($this->Session->read('cart.0.store_pickup_date'));
+                $orderDate = $this->reformatDate($this->Session->read('Order.store_pickup_date'));
                 $orderTime = $orderDate . ' ' . $orderhours;
             } else if ($this->Session->check('Cart.order_time')) {
                 $orderTimearr = explode(' ', $this->Session->read('Cart.order_time'));
@@ -1670,8 +1697,26 @@ class PaymentsController extends StoreAppController {
             }
             //$orderTime=date("Y-m-d H:i:s",strtotime($orderTime));
             $currentTime = $this->Common->gettodayDate(3);
-            if (strtotime($orderTime) < strtotime($currentTime)) {
+            if ($orderType == 3) {//delivery
+                if (!empty($storeInfo['Store']['delivery_delay'])) {
+                    $delayTime = '+' . $storeInfo['Store']['delivery_delay'] . ' minutes';
+                    $currentTime = strtotime($delayTime, strtotime($currentTime));
+                } else {
+                    $currentTime = strtotime($currentTime);
+                }
+            } else {//pick up
+                if (!empty($storeInfo['Store']['pick_up_delay'])) {
+                    $delayTime = '+' . $storeInfo['Store']['pick_up_delay'] . ' minutes';
+                    $currentTime = strtotime($delayTime, strtotime($currentTime));
+                } else {
+                    $currentTime = strtotime($currentTime);
+                }
+            }
+
+            //echo $orderTime . '==========' . date("Y-m-d H:i:s", $currentTime);
+            if (strtotime($orderTime) < $currentTime) {
                 $this->Session->setFlash(__('Please choose a different time for Delivery/Pickup.'), 'flash_error');
+                $this->Session->Write('timeError', 'Please choose a different time for Delivery/Pickup.');
                 $this->redirect(array('controller' => 'Products', 'action' => 'orderDetails'));
             }
             if (DateTime::createFromFormat('Y-m-d H:i:s', $orderTime) == false) {
@@ -1679,6 +1724,7 @@ class PaymentsController extends StoreAppController {
                     $orderTime = $orderTime . ":00"; //date("Y-m-d H:i:s",strtotime($orderTime));
                 } else {
                     $this->Session->setFlash(__('Please choose a different time for Delivery/Pickup.'), 'flash_error');
+                    $this->Session->Write('timeError', 'Please choose a different time for Delivery/Pickup.');
                     $this->redirect(array('controller' => 'Products', 'action' => 'orderDetails'));
                 }
             }

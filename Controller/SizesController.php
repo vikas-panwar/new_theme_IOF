@@ -659,12 +659,19 @@ class SizesController extends StoreAppController {
                 $sheetData = $objPHPExcel->getActiveSheet()->toArray(null, true, true, true);
                 $real_data = array_values($sheetData);
                 $i = 0;
+                $storeId = $this->Session->read('admin_store_id');
+                $merchantId = $this->Session->read('admin_merchant_id');
                 foreach ($real_data as $key => $row) {
+                    $row['A'] = trim($row['A']);
+                    if (!empty($row['A'])) {
+                        $isUniqueId = $this->Size->checkSizeWithId($row['A']);
+                        if (!empty($isUniqueId) && $isUniqueId['Size']['store_id'] != $storeId) {
+                            continue;
+                        }
+                    }
                     $row = $this->Common->trimValue($row);
                     if ($key > 0) {
                         if (!empty($row['B']) && !empty($row['C'])) {
-                            $storeId = $this->Session->read('admin_store_id');
-                            $merchantId = $this->Session->read('admin_merchant_id');
                             if (!empty($storeId)) {
                                 $row['B'] = trim($row['B']);
                                 $categoryId = $this->Category->getCategoryByName($storeId, $row['B']);
@@ -1012,7 +1019,7 @@ class SizesController extends StoreAppController {
 //            'conditions' => array('Item.store_id' => $storeID, 'Item.is_deleted' => 0, 'Item.is_active' => 1, 'Category.is_deleted' => 0, 'Category.is_active' => 1),
 //            'recursive' => 1
 //        ));
-        $itemList = $this->ItemPrice->find('all', array('conditions' => array('ItemPrice.store_id' => $storeID, 'ItemPrice.is_deleted' => 0),'group'=>array('ItemPrice.item_id')));
+        $itemList = $this->ItemPrice->find('all', array('conditions' => array('ItemPrice.store_id' => $storeID, 'ItemPrice.is_deleted' => 0), 'group' => array('ItemPrice.item_id')));
         //$itemList=$this->Item->getallItemsByStore($storeID);
         $nList = array();
         if (!empty($itemList)) {

@@ -318,7 +318,8 @@ class HqordersController extends HqAppController {
                 $emailSuccess = $this->EmailTemplate->storeTemplates($data['StoreReview']['store_id'], $data['StoreReview']['merchant_id'], $template_type);
                 $store = $this->Store->fetchStoreDetail($data['StoreReview']['store_id'], $data['StoreReview']['merchant_id']);
                 if ($emailSuccess) {
-                    if (($store['Store']['notification_type'] == 1 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_email']))) {
+                    $checkEmailNotificationMethod=$this->Common->checkNotificationMethod($store,'email');
+		    if ($checkEmailNotificationMethod){
                         $storeEmail = trim($store['Store']['notification_email']);
                     } else {
                         $storeEmail = trim($store['Store']['email_id']);
@@ -357,7 +358,8 @@ class HqordersController extends HqAppController {
                         
                     }
 
-                    if (($store['Store']['notification_type'] == 2 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_number']))) {
+                    $checkPhoneNotificationMethod=$this->Common->checkNotificationMethod($store,'number');
+		    if ($checkPhoneNotificationMethod){
                         $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['notification_number']);
                     } else {
                         $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['phone']);
@@ -445,7 +447,7 @@ class HqordersController extends HqAppController {
                     array('id', 'name')))), false);
         $this->OrderOffer->bindModel(array('belongsTo' => array('Item' => array('className' => 'Item', 'foreignKey' => 'offered_item_id', 'fields' => array('id', 'name')), 'Size' => array('className' => 'Size', 'foreignKey' => 'offered_size_id', 'fields' => array('id', 'size')))), false);
         $this->OrderTopping->bindModel(array('belongsTo' => array('Topping' => array('className' => 'Topping', 'foreignKey' => 'topping_id', 'fields' => array('id', 'name')))), false);
-        $this->OrderItem->bindModel(array('hasMany' => array('OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id'), 'order' => array('OrderTopping.id')), 'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name','category_id')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('id', 'name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('id', 'size')))), false);
+        $this->OrderItem->bindModel(array('hasMany' => array('OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id'), 'order' => array('OrderTopping.id')), 'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id', 'size'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name','category_id')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('id', 'name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('id', 'size')))), false);
         $this->Order->bindModel(
                 array(
             'hasMany' => array(
@@ -463,7 +465,7 @@ class HqordersController extends HqAppController {
                 'OrderPayment' => array(
                     'className' => 'OrderPayment',
                     'foreignKey' => 'payment_id',
-                    'fields' => array('id', 'transection_id', 'amount', 'payment_gateway', 'payment_status'),
+                    'fields' => array('id', 'transection_id', 'amount', 'payment_gateway', 'payment_status', 'last_digit'),
                 ))), false);
         $orderDetails = $this->Order->getSingleOrderDetail($merchantId, $storeID, $orderId);
         $this->set('orderDetail', $orderDetails);

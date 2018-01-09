@@ -78,12 +78,10 @@ class StoreReportsController extends StoreAppController
                     $startdate      = $storeDate;
                     $enddate        = $storeDate;
                     $expoladDate    = explode("-", $startdate);
-                    $Month          = $expoladDate[1];
-                    $Year           = $expoladDate[0];
-                    $yearFrom       = date('Y', strtotime('-1 year', strtotime($Year)));
-                    $yearTo         = $Year;
-                    $dateFrom       = date('Y-m-d', strtotime('last Sunday', strtotime($startdate)));
-                    $dateTo         = date('Y-m-d', strtotime('next saturday', strtotime($dateFrom)));
+                    $fromMonthDefault   = $expoladDate[1];
+                    $fromYearDefault    = $expoladDate[0];
+                    $toMonthDefault     = $expoladDate[1];
+                    $toYearDefault      = $expoladDate[0];
                     
                     $timezoneStore  = array();
                     $store_data = $this->Store->fetchStoreDetail($storeId);
@@ -104,12 +102,10 @@ class StoreReportsController extends StoreAppController
                     $edate      = null;
                     $startdate  = null;
                     $enddate    = null;
-                    $Month      = null;
-                    $Year       = null;
-                    $yearFrom   = null;
-                    $yearTo     = null;
-                    $dateFrom   = null;
-                    $dateTo     = null;
+                    $fromMonthDefault   = null;
+                    $fromYearDefault    = null;
+                    $toMonthDefault     = null;
+                    $toYearDefault      = null;
                 }
                 
                 $reportType         = (isset($dataRequest['reportType']) ? $dataRequest['reportType'] : 1);
@@ -117,17 +113,16 @@ class StoreReportsController extends StoreAppController
                 $orderType          = (isset($dataRequest['orderType']) ? $dataRequest['orderType'] : 1);
                 $startDate          = (isset($dataRequest['startDate']) ? $this->Dateform->formatDate($dataRequest['startDate']) : $sdate);
                 $endDate            = (isset($dataRequest['endDate']) ? $this->Dateform->formatDate($dataRequest['endDate']) : $edate);
-                $month              = (isset($dataRequest['month']) ? $dataRequest['month'] : $Month);
-                $year               = (isset($dataRequest['year']) ? $dataRequest['year'] : $Year);
                 $itemId             = (isset($dataRequest['itemId']) ? $dataRequest['itemId'] : null);
                 $merchantOption     = (isset($dataRequest['merchantOption']) ? $dataRequest['merchantOption'] : null);
-                $fromYearReq        = (isset($dataRequest['fromYear']) ? $dataRequest['fromYear'] : $yearFrom);
-                $toYearReq          = (isset($dataRequest['toYear']) ? $dataRequest['toYear'] : $yearTo);
-                $date_start_from    = (isset($dataRequest['date_start_from']) ? $dataRequest['date_start_from'] : $dateFrom);
-                $date_end_from      = (isset($dataRequest['date_end_from']) ? $dataRequest['date_end_from'] : $dateTo);
+                $fromMonth          = (isset($dataRequest['fromMonth']) ? $dataRequest['fromMonth'] : $fromMonthDefault);
+                $fromYear           = (isset($dataRequest['fromYear']) ? $dataRequest['fromYear'] : $fromYearDefault);
+                $toMonth            = (isset($dataRequest['toMonth']) ? $dataRequest['toMonth'] : $toMonthDefault);
+                $toYear             = (isset($dataRequest['toYear']) ? $dataRequest['toYear'] : $toYearDefault);
                 $couponCode         = (isset($dataRequest['coupon_code']) ? $dataRequest['coupon_code'] : null);       
                 $promoId            = (isset($dataRequest['promo_id']) ? $dataRequest['promo_id'] : null);
                 $extendedOfferId    = (isset($dataRequest['extended_offer_id']) ? $dataRequest['extended_offer_id'] : null);
+                $productCount    = (isset($dataRequest['product_count']) ? $dataRequest['product_count'] : null);
                 
                 $graphPageNumber    = (isset($dataRequest['graph_page_number']) ? $dataRequest['graph_page_number'] : 0);
                 
@@ -170,25 +165,24 @@ class StoreReportsController extends StoreAppController
                                 $this->set(compact('graphData', 'startDate', 'endDate', 'orderProduct', 'storeId'));
                                 $this->render('/Elements/storeReports/dollar/daily_report_single_store');
                             }
-                            else if ($type == 2) 
+                            else if($type == 2) 
                             {//Weekly
-
-                                if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                                if($fromMonth == 1)
                                 {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                                    $weekyear = date('Y', strtotime($date_start_from));
+                                    $day = $this->Common->getStartAndEndDate(1,$fromYear);
                                 } else {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                                    $weekyear = date('Y', strtotime("This Week"));
+                                    $day = '01';
                                 }
+                                $endYear = $fromYear;
+                                $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                                $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                                $weekyear = $fromYear;
+                                
                                 $expoladEndDate=  explode(" ", $endFrom);
-                                $endMonth = $expoladEndDate[1];
                                 $explodeEndYear = explode("-", $expoladEndDate[0]);
                                 $endYear=$explodeEndYear[0];
-                                $startweekNumber = date("W", strtotime($startFrom));
-                                $endWeekNumber = date("W", strtotime($endFrom));
+                                $startweekNumber = (int)date("W", strtotime($startFrom));
+                                $endWeekNumber = (int)date("W", strtotime($endFrom));
                                 $data = array();
                                 $weeknumbers = '';
                                 $j = 0;
@@ -215,7 +209,6 @@ class StoreReportsController extends StoreAppController
                                         $data[$i]['datestring'] = $datestring;
                                     }
                                 }
-
                                 $result1 = $this->fetchWeeklyOrderToday($storeId, $startFrom, $endFrom, $orderType,$weekyear);
 
                                 $weekarray = array();
@@ -254,23 +247,24 @@ class StoreReportsController extends StoreAppController
                                 $this->render('/Elements/storeReports/dollar/weekly_report_single_store');
 
                             } 
-                            else if ($type == 3) 
+                            else if($type == 3) 
                             {//Monthly
-                                $dateFrom   = $year . '-' . $month . '-01';
-                                $dateTo     = $year . '-' . $month . '-31';
+                                $year = $fromYear;
+                                $month = $fromMonth;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                                 
                                 $graphData = $this->orderGraphListing($storeId, $dateFrom, $dateTo, $orderType, $year);
                                 $orderProduct = $this->orderListing($storeId, $dateFrom, $dateTo, $orderType);
                                 $this->set(compact('graphData', 'month', 'year', 'orderProduct', 'storeId'));
                                 $this->render('/Elements/storeReports/dollar/monthly_report_single_store');
                             } 
-                            else if ($type == 4) 
+                            else if($type == 4) 
                             {//Yearly
-                                $yearFrom   = $fromYearReq;
-                                $yearTo     = $toYearReq;
-
-                                $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                                $dateTo     = $toYearReq . '-' . '12' . '-31';
+                                $yearFrom = $fromYear;
+                                $yearTo = $toYear;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                                 
                                 $graphData = $this->orderGraphListing($storeId, $dateFrom, $dateTo, $orderType);
                                 $orderProduct = $this->orderListing($storeId, $dateFrom, $dateTo, $orderType);
@@ -284,41 +278,41 @@ class StoreReportsController extends StoreAppController
                                 $today = date('Y-m-d');
                                 $startDate = $today;
                                 $endDate = $today;
-                            } elseif ($merchantOption == 2) {
+                            } else if($merchantOption == 2) {
                                 $yesterday = date('Y-m-d', strtotime("-1 days"));
                                 $startDate = $yesterday;
                                 $endDate = $yesterday;
-                            } elseif ($merchantOption == 3) {
+                            } else if($merchantOption == 3) {
                                 $startDate = date('Y-m-d', strtotime('last sunday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 4) {
+                            } else if($merchantOption == 4) {
                                 $startDate = date('Y-m-d', strtotime('last monday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 5) {
+                            } else if($merchantOption == 5) {
                                 $startDate = date('Y-m-d', strtotime('-6 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 6) {
+                            } else if($merchantOption == 6) {
                                 $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                                 $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                            } elseif ($merchantOption == 7) {
+                            } else if($merchantOption == 7) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week sunday'));
-                            } elseif ($merchantOption == 8) {
+                            } else if($merchantOption == 8) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week friday'));
-                            } elseif ($merchantOption == 9) {
+                            } else if($merchantOption == 9) {
                                 $startDate = date('Y-m-d', strtotime('-13 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 10) {
+                            } else if($merchantOption == 10) {
                                 $startDate = date('Y-m-01');
                                 $endDate = date("Y-m-t");
-                            } elseif ($merchantOption == 11) {
+                            } else if($merchantOption == 11) {
                                 $startDate = date('Y-m-d', strtotime('-29 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 12) {
+                            } else if($merchantOption == 12) {
                                 $startDate = date('Y-m-d', strtotime("first day of last month"));
                                 $endDate = date('Y-m-d', strtotime("last day of last month"));
-                            } elseif ($merchantOption == 13) {
+                            } else if($merchantOption == 13) {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
                                 $startDate = $yearFrom . '-' . '01' . '-01';
@@ -341,10 +335,10 @@ class StoreReportsController extends StoreAppController
 
                             if($merchantOption == 13)
                             {
-                                $yearFrom = date('Y', strtotime('-5 Years'));
+                                $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
-                                $dateFrom = $yearFrom . '-' . '01' . '-01';
-                                $dateTo = $yearTo . '-' . '12' . '-31';
+                                $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                                $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                                 
                                 $graphData = $this->orderGraphListing($storeId, $dateFrom, $dateTo, $orderType);
                                 $orderProduct = $this->orderListing($storeId, $dateFrom, $dateTo, $orderType);
@@ -353,7 +347,7 @@ class StoreReportsController extends StoreAppController
                             }
                         }
                     }
-                    elseif ($reportType == 2) 
+                    else if($reportType == 2) 
                     {
                         // Report For Product
                         if(isset($type) && $merchantOption == 0)
@@ -363,103 +357,60 @@ class StoreReportsController extends StoreAppController
                                 $startDate = date("Y-m-d", strtotime($startDate));
                                 $endDate = date("Y-m-d", strtotime($endDate));
                                 
-                                $graphData = $this->itemListings($storeId, $startDate, $endDate, $itemId, $orderType);
-                                $orderProduct = $this->orderProductListing($storeId, $startDate, $endDate, $itemId, $orderType);
-                                $this->set(compact('graphData', 'startDate', 'endDate', 'type', 'orderProduct', 'storeId'));
-                                $this->render('/Elements/storeReports/product/daily');
+                                $graphData = $this->itemListings($storeId, $startDate, $endDate, $orderType, $productCount);
+
+                                $productData = $this->orderProductListing($storeId, $startDate, $endDate, $orderType, $productCount);
+                                $this->set(compact('graphData', 'startDate', 'endDate', 'productData', 'productCount'));
+                                $this->render('/Elements/storeReports/product/index');
                             }
-                            else if ($type == 2) 
+                            else if($type == 2) 
                             {
-                                if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                                if($fromMonth == 1)
                                 {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                                    $weekyear = date('Y', strtotime($date_start_from));
+                                    $day = $this->Common->getStartAndEndDate(1,$fromYear);
                                 } else {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                                    $weekyear = date('Y', strtotime("This Week"));
+                                    $day = '01';
                                 }
+                                $endYear = $fromYear;
+                                $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                                $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                                $weekyear = $fromYear;
                                 
-                                // For SingLe Store
-                                $expoladEndDate=  explode(" ", $endFrom);
-                                $endMonth = $expoladEndDate[1];
-                                $explodeEndYear = explode("-", $expoladEndDate[0]);
-                                $endYear=$explodeEndYear[0];
-                                $startweekNumber = date("W", strtotime($startFrom));
-                                $endWeekNumber = date("W", strtotime($endFrom));
-                                $data = array();
-                                $weeknumbers = '';
-                                $j = 0;
-                                for ($i = $startweekNumber; $i <= $endWeekNumber; $i++) {
-                                    $data[$i] = array();
-                                    if ($j == 0) {
-                                        $weeknumbers.="'Week" . $i . "'";
-                                    } else {
-                                        $weeknumbers.=",'Week" . $i . "'";
-                                    }
-                                    $j++;
-                                    $time = strtotime("1 January $weekyear", time());
-                                    $day = date('w', $time);
-                                    $time += ((7 * $i) - $day) * 24 * 3600;
-                                    $data[$i]['daywise'] = array();
-                                    for ($k = 0; $k <= 6; $k++) {
-                                        $time2 = $time + $k * 24 * 3600;
-                                        $data[$i]['daywise'][date('Y-m-d', $time2)] = array(0);
-                                        if ($k == 0) {
-                                            $datestring = "'" . date('Y-m-d', $time2) . "'";
-                                        } else {
-                                            $datestring.=",'" . date('Y-m-d', $time2) . "'";
-                                        }
-                                        $data[$i]['datestring'] = $datestring;
-                                    }
-                                }
+                                $graphData = $this->itemListingsWeekly($storeId, $startFrom, $endFrom, $orderType, $weekyear, $productCount);
+                                $productData = $this->orderProductListingWeekly($storeId, $startFrom, $endFrom, $orderType, $productCount);
 
-                                $result1 = $this->itemListingsWeekly($storeId, $startFrom, $endFrom, $orderType, $weekyear);
-                                $weekarray = array();
-                                $datearray = array();
-                                $totalItems = 0;
-                                foreach ($result1 as $k => $result) {
-                                    if (in_array($result[0]['WEEKno'], $weekarray)) {
-                                        $data[$result[0]['WEEKno']]['week']         = $result[0]['WEEKno'];
-                                        $data[$result[0]['WEEKno']]['totalitems']  += $result[0]['number'];
-                                        $totalItems                                += $result[0]['number'];
-                                    } else {
-                                        $weekarray[$result[0]['WEEKno']]            = $result[0]['WEEKno'];
-                                        $data[$result[0]['WEEKno']]['totalitems']  = $result[0]['number'];
-                                        $totalItems                                += $result[0]['number'];
-                                    }
-                                }
-
-                                $graphData = $data;
-
-                                $orderProduct = $this->orderProductListingWeekly($storeId, $startFrom, $endFrom, $orderType, $endYear);
-
-                                $this->set(compact('graphData', 'startDate', 'endDate', 'orderProduct', 'storeId', 'startFrom', 'endFrom', 'weekyear', 'weeknumbers', 'totalItems'));
-                                $this->render('/Elements/storeReports/product/weekly');
+                                $this->set(compact('graphData', 'dateFrom', 'dateTo', 'productData', 'weekyear', 'productCount', 'fromYear', 'fromMonth', 'toYear', 'toMonth'));
+                                $this->render('/Elements/storeReports/product/index');
                             }
-                            else if ($type == 3) 
-                            {//Monthly
-                                $dateFrom   = $year . '-' . $month . '-01';
-                                $dateTo     = $year . '-' . $month . '-31';
+                            else if($type == 3) 
+                            {
+                                //Monthly
+                                $year = $fromYear;
+                                $month = $fromMonth;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                                 
-                                $graphData = $this->itemListings($storeId, $dateFrom, $dateTo, $itemId, $orderType);
-                                $orderProduct = $this->orderProductListing($storeId, $dateFrom, $dateTo, $itemId, $orderType);
-                                $this->set(compact('graphData', 'startDate', 'endDate', 'type', 'orderProduct', 'storeId', 'year', 'month'));
-                                $this->render('/Elements/storeReports/product/monthly');
-                            } 
-                            else if ($type == 4) 
-                            {//Yearly
-                                $yearFrom = $fromYearReq;
-                                $yearTo = $toYearReq;
+                                $graphData = $this->itemListings($storeId, $dateFrom, $dateTo, $orderType, $productCount);
 
-                                $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                                $dateTo     = $toYearReq . '-' . '12' . '-31';
+                                $productData = $this->orderProductListing($storeId, $dateFrom, $dateTo, $orderType, $productCount);
+
+                                $this->set(compact('graphData', 'dateFrom', 'dateTo', 'productData', 'productCount', 'fromYear', 'fromMonth', 'toYear', 'toMonth'));
+                                $this->render('/Elements/storeReports/product/index');
+                            } 
+                            else if($type == 4) 
+                            {
+                                //Yearly
+                                $yearFrom = $fromYear;
+                                $yearTo = $toYear;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                                 
-                                $graphData = $this->itemListings($storeId, $dateFrom, $dateTo, $itemId, $orderType);
-                                $orderProduct = $this->orderProductListing($storeId, $dateFrom, $dateTo, $itemId, $orderType);
-                                $this->set(compact('graphData', 'startDate', 'endDate' ,'itemId', 'orderProduct', 'storeId', 'yearFrom', 'yearTo' ));
-                                $this->render('/Elements/storeReports/product/yearly');
+                                $graphData = $this->itemListings($storeId, $dateFrom, $dateTo, $orderType, $productCount);
+
+                                $productData = $this->orderProductListing($storeId, $dateFrom, $dateTo, $orderType, $productCount);
+
+                                $this->set(compact('graphData', 'dateFrom', 'dateTo', 'productData', 'productCount', 'fromYear', 'toYear'));
+                                $this->render('/Elements/storeReports/product/index');
                             }
                         }
                         else if(isset($merchantOption))
@@ -468,41 +419,41 @@ class StoreReportsController extends StoreAppController
                                 $today = date('Y-m-d');
                                 $startDate = $today;
                                 $endDate = $today;
-                            } elseif ($merchantOption == 2) {
+                            } else if($merchantOption == 2) {
                                 $yesterday = date('Y-m-d', strtotime("-1 days"));
                                 $startDate = $yesterday;
                                 $endDate = $yesterday;
-                            } elseif ($merchantOption == 3) {
+                            } else if($merchantOption == 3) {
                                 $startDate = date('Y-m-d', strtotime('last sunday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 4) {
+                            } else if($merchantOption == 4) {
                                 $startDate = date('Y-m-d', strtotime('last monday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 5) {
+                            } else if($merchantOption == 5) {
                                 $startDate = date('Y-m-d', strtotime('-6 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 6) {
+                            } else if($merchantOption == 6) {
                                 $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                                 $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                            } elseif ($merchantOption == 7) {
+                            } else if($merchantOption == 7) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week sunday'));
-                            } elseif ($merchantOption == 8) {
+                            } else if($merchantOption == 8) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week friday'));
-                            } elseif ($merchantOption == 9) {
+                            } else if($merchantOption == 9) {
                                 $startDate = date('Y-m-d', strtotime('-13 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 10) {
+                            } else if($merchantOption == 10) {
                                 $startDate = date('Y-m-01');
                                 $endDate = date("Y-m-t");
-                            } elseif ($merchantOption == 11) {
+                            } else if($merchantOption == 11) {
                                 $startDate = date('Y-m-d', strtotime('-29 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 12) {
+                            } else if($merchantOption == 12) {
                                 $startDate = date('Y-m-d', strtotime("first day of last month"));
                                 $endDate = date('Y-m-d', strtotime("last day of last month"));
-                            } elseif ($merchantOption == 13) {
+                            } else if($merchantOption == 13) {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
                                 $startDate = $yearFrom . '-' . '01' . '-01';
@@ -515,27 +466,31 @@ class StoreReportsController extends StoreAppController
 
                             if(($merchantOption >= 1 && $merchantOption <= 9)  || $merchantOption == 11 || $merchantOption == 10 || $merchantOption == 12)
                             {
-                                $graphData = $this->itemListings($storeId, $startDate, $endDate, $itemId, $orderType);
-                                $orderProduct = $this->orderProductListing($storeId, $startDate, $endDate, $itemId, $orderType);
-                                $this->set(compact('graphData', 'startDate', 'endDate', 'type', 'orderProduct', 'storeId'));
-                                $this->render('/Elements/storeReports/product/daily');
+                                $graphData = $this->itemListings($storeId, $startDate, $endDate, $orderType, $productCount);
+
+                                $productData = $this->orderProductListing($storeId, $startDate, $endDate, $orderType, $productCount);
+
+                                $this->set(compact('graphData', 'startDate', 'endDate', 'productData', 'productCount'));
+                                $this->render('/Elements/storeReports/product/index');
                             }
 
                             if($merchantOption == 13)
                             {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
-                                $dateFrom = $yearFrom . '-' . '01' . '-01';
-                                $dateTo = $yearTo . '-' . '12' . '-31';
+                                $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                                $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                                 
-                                $graphData = $this->itemListings($storeId, $dateFrom, $dateTo, $itemId, $orderType);
-                                $orderProduct = $this->orderProductListing($storeId, $startDate, $endDate, $itemId, $orderType);
-                                $this->set(compact('graphData', 'startDate', 'endDate' ,'itemId', 'orderProduct', 'storeId'));
-                                $this->render('/Elements/storeReports/product/life_time');
+                                $graphData = $this->itemListings($storeId, $dateFrom, $dateTo, $orderType, $productCount);
+
+                                $productData = $this->orderProductListing($storeId, $dateFrom, $dateTo, $orderType, $productCount);
+
+                                $this->set(compact('graphData', 'dateFrom', 'dateTo', 'productData', 'productCount', 'fromYear', 'toYear'));
+                                $this->render('/Elements/storeReports/product/index');
                             }
                         }
                     } 
-                    elseif ($reportType == 3) 
+                    else if($reportType == 3) 
                     {
                         // Customer Report Section
                         if(isset($type) && $merchantOption == 0)
@@ -565,25 +520,24 @@ class StoreReportsController extends StoreAppController
                                 $this->render('/Elements/storeReports/customer/daily');
 
                             } 
-                            else if ($type == 2) 
+                            else if($type == 2) 
                             {
-                                if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                                if($fromMonth == 1)
                                 {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                                    $weekyear = date('Y', strtotime($date_start_from));
+                                    $day = $this->Common->getStartAndEndDate(1,$fromYear);
                                 } else {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                                    $weekyear = date('Y', strtotime("This Week"));
+                                    $day = '01';
                                 }
-
+                                $endYear = $fromYear;
+                                $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                                $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                                $weekyear = $fromYear;
+                                
                                 $expoladEndDate=  explode(" ", $endFrom);
-                                $endMonth = $expoladEndDate[1];
                                 $explodeEndYear = explode("-", $expoladEndDate[0]);
                                 $endYear=$explodeEndYear[0];
-                                $startweekNumber = date("W", strtotime($startFrom));
-                                $endWeekNumber = date("W", strtotime($endFrom));
+                                $startweekNumber = (int)date("W", strtotime($startFrom));
+                                $endWeekNumber = (int)date("W", strtotime($endFrom));
                                 $data = array();
                                 $return = array();
                                 $weeknumbers = '';
@@ -635,9 +589,11 @@ class StoreReportsController extends StoreAppController
                                 $enddate = $endFrom;
                                 $this->set(compact('userdata', 'weeknumbers', 'data', 'startFrom', 'endFrom', 'totalCustomer'));
                                 $this->render('/Elements/storeReports/customer/weekly');
-                            } else if ($type == 3) {
-                                $dateFrom   = $year . '-' . $month . '-01';
-                                $dateTo     = $year . '-' . $month . '-31';
+                            } else if($type == 3) {
+                                $year = $fromYear;
+                                $month = $fromMonth;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                                 $user = array();
                                 if(!empty($storeId)){
                                     $result1 = $this->User->fetchUserToday($storeId, $dateFrom, $dateTo);
@@ -651,12 +607,11 @@ class StoreReportsController extends StoreAppController
                                 $paginationdata = array('store_id' => $storeId, 'startdate' => $dateFrom, 'enddate' => $dateTo, 'type' => 3);
                                 $this->set(compact('page', 'userdata', 'user', 'result', 'date', 'type', 'dateFrom', 'dateTo', 'month', 'year', 'yearFrom', 'yearTo', 'paginationdata', 'order'));
                                 $this->render('/Elements/storeReports/customer/monthly');
-                            } else if ($type == 4) {
-                                $yearFrom = $fromYearReq;
-                                $yearTo = $toYearReq;
-
-                                $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                                $dateTo     = $toYearReq . '-' . '12' . '-31';
+                            } else if($type == 4) {
+                                $yearFrom = $fromYear;
+                                $yearTo = $toYear;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                                 $user = array();
                                 if(!empty($storeId)){
                                     $result1 = $this->User->fetchUserToday($storeId, $dateFrom, $dateTo);
@@ -678,41 +633,41 @@ class StoreReportsController extends StoreAppController
                                 $today = date('Y-m-d');
                                 $startDate = $today;
                                 $endDate = $today;
-                            } elseif ($merchantOption == 2) {
+                            } else if($merchantOption == 2) {
                                 $yesterday = date('Y-m-d', strtotime("-1 days"));
                                 $startDate = $yesterday;
                                 $endDate = $yesterday;
-                            } elseif ($merchantOption == 3) {
+                            } else if($merchantOption == 3) {
                                 $startDate = date('Y-m-d', strtotime('last sunday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 4) {
+                            } else if($merchantOption == 4) {
                                 $startDate = date('Y-m-d', strtotime('last monday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 5) {
+                            } else if($merchantOption == 5) {
                                 $startDate = date('Y-m-d', strtotime('-6 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 6) {
+                            } else if($merchantOption == 6) {
                                 $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                                 $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                            } elseif ($merchantOption == 7) {
+                            } else if($merchantOption == 7) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week sunday'));
-                            } elseif ($merchantOption == 8) {
+                            } else if($merchantOption == 8) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week friday'));
-                            } elseif ($merchantOption == 9) {
+                            } else if($merchantOption == 9) {
                                 $startDate = date('Y-m-d', strtotime('-13 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 10) {
+                            } else if($merchantOption == 10) {
                                 $startDate = date('Y-m-01');
                                 $endDate = date("Y-m-t");
-                            } elseif ($merchantOption == 11) {
+                            } else if($merchantOption == 11) {
                                 $startDate = date('Y-m-d', strtotime('-29 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 12) {
+                            } else if($merchantOption == 12) {
                                 $startDate = date('Y-m-d', strtotime("first day of last month"));
                                 $endDate = date('Y-m-d', strtotime("last day of last month"));
-                            } elseif ($merchantOption == 13) {
+                            } else if($merchantOption == 13) {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
                                 $startDate = $yearFrom . '-' . '01' . '-01';
@@ -745,8 +700,8 @@ class StoreReportsController extends StoreAppController
                             {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
-                                $dateFrom = $yearFrom . '-' . '01' . '-01';
-                                $dateTo = $yearTo . '-' . '12' . '-31';
+                                $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                                $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                                 
                                 $user = array();
                                 if(!empty($storeId)){
@@ -763,7 +718,7 @@ class StoreReportsController extends StoreAppController
                             }
                         }
                     } 
-                    elseif ($reportType == 4) 
+                    else if($reportType == 4) 
                     {
                         // Report For Coupon
                         if(isset($type) && $merchantOption == 0)
@@ -778,26 +733,25 @@ class StoreReportsController extends StoreAppController
                                 $this->set(compact('graphData', 'startDate', 'endDate', 'type', 'orderCoupon', 'storeId'));
                                 $this->render('/Elements/storeReports/coupon/daily');
                             }
-                            else if ($type == 2) 
+                            else if($type == 2) 
                             {
-                                if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                                if($fromMonth == 1)
                                 {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                                    $weekyear = date('Y', strtotime($date_start_from));
+                                    $day = $this->Common->getStartAndEndDate(1,$fromYear);
                                 } else {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                                    $weekyear = date('Y', strtotime("This Week"));
+                                    $day = '01';
                                 }
+                                $endYear = $fromYear;
+                                $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                                $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                                $weekyear = $fromYear;
                                 
                                 // For SingLe Store
                                 $expoladEndDate=  explode(" ", $endFrom);
-                                $endMonth = $expoladEndDate[1];
                                 $explodeEndYear = explode("-", $expoladEndDate[0]);
                                 $endYear=$explodeEndYear[0];
-                                $startweekNumber = date("W", strtotime($startFrom));
-                                $endWeekNumber = date("W", strtotime($endFrom));
+                                $startweekNumber = (int)date("W", strtotime($startFrom));
+                                $endWeekNumber = (int)date("W", strtotime($endFrom));
                                 $data = array();
                                 $weeknumbers = '';
                                 $j = 0;
@@ -859,21 +813,22 @@ class StoreReportsController extends StoreAppController
                                 $this->set(compact('graphData', 'startDate', 'endDate', 'orderCoupon', 'storeId', 'startFrom', 'endFrom', 'weekyear', 'weeknumbers', 'totalCoupon'));
                                 $this->render('/Elements/storeReports/coupon/weekly');
                             }
-                            else if ($type == 3) 
+                            else if($type == 3) 
                             {//Monthly
-                                $dateFrom   = $year . '-' . $month . '-01';
-                                $dateTo     = $year . '-' . $month . '-31';
+                                $year = $fromYear;
+                                $month = $fromMonth;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                                 
                                 $graphData = $this->couponListings($storeId, $dateFrom, $dateTo, $couponCode, $orderType);
                                 $orderCoupon  = $this->orderCouponListing($storeId, $dateFrom, $dateTo, $couponCode, $orderType);
                                 $this->set(compact('graphData', 'dateFrom', 'dateTo', 'type', 'orderCoupon', 'storeId', 'year', 'month'));
                                 $this->render('/Elements/storeReports/coupon/monthly');
-                            } else if ($type == 4) {//Yearly
-                                $yearFrom = $fromYearReq;
-                                $yearTo = $toYearReq;
-
-                                $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                                $dateTo     = $toYearReq . '-' . '12' . '-31';
+                            } else if($type == 4) {//Yearly
+                                $yearFrom = $fromYear;
+                                $yearTo = $toYear;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                                 
                                 $graphData = $this->couponListings($storeId, $dateFrom, $dateTo, $couponCode, $orderType);
                                 $orderCoupon = $this->orderCouponListing($storeId, $dateFrom, $dateTo, $couponCode, $orderType);
@@ -887,41 +842,41 @@ class StoreReportsController extends StoreAppController
                                 $today = date('Y-m-d');
                                 $startDate = $today;
                                 $endDate = $today;
-                            } elseif ($merchantOption == 2) {
+                            } else if($merchantOption == 2) {
                                 $yesterday = date('Y-m-d', strtotime("-1 days"));
                                 $startDate = $yesterday;
                                 $endDate = $yesterday;
-                            } elseif ($merchantOption == 3) {
+                            } else if($merchantOption == 3) {
                                 $startDate = date('Y-m-d', strtotime('last sunday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 4) {
+                            } else if($merchantOption == 4) {
                                 $startDate = date('Y-m-d', strtotime('last monday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 5) {
+                            } else if($merchantOption == 5) {
                                 $startDate = date('Y-m-d', strtotime('-6 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 6) {
+                            } else if($merchantOption == 6) {
                                 $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                                 $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                            } elseif ($merchantOption == 7) {
+                            } else if($merchantOption == 7) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week sunday'));
-                            } elseif ($merchantOption == 8) {
+                            } else if($merchantOption == 8) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week friday'));
-                            } elseif ($merchantOption == 9) {
+                            } else if($merchantOption == 9) {
                                 $startDate = date('Y-m-d', strtotime('-13 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 10) {
+                            } else if($merchantOption == 10) {
                                 $startDate = date('Y-m-01');
                                 $endDate = date("Y-m-t");
-                            } elseif ($merchantOption == 11) {
+                            } else if($merchantOption == 11) {
                                 $startDate = date('Y-m-d', strtotime('-29 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 12) {
+                            } else if($merchantOption == 12) {
                                 $startDate = date('Y-m-d', strtotime("first day of last month"));
                                 $endDate = date('Y-m-d', strtotime("last day of last month"));
-                            } elseif ($merchantOption == 13) {
+                            } else if($merchantOption == 13) {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
                                 $startDate = $yearFrom . '-' . '01' . '-01';
@@ -944,8 +899,8 @@ class StoreReportsController extends StoreAppController
                             {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
-                                $dateFrom = $yearFrom . '-' . '01' . '-01';
-                                $dateTo = $yearTo . '-' . '12' . '-31';
+                                $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                                $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                                 
                                 $graphData = $this->couponListings($storeId, $dateFrom, $dateTo, $couponCode, $orderType);
                                 $orderCoupon = $this->orderCouponListing($storeId, $dateFrom, $dateTo, $couponCode, $orderType);
@@ -954,7 +909,7 @@ class StoreReportsController extends StoreAppController
                             }
                         }
                     }
-                    elseif ($reportType == 5) 
+                    else if($reportType == 5) 
                     {
                         // Report For Promotions
                         if(isset($type) && $merchantOption == 0)
@@ -968,26 +923,25 @@ class StoreReportsController extends StoreAppController
                                 $this->set(compact('graphData', 'startDate', 'endDate', 'type', 'orderPromo', 'storeId'));
                                 $this->render('/Elements/storeReports/promo/daily');
                             }
-                            else if ($type == 2) 
+                            else if($type == 2) 
                             {
-                                if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                                if($fromMonth == 1)
                                 {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                                    $weekyear = date('Y', strtotime($date_start_from));
+                                    $day = $this->Common->getStartAndEndDate(1,$fromYear);
                                 } else {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                                    $weekyear = date('Y', strtotime("This Week"));
+                                    $day = '01';
                                 }
+                                $endYear = $fromYear;
+                                $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                                $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                                $weekyear = $fromYear;
                                 
                                 // For SingLe Store
                                 $expoladEndDate=  explode(" ", $endFrom);
-                                $endMonth = $expoladEndDate[1];
                                 $explodeEndYear = explode("-", $expoladEndDate[0]);
                                 $endYear=$explodeEndYear[0];
-                                $startweekNumber = date("W", strtotime($startFrom));
-                                $endWeekNumber = date("W", strtotime($endFrom));
+                                $startweekNumber = (int)date("W", strtotime($startFrom));
+                                $endWeekNumber = (int)date("W", strtotime($endFrom));
                                 $data = array();
                                 $weeknumbers = '';
                                 $j = 0;
@@ -1049,21 +1003,22 @@ class StoreReportsController extends StoreAppController
                                 $this->set(compact('graphData', 'startDate', 'endDate', 'orderPromo', 'storeId', 'startFrom', 'endFrom', 'weekyear', 'weeknumbers', 'totalOffer'));
                                 $this->render('/Elements/storeReports/promo/weekly');
                             }
-                            else if ($type == 3) 
+                            else if($type == 3) 
                             {//Monthly
-                                $dateFrom   = $year . '-' . $month . '-01';
-                                $dateTo     = $year . '-' . $month . '-31';
+                                $year = $fromYear;
+                                $month = $fromMonth;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                                 
                                 $graphData = $this->promoListings($storeId, $dateFrom, $dateTo, $promoId, $orderType);
                                 $orderPromo  = $this->orderPromoListing($storeId, $dateFrom, $dateTo, $promoId, $orderType);
                                 $this->set(compact('graphData', 'dateFrom', 'dateTo', 'type', 'orderPromo', 'storeId', 'year', 'month'));
                                 $this->render('/Elements/storeReports/promo/monthly');
-                            } else if ($type == 4) {//Yearly
-                                $yearFrom = $fromYearReq;
-                                $yearTo = $toYearReq;
-
-                                $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                                $dateTo     = $toYearReq . '-' . '12' . '-31';
+                            } else if($type == 4) {//Yearly
+                                $yearFrom = $fromYear;
+                                $yearTo = $toYear;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                                 
                                 $graphData = $this->promoListings($storeId, $dateFrom, $dateTo, $promoId, $orderType);
                                 $orderPromo = $this->orderPromoListing($storeId, $dateFrom, $dateTo, $promoId, $orderType);
@@ -1077,41 +1032,41 @@ class StoreReportsController extends StoreAppController
                                 $today = date('Y-m-d');
                                 $startDate = $today;
                                 $endDate = $today;
-                            } elseif ($merchantOption == 2) {
+                            } else if($merchantOption == 2) {
                                 $yesterday = date('Y-m-d', strtotime("-1 days"));
                                 $startDate = $yesterday;
                                 $endDate = $yesterday;
-                            } elseif ($merchantOption == 3) {
+                            } else if($merchantOption == 3) {
                                 $startDate = date('Y-m-d', strtotime('last sunday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 4) {
+                            } else if($merchantOption == 4) {
                                 $startDate = date('Y-m-d', strtotime('last monday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 5) {
+                            } else if($merchantOption == 5) {
                                 $startDate = date('Y-m-d', strtotime('-6 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 6) {
+                            } else if($merchantOption == 6) {
                                 $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                                 $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                            } elseif ($merchantOption == 7) {
+                            } else if($merchantOption == 7) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week sunday'));
-                            } elseif ($merchantOption == 8) {
+                            } else if($merchantOption == 8) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week friday'));
-                            } elseif ($merchantOption == 9) {
+                            } else if($merchantOption == 9) {
                                 $startDate = date('Y-m-d', strtotime('-13 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 10) {
+                            } else if($merchantOption == 10) {
                                 $startDate = date('Y-m-01');
                                 $endDate = date("Y-m-t");
-                            } elseif ($merchantOption == 11) {
+                            } else if($merchantOption == 11) {
                                 $startDate = date('Y-m-d', strtotime('-29 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 12) {
+                            } else if($merchantOption == 12) {
                                 $startDate = date('Y-m-d', strtotime("first day of last month"));
                                 $endDate = date('Y-m-d', strtotime("last day of last month"));
-                            } elseif ($merchantOption == 13) {
+                            } else if($merchantOption == 13) {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
                                 $startDate = $yearFrom . '-' . '01' . '-01';
@@ -1134,8 +1089,8 @@ class StoreReportsController extends StoreAppController
                             {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
-                                $dateFrom = $yearFrom . '-' . '01' . '-01';
-                                $dateTo = $yearTo . '-' . '12' . '-31';
+                                $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                                $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                                 
                                 $graphData = $this->promoListings($storeId, $dateFrom, $dateTo, $promoId, $orderType);
                                 $orderPromo = $this->orderPromoListing($storeId, $dateFrom, $dateTo, $promoId, $orderType);
@@ -1144,7 +1099,7 @@ class StoreReportsController extends StoreAppController
                             }
                         }
                     }
-                    elseif ($reportType == 6) 
+                    else if($reportType == 6) 
                     {
                         // Report For Extended Offers
                         if(isset($type) && $merchantOption == 0)
@@ -1158,26 +1113,25 @@ class StoreReportsController extends StoreAppController
                                 $this->set(compact('graphData', 'startDate', 'endDate', 'type', 'orderExtendedOffer', 'storeId'));
                                 $this->render('/Elements/storeReports/extended_promo/daily');
                             }
-                            else if ($type == 2) 
+                            else if($type == 2) 
                             {
-                                if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                                if($fromMonth == 1)
                                 {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                                    $weekyear = date('Y', strtotime($date_start_from));
+                                    $day = $this->Common->getStartAndEndDate(1,$fromYear);
                                 } else {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                                    $weekyear = date('Y', strtotime("This Week"));
+                                    $day = '01';
                                 }
+                                $endYear = $fromYear;
+                                $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                                $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                                $weekyear = $fromYear;
                                 
                                 // For SingLe Store
                                 $expoladEndDate=  explode(" ", $endFrom);
-                                $endMonth = $expoladEndDate[1];
                                 $explodeEndYear = explode("-", $expoladEndDate[0]);
                                 $endYear=$explodeEndYear[0];
-                                $startweekNumber = date("W", strtotime($startFrom));
-                                $endWeekNumber = date("W", strtotime($endFrom));
+                                $startweekNumber = (int)date("W", strtotime($startFrom));
+                                $endWeekNumber = (int)date("W", strtotime($endFrom));
                                 $data = array();
                                 $weeknumbers = '';
                                 $j = 0;
@@ -1239,21 +1193,22 @@ class StoreReportsController extends StoreAppController
                                 $this->set(compact('graphData', 'startDate', 'endDate', 'orderExtendedOffer', 'storeId', 'startFrom', 'endFrom', 'weekyear', 'weeknumbers', 'totalOffer'));
                                 $this->render('/Elements/storeReports/extended_promo/weekly');
                             }
-                            else if ($type == 3) 
+                            else if($type == 3) 
                             {//Monthly
-                                $dateFrom   = $year . '-' . $month . '-01';
-                                $dateTo     = $year . '-' . $month . '-31';
+                                $year = $fromYear;
+                                $month = $fromMonth;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                                 
                                 $graphData = $this->extendedOfferListings($storeId, $dateFrom, $dateTo, $extendedOfferId, $orderType);
                                 $orderExtendedOffer  = $this->orderExtendedOfferListing($storeId, $dateFrom, $dateTo, $extendedOfferId, $orderType);
                                 $this->set(compact('graphData', 'dateFrom', 'dateTo', 'type', 'orderExtendedOffer', 'storeId', 'year', 'month'));
                                 $this->render('/Elements/storeReports/extended_promo/monthly');
-                            } else if ($type == 4) {//Yearly
-                                $yearFrom = $fromYearReq;
-                                $yearTo = $toYearReq;
-
-                                $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                                $dateTo     = $toYearReq . '-' . '12' . '-31';
+                            } else if($type == 4) {//Yearly
+                                $yearFrom = $fromYear;
+                                $yearTo = $toYear;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                                 
                                 $graphData = $this->extendedOfferListings($storeId, $dateFrom, $dateTo, $extendedOfferId, $orderType);
                                 $orderExtendedOffer = $this->orderExtendedOfferListing($storeId, $dateFrom, $dateTo, $extendedOfferId, $orderType);
@@ -1267,41 +1222,41 @@ class StoreReportsController extends StoreAppController
                                 $today = date('Y-m-d');
                                 $startDate = $today;
                                 $endDate = $today;
-                            } elseif ($merchantOption == 2) {
+                            } else if($merchantOption == 2) {
                                 $yesterday = date('Y-m-d', strtotime("-1 day"));
                                 $startDate = $yesterday;
                                 $endDate = $yesterday;
-                            } elseif ($merchantOption == 3) {
+                            } else if($merchantOption == 3) {
                                 $startDate = date('Y-m-d', strtotime('last sunday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 4) {
+                            } else if($merchantOption == 4) {
                                 $startDate = date('Y-m-d', strtotime('last monday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 5) {
+                            } else if($merchantOption == 5) {
                                 $startDate = date('Y-m-d', strtotime('-6 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 6) {
+                            } else if($merchantOption == 6) {
                                 $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                                 $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                            } elseif ($merchantOption == 7) {
+                            } else if($merchantOption == 7) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week sunday'));
-                            } elseif ($merchantOption == 8) {
+                            } else if($merchantOption == 8) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week friday'));
-                            } elseif ($merchantOption == 9) {
+                            } else if($merchantOption == 9) {
                                 $startDate = date('Y-m-d', strtotime('-13 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 10) {
+                            } else if($merchantOption == 10) {
                                 $startDate = date('Y-m-01');
                                 $endDate = date("Y-m-t");
-                            } elseif ($merchantOption == 11) {
+                            } else if($merchantOption == 11) {
                                 $startDate = date('Y-m-d', strtotime('-29 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 12) {
+                            } else if($merchantOption == 12) {
                                 $startDate = date('Y-m-d', strtotime("first day of last month"));
                                 $endDate = date('Y-m-d', strtotime("last day of last month"));
-                            } elseif ($merchantOption == 13) {
+                            } else if($merchantOption == 13) {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
                                 $startDate = $yearFrom . '-' . '01' . '-01';
@@ -1324,8 +1279,8 @@ class StoreReportsController extends StoreAppController
                             {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
-                                $dateFrom = $yearFrom . '-' . '01' . '-01';
-                                $dateTo = $yearTo . '-' . '12' . '-31';
+                                $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                                $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                                 
                                 $graphData = $this->extendedOfferListings($storeId, $dateFrom, $dateTo, $extendedOfferId, $orderType);
                                 $orderExtendedOffer = $this->orderExtendedOfferListing($storeId, $dateFrom, $dateTo, $extendedOfferId, $orderType);
@@ -1334,7 +1289,7 @@ class StoreReportsController extends StoreAppController
                             }
                         }
                     }
-                    elseif ($reportType == 7) 
+                    else if($reportType == 7) 
                     {
                         // Report For Dine In
                         if(isset($type) && $merchantOption == 0)
@@ -1346,29 +1301,29 @@ class StoreReportsController extends StoreAppController
                                 
                                 $graphData = $this->dineInGraphListings($storeId, $startDate, $endDate);
                                 $dineInData= $this->dineInListing($storeId, $startDate, $endDate);
-                                $this->set(compact('graphData', 'startDate', 'endDate', 'type', 'dineInData', 'storeId'));
+                                $dineInPieData = $this->dineInPieListing($storeId, $startDate, $endDate);
+                                $this->set(compact('graphData', 'startDate', 'endDate', 'type', 'dineInData', 'storeId', 'dineInPieData'));
                                 $this->render('/Elements/storeReports/dine_in/daily');
                             }
-                            else if ($type == 2) 
+                            else if($type == 2) 
                             {
-                                if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                                if($fromMonth == 1)
                                 {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                                    $weekyear = date('Y', strtotime($date_start_from));
+                                    $day = $this->Common->getStartAndEndDate(1,$fromYear);
                                 } else {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                                    $weekyear = date('Y', strtotime("This Week"));
+                                    $day = '01';
                                 }
+                                $endYear = $fromYear;
+                                $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                                $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                                $weekyear = $fromYear;
                                 
                                 // For SingLe Store
                                 $expoladEndDate=  explode(" ", $endFrom);
-                                $endMonth = $expoladEndDate[1];
                                 $explodeEndYear = explode("-", $expoladEndDate[0]);
                                 $endYear=$explodeEndYear[0];
-                                $startweekNumber = date("W", strtotime($startFrom));
-                                $endWeekNumber = date("W", strtotime($endFrom));
+                                $startweekNumber = (int)date("W", strtotime($startFrom));
+                                $endWeekNumber = (int)date("W", strtotime($endFrom));
                                 $data = array();
                                 $weeknumbers = '';
                                 $j = 0;
@@ -1426,31 +1381,35 @@ class StoreReportsController extends StoreAppController
                                 $graphData = $data;
 
                                 $dineInData = $this->dineInWeeklyListing($storeId, $startFrom, $endFrom);
+                                $dineInPieData = $this->dineInPieWeeklyListing($storeId, $startFrom, $endFrom);
 
-                                $this->set(compact('graphData', 'startDate', 'endDate', 'dineInData', 'storeId', 'startFrom', 'endFrom', 'weekyear', 'weeknumbers', 'totalDineIn'));
+                                $this->set(compact('graphData', 'startDate', 'endDate', 'dineInData', 'storeId', 'startFrom', 'endFrom', 'weekyear', 'weeknumbers', 'totalDineIn', 'dineInPieData'));
                                 $this->render('/Elements/storeReports/dine_in/weekly');
                             }
-                            else if ($type == 3) 
+                            else if($type == 3) 
                             {//Monthly
-                                $dateFrom   = $year . '-' . $month . '-01';
-                                $dateTo     = $year . '-' . $month . '-31';
+                                $year = $fromYear;
+                                $month = $fromMonth;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                                 
                                 $graphData = $this->dineInGraphListings($storeId, $dateFrom, $dateTo);
                                 $dineInData  = $this->dineInListing($storeId, $dateFrom, $dateTo);
-                                $this->set(compact('graphData', 'dateFrom', 'dateTo', 'type', 'dineInData', 'storeId', 'year', 'month'));
+                                $dineInPieData = $this->dineInPieListing($storeId, $dateFrom, $dateTo);
+                                $this->set(compact('graphData', 'dateFrom', 'dateTo', 'type', 'dineInData', 'storeId', 'year', 'month', 'dineInPieData'));
                                 $this->render('/Elements/storeReports/dine_in/monthly');
                             }
-                            else if ($type == 4) 
+                            else if($type == 4) 
                             {//Yearly
-                                $yearFrom = $fromYearReq;
-                                $yearTo = $toYearReq;
-
-                                $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                                $dateTo     = $toYearReq . '-' . '12' . '-31';
+                                $yearFrom = $fromYear;
+                                $yearTo = $toYear;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                                 
                                 $graphData = $this->dineInGraphListings($storeId, $dateFrom, $dateTo);
                                 $dineInData = $this->dineInListing($storeId, $dateFrom, $dateTo);
-                                $this->set(compact('graphData', 'dateFrom', 'dateTo' ,'couponCode', 'dineInData', 'storeId', 'yearFrom', 'yearTo' ));
+                                $dineInPieData = $this->dineInPieListing($storeId, $dateFrom, $dateTo);
+                                $this->set(compact('graphData', 'dateFrom', 'dateTo' ,'couponCode', 'dineInData', 'storeId', 'yearFrom', 'yearTo', 'dineInPieData'));
                                 $this->render('/Elements/storeReports/dine_in/yearly');
                             }
                         }
@@ -1460,41 +1419,41 @@ class StoreReportsController extends StoreAppController
                                 $today = date('Y-m-d');
                                 $startDate = $today;
                                 $endDate = $today;
-                            } elseif ($merchantOption == 2) {
+                            } else if($merchantOption == 2) {
                                 $yesterday = date('Y-m-d', strtotime("-1 day"));
                                 $startDate = $yesterday;
                                 $endDate = $yesterday;
-                            } elseif ($merchantOption == 3) {
+                            } else if($merchantOption == 3) {
                                 $startDate = date('Y-m-d', strtotime('last sunday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 4) {
+                            } else if($merchantOption == 4) {
                                 $startDate = date('Y-m-d', strtotime('last monday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 5) {
+                            } else if($merchantOption == 5) {
                                 $startDate = date('Y-m-d', strtotime('-6 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 6) {
+                            } else if($merchantOption == 6) {
                                 $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                                 $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                            } elseif ($merchantOption == 7) {
+                            } else if($merchantOption == 7) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week sunday'));
-                            } elseif ($merchantOption == 8) {
+                            } else if($merchantOption == 8) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week friday'));
-                            } elseif ($merchantOption == 9) {
+                            } else if($merchantOption == 9) {
                                 $startDate = date('Y-m-d', strtotime('-13 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 10) {
+                            } else if($merchantOption == 10) {
                                 $startDate = date('Y-m-01');
                                 $endDate = date("Y-m-t");
-                            } elseif ($merchantOption == 11) {
+                            } else if($merchantOption == 11) {
                                 $startDate = date('Y-m-d', strtotime('-29 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 12) {
+                            } else if($merchantOption == 12) {
                                 $startDate = date('Y-m-d', strtotime("first day of last month"));
                                 $endDate = date('Y-m-d', strtotime("last day of last month"));
-                            } elseif ($merchantOption == 13) {
+                            } else if($merchantOption == 13) {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
                                 $startDate = $yearFrom . '-' . '01' . '-01';
@@ -1510,7 +1469,8 @@ class StoreReportsController extends StoreAppController
                                 
                                 $graphData = $this->dineInGraphListings($storeId, $startDate, $endDate);
                                 $dineInData = $this->dineInListing($storeId, $startDate, $endDate);
-                                $this->set(compact('graphData', 'startDate', 'endDate', 'type', 'dineInData', 'storeId'));
+                                $dineInPieData = $this->dineInPieListing($storeId, $startDate, $endDate);
+                                $this->set(compact('graphData', 'startDate', 'endDate', 'type', 'dineInData', 'storeId', 'dineInPieData'));
                                 $this->render('/Elements/storeReports/dine_in/daily');
                             }
 
@@ -1518,12 +1478,13 @@ class StoreReportsController extends StoreAppController
                             {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
-                                $dateFrom = $yearFrom . '-' . '01' . '-01';
-                                $dateTo = $yearTo . '-' . '12' . '-31';
+                                $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                                $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                                 
                                 $graphData = $this->dineInGraphListings($storeId, $dateFrom, $dateTo);
                                 $dineInData = $this->dineInListing($storeId, $dateFrom, $dateTo);
-                                $this->set(compact('graphData', 'dateFrom', 'dateTo' ,'couponCode', 'dineInData', 'storeId', 'yearFrom', 'yearTo' ));
+                                $dineInPieData = $this->dineInPieListing($storeId, $dateFrom, $dateTo);
+                                $this->set(compact('graphData', 'dateFrom', 'dateTo' ,'couponCode', 'dineInData', 'storeId', 'yearFrom', 'yearTo', 'dineInPieData'));
                                 $this->render('/Elements/storeReports/dine_in/life_time');
                             }
                         }
@@ -1799,12 +1760,10 @@ class StoreReportsController extends StoreAppController
                     $startdate      = $storeDate;
                     $enddate        = $storeDate;
                     $expoladDate    = explode("-", $startdate);
-                    $Month          = $expoladDate[1];
-                    $Year           = $expoladDate[0];
-                    $yearFrom       = date('Y', strtotime('-1 year', strtotime($Year)));
-                    $yearTo         = $Year;
-                    $dateFrom       = date('Y-m-d', strtotime('last Sunday', strtotime($startdate)));
-                    $dateTo         = date('Y-m-d', strtotime('next saturday', strtotime($dateFrom)));
+                    $fromMonthDefault   = $expoladDate[1];
+                    $fromYearDefault    = $expoladDate[0];
+                    $toMonthDefault     = $expoladDate[1];
+                    $toYearDefault      = $expoladDate[0];
                     
                     $timezoneStore  = array();
                     $store_data = $this->Store->fetchStoreDetail($storeId);
@@ -1825,34 +1784,30 @@ class StoreReportsController extends StoreAppController
                     $edate      = null;
                     $startdate  = null;
                     $enddate    = null;
-                    $Month      = null;
-                    $Year       = null;
-                    $yearFrom   = null;
-                    $yearTo     = null;
-                    $dateFrom   = null;
-                    $dateTo     = null;
+                    $fromMonthDefault   = null;
+                    $fromYearDefault    = null;
+                    $toMonthDefault     = null;
+                    $toYearDefault      = null;
                 }
                 
                 $reportType         = (isset($dataRequest['reportType']) ? $dataRequest['reportType'] : null);
                 $orderType          = (isset($dataRequest['orderType']) ? $dataRequest['orderType'] :1);
-                $type          = (isset($dataRequest['type']) ? $dataRequest['type'] : null);
+                $type               = (isset($dataRequest['type']) ? $dataRequest['type'] : null);
                 $merchantOption     = (isset($dataRequest['merchantOption']) ? $dataRequest['merchantOption'] : null);
-                $startDateReq       = (isset($dataRequest['startDate']) ? $dataRequest['startDate'] : $sdate);
-                $endDateReq         = (isset($dataRequest['endDate']) ? $dataRequest['endDate'] : $edate);
-                $monthReq           = (isset($dataRequest['month']) ? $dataRequest['month'] : $Month);
-                
-                $yearReq            = (isset($dataRequest['year']) ? $dataRequest['year'] : $Year);
-                $fromYearReq        = (isset($dataRequest['fromYear']) ? $dataRequest['fromYear'] : $yearFrom);
-                $toYearReq          = (isset($dataRequest['toYear']) ? $dataRequest['toYear'] : $yearTo);
+                $startDate          = (isset($dataRequest['startDate']) ? $dataRequest['startDate'] : $sdate);
+                $endDate            = (isset($dataRequest['endDate']) ? $dataRequest['endDate'] : $edate);
                 $itemId             = (isset($dataRequest['itemId']) ? $dataRequest['itemId'] : null);
-                $date_start_from    = (isset($dataRequest['date_start_from']) ? $dataRequest['date_start_from'] : $dateFrom);
-                $date_end_from      = (isset($dataRequest['date_end_from']) ? $dataRequest['date_end_from'] : $dateTo);
+                $fromMonth          = (isset($dataRequest['fromMonth']) ? $dataRequest['fromMonth'] : $fromMonthDefault);
+                $fromYear           = (isset($dataRequest['fromYear']) ? $dataRequest['fromYear'] : $fromYearDefault);
+                $toMonth            = (isset($dataRequest['toMonth']) ? $dataRequest['toMonth'] : $toMonthDefault);
+                $toYear             = (isset($dataRequest['toYear']) ? $dataRequest['toYear'] : $toYearDefault);
                 $page               = (isset($dataRequest['page']) ? $dataRequest['page'] : 1);
                 $sort               = (isset($dataRequest['sort']) ? $dataRequest['sort'] : '');
                 $sort_direction     = (isset($dataRequest['sort_direction']) ? $dataRequest['sort_direction'] : 'asc');
                 $couponCode         = (isset($dataRequest['coupon_code']) ? $dataRequest['coupon_code'] : null);
                 $promoId            = (isset($dataRequest['promo_id']) ? $dataRequest['promo_id'] : null);
                 $extendedOfferId    = (isset($dataRequest['extended_offer_id']) ? $dataRequest['extended_offer_id'] : null);
+                $productCount    = (isset($dataRequest['product_count']) ? $dataRequest['product_count'] : null);
                 if(isset($reportType))
                 {
                     if($reportType == 1)
@@ -1860,40 +1815,42 @@ class StoreReportsController extends StoreAppController
                         if(isset($type) && $merchantOption == 0)
                         {
                             if ($type == 1) {//Daily
-                                $startDate = date("Y-m-d", strtotime($startDateReq));
-                                $endDate = date("Y-m-d", strtotime($endDateReq));
+                                $startDate = date("Y-m-d", strtotime($startDate));
+                                $endDate = date("Y-m-d", strtotime($endDate));
 
                                 $orderProduct = $this->orderListing($storeId, $startDate, $endDate, $orderType, $page, $sort, $sort_direction);
                                 $this->set(compact('orderProduct', 'storeId'));
                                 $this->render('/Elements/storeReports/dollar/pagination');
 
                             }
-                            elseif ($type == 2) {
-                                if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                            else if($type == 2) 
+                            {
+                                if($fromMonth == 1)
                                 {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                                    $weekyear = date('Y', strtotime($date_start_from));
+                                    $day = $this->Common->getStartAndEndDate(1,$fromYear);
                                 } else {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime("First Day of This Month"));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime("This Week"));
-                                    $weekyear = date('Y', strtotime("This Week"));
+                                    $day = '01';
                                 }
+                                $endYear = $fromYear;
+                                $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                                $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                                $weekyear = $fromYear;
                                 $orderProduct = $this->orderListingweek($storeId, $startFrom, $endFrom, $orderType, $weekyear, $page, $sort, $sort_direction);
                                 $this->set(compact('orderProduct', 'storeId'));
                                 $this->render('/Elements/storeReports/dollar/pagination');
-                            } else if ($type == 3) {//Monthly
-                                $dateFrom   = $yearReq . '-' . $monthReq . '-01';
-                                $dateTo     = $yearReq . '-' . $monthReq . '-31';
+                            } else if($type == 3) {//Monthly
+                                $year = $fromYear;
+                                $month = $fromMonth;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                                 $orderProduct = $this->orderListing($storeId, $dateFrom, $dateTo, $orderType, $page, $sort, $sort_direction);
                                 $this->set(compact('orderProduct', 'storeId'));
                                 $this->render('/Elements/storeReports/dollar/pagination');
-                            } else if ($type == 4) {//Yearly
-                                $yearFrom = $fromYearReq;
-                                $yearTo = $toYearReq;
-
-                                $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                                $dateTo     = $toYearReq . '-' . '12' . '-31';
+                            } else if($type == 4) {//Yearly
+                                $yearFrom = $fromYear;
+                                $yearTo = $toYear;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
 
                                 $orderProduct = $this->orderListing($storeId, $dateFrom, $dateTo, $orderType, $page, $sort, $sort_direction);
                                 $this->set(compact('orderProduct', 'storeId'));
@@ -1906,41 +1863,41 @@ class StoreReportsController extends StoreAppController
                                 $today = date('Y-m-d');
                                 $startDate = $today;
                                 $endDate = $today;
-                            } elseif ($merchantOption == 2) {
+                            } else if($merchantOption == 2) {
                                 $yesterday = date('Y-m-d', strtotime("-1 days"));
                                 $startDate = $yesterday;
                                 $endDate = $yesterday;
-                            } elseif ($merchantOption == 3) {
+                            } else if($merchantOption == 3) {
                                 $startDate = date('Y-m-d', strtotime('last sunday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 4) {
+                            } else if($merchantOption == 4) {
                                 $startDate = date('Y-m-d', strtotime('last monday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 5) {
+                            } else if($merchantOption == 5) {
                                 $startDate = date('Y-m-d', strtotime('-6 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 6) {
+                            } else if($merchantOption == 6) {
                                 $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                                 $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                            } elseif ($merchantOption == 7) {
+                            } else if($merchantOption == 7) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week sunday'));
-                            } elseif ($merchantOption == 8) {
+                            } else if($merchantOption == 8) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week friday'));
-                            } elseif ($merchantOption == 9) {
+                            } else if($merchantOption == 9) {
                                 $startDate = date('Y-m-d', strtotime('-13 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 10) {
+                            } else if($merchantOption == 10) {
                                 $startDate = date('Y-m-01');
                                 $endDate = date("Y-m-t");
-                            } elseif ($merchantOption == 11) {
+                            } else if($merchantOption == 11) {
                                 $startDate = date('Y-m-d', strtotime('-29 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 12) {
+                            } else if($merchantOption == 12) {
                                 $startDate = date('Y-m-d', strtotime("first day of last month"));
                                 $endDate = date('Y-m-d', strtotime("last day of last month"));
-                            } elseif ($merchantOption == 13) {
+                            } else if($merchantOption == 13) {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
                                 $startDate = $yearFrom . '-' . '01' . '-01';
@@ -1963,160 +1920,46 @@ class StoreReportsController extends StoreAppController
                                 $this->render('/Elements/storeReports/dollar/pagination');
                             }
                         }
-                    } 
-                    elseif ($reportType == 2) 
-                    {
-                        if(isset($type) && $merchantOption == 0)
-                        {
-                            if ($type == 1) 
-                            {//Daily
-                                $startDate = date("Y-m-d", strtotime($startDateReq));
-                                $endDate = date("Y-m-d", strtotime($endDateReq));
-
-                                $orderProduct = $this->orderProductListing($storeId, $startDate, $endDate, $itemId, $orderType, $page, $sort, $sort_direction);
-                                $this->set(compact('orderProduct', 'storeId'));
-                                $this->render('/Elements/storeReports/product/pagination');
-
-                            }
-                            elseif ($type == 2) 
-                            {
-                                if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
-                                {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                                    $weekyear = date('Y', strtotime($date_start_from));
-                                } else {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime("First Day of This Month"));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime("This Week"));
-                                    $weekyear = date('Y', strtotime("This Week"));
-                                }
-                                $orderProduct = $this->orderProductListingWeekly($storeId, $startFrom, $endFrom, $orderType, $weekyear, $page, $sort, $sort_direction);
-                                $this->set(compact('orderProduct', 'storeId'));
-                                $this->render('/Elements/storeReports/product/pagination');
-                            }
-                            else if ($type == 3) 
-                            {//Monthly
-                                $dateFrom   = $yearReq . '-' . $monthReq . '-01';
-                                $dateTo     = $yearReq . '-' . $monthReq . '-31';
-                                $orderProduct = $this->orderProductListing($storeId, $dateFrom, $dateTo, $itemId, $orderType, $page, $sort, $sort_direction);
-                                $this->set(compact('orderProduct', 'storeId'));
-                                $this->render('/Elements/storeReports/product/pagination');
-                            } else if ($type == 4) {//Yearly
-                                $yearFrom = $fromYearReq;
-                                $yearTo = $toYearReq;
-
-                                $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                                $dateTo     = $toYearReq . '-' . '12' . '-31';
-
-                                $orderProduct = $this->orderProductListing($storeId, $dateFrom, $dateTo, $itemId, $orderType, $page, $sort, $sort_direction);
-                                $this->set(compact('orderProduct', 'storeId'));
-                                $this->render('/Elements/storeReports/product/pagination');
-                            }
-                        }
-                        else if(isset($merchantOption))
-                        {
-                            if ($merchantOption == 1) {
-                                $today = date('Y-m-d');
-                                $startDate = $today;
-                                $endDate = $today;
-                            } elseif ($merchantOption == 2) {
-                                $yesterday = date('Y-m-d', strtotime("-1 days"));
-                                $startDate = $yesterday;
-                                $endDate = $yesterday;
-                            } elseif ($merchantOption == 3) {
-                                $startDate = date('Y-m-d', strtotime('last sunday'));
-                                $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 4) {
-                                $startDate = date('Y-m-d', strtotime('last monday'));
-                                $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 5) {
-                                $startDate = date('Y-m-d', strtotime('-6 days'));
-                                $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 6) {
-                                $startDate = date('Y-m-d', strtotime('-2 week sunday'));
-                                $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                            } elseif ($merchantOption == 7) {
-                                $startDate = date('Y-m-d', strtotime('last week monday'));
-                                $endDate = date('Y-m-d', strtotime('last week sunday'));
-                            } elseif ($merchantOption == 8) {
-                                $startDate = date('Y-m-d', strtotime('last week monday'));
-                                $endDate = date('Y-m-d', strtotime('last week friday'));
-                            } elseif ($merchantOption == 9) {
-                                $startDate = date('Y-m-d', strtotime('-13 days'));
-                                $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 10) {
-                                $startDate = date('Y-m-01');
-                                $endDate = date("Y-m-t");
-                            } elseif ($merchantOption == 11) {
-                                $startDate = date('Y-m-d', strtotime('-29 days'));
-                                $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 12) {
-                                $startDate = date('Y-m-d', strtotime("first day of last month"));
-                                $endDate = date('Y-m-d', strtotime("last day of last month"));
-                            } elseif ($merchantOption == 13) {
-                                $yearFrom = date('Y',strtotime('-5 Years'));
-                                $yearTo = date('Y');
-                                $startDate = $yearFrom . '-' . '01' . '-01';
-                                $endDate = $yearTo . '-' . '12' . '-31';
-
-                            } else {
-                                $startDate = date('Y-m-d', strtotime('-6 days'));
-                                $endDate = date('Y-m-d');
-                            }
-                            if(($merchantOption >= 1 && $merchantOption <= 9)  || $merchantOption == 11 || $merchantOption == 10 || $merchantOption == 12)
-                            {
-                                $orderProduct = $this->orderProductListing($storeId, $startDate, $endDate, $itemId, $orderType, $page, $sort, $sort_direction);
-                                $this->set(compact('orderProduct', 'storeId'));
-                                $this->render('/Elements/storeReports/product/pagination');
-                            }
-                            if($merchantOption == 13)
-                            {   
-                                $orderProduct = $this->orderProductListing($storeId, $startDate, $endDate, $itemId, $orderType, $page, $sort, $sort_direction);
-                                $this->set(compact('orderProduct', 'storeId'));
-                                $this->render('/Elements/storeReports/product/pagination');
-                            }
-                        }
-                    } 
-                    elseif ($reportType == 3) 
+                    }
+                    else if($reportType == 3) 
                     {
                         if(isset($type) && $merchantOption == 0)
                         {
                             if ($type == 1) {//Daily
-                                $startDate = date("Y-m-d", strtotime($startDateReq));
-                                $endDate = date("Y-m-d", strtotime($endDateReq));
+                                $startDate = date("Y-m-d", strtotime($startDate));
+                                $endDate = date("Y-m-d", strtotime($endDate));
 
-                                $userdata = $this->userListing($storeId, $dateFrom, $dateTo, $page, $sort, $sort_direction);
+                                $userdata = $this->userListing($storeId, $startDate, $endDate, $page, $sort, $sort_direction);
                                 $this->set(compact('userdata', 'storeId'));
                                 $this->render('/Elements/storeReports/customer/pagination');
 
                             }
-                            elseif ($type == 2) {
-                                if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                            else if($type == 2) {
+                                if($fromMonth == 1)
                                 {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                                    $weekyear = date('Y', strtotime($date_start_from));
+                                    $day = $this->Common->getStartAndEndDate(1,$fromYear);
                                 } else {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime("First Day of This Month"));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime("This Week"));
-                                    $weekyear = date('Y', strtotime("This Week"));
+                                    $day = '01';
                                 }
-                                $userdata = $this->userListingweekly($storeId, $dateFrom, $dateTo, $weekyear, $page, $sort, $sort_direction);
+                                $endYear = $fromYear;
+                                $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                                $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                                $weekyear = $fromYear;
+                                $userdata = $this->userListingweekly($storeId, $startFrom, $endFrom, $weekyear, $page, $sort, $sort_direction);
                                 
                                 $this->set(compact('userdata', 'storeId'));
                                 $this->render('/Elements/storeReports/customer/pagination');
-                            } else if ($type == 3) {//Monthly
-                                $dateFrom   = $yearReq . '-' . $monthReq . '-01';
-                                $dateTo     = $yearReq . '-' . $monthReq . '-31';
-                                $orderProduct = $this->orderProductListing($storeId, $dateFrom, $dateTo, $itemId, $orderType, $page, $sort, $sort_direction);
-                                $this->set(compact('orderProduct', 'storeId'));
+                            } else if($type == 3) {//Monthly
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
+                                $userdata = $this->userListing($storeId, $dateFrom, $dateTo, $page, $sort, $sort_direction);
+                                $this->set(compact('userdata', 'storeId'));
                                 $this->render('/Elements/storeReports/customer/pagination');
-                            } else if ($type == 4) {//Yearly
-                                $yearFrom = $fromYearReq;
-                                $yearTo = $toYearReq;
-
-                                $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                                $dateTo     = $toYearReq . '-' . '12' . '-31';
+                            } else if($type == 4) {//Yearly
+                                $yearFrom = $fromYear;
+                                $yearTo = $toYear;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
 
                                 $userdata = $this->userListing($storeId, $dateFrom, $dateTo, $page, $sort, $sort_direction);
                                 
@@ -2130,41 +1973,41 @@ class StoreReportsController extends StoreAppController
                                 $today = date('Y-m-d');
                                 $startDate = $today;
                                 $endDate = $today;
-                            } elseif ($merchantOption == 2) {
+                            } else if($merchantOption == 2) {
                                 $yesterday = date('Y-m-d', strtotime("-1 days"));
                                 $startDate = $yesterday;
                                 $endDate = $yesterday;
-                            } elseif ($merchantOption == 3) {
+                            } else if($merchantOption == 3) {
                                 $startDate = date('Y-m-d', strtotime('last sunday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 4) {
+                            } else if($merchantOption == 4) {
                                 $startDate = date('Y-m-d', strtotime('last monday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 5) {
+                            } else if($merchantOption == 5) {
                                 $startDate = date('Y-m-d', strtotime('-6 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 6) {
+                            } else if($merchantOption == 6) {
                                 $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                                 $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                            } elseif ($merchantOption == 7) {
+                            } else if($merchantOption == 7) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week sunday'));
-                            } elseif ($merchantOption == 8) {
+                            } else if($merchantOption == 8) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week friday'));
-                            } elseif ($merchantOption == 9) {
+                            } else if($merchantOption == 9) {
                                 $startDate = date('Y-m-d', strtotime('-13 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 10) {
+                            } else if($merchantOption == 10) {
                                 $startDate = date('Y-m-01');
                                 $endDate = date("Y-m-t");
-                            } elseif ($merchantOption == 11) {
+                            } else if($merchantOption == 11) {
                                 $startDate = date('Y-m-d', strtotime('-29 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 12) {
+                            } else if($merchantOption == 12) {
                                 $startDate = date('Y-m-d', strtotime("first day of last month"));
                                 $endDate = date('Y-m-d', strtotime("last day of last month"));
-                            } elseif ($merchantOption == 13) {
+                            } else if($merchantOption == 13) {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
                                 $startDate = $yearFrom . '-' . '01' . '-01';
@@ -2188,49 +2031,51 @@ class StoreReportsController extends StoreAppController
                             }
                         }
                     } 
-                    elseif ($reportType == 4) 
+                    else if($reportType == 4) 
                     {
                         // Report For Coupon
                         if(isset($type) && $merchantOption == 0)
                         {
                             if ($type == 1) {//Daily
-                                $startDate = date("Y-m-d", strtotime($startDateReq));
-                                $endDate = date("Y-m-d", strtotime($endDateReq));
+                                $startDate = date("Y-m-d", strtotime($startDate));
+                                $endDate = date("Y-m-d", strtotime($endDate));
                                 $orderCoupon  = $this->orderCouponListing($storeId, $startDate, $endDate, $couponCode, $orderType, $page, $sort, $sort_direction);
                                 $this->set(compact('orderCoupon', 'storeId'));
                                 $this->render('/Elements/storeReports/coupon/pagination');
                             }
-                            else if ($type == 2) 
+                            else if($type == 2) 
                             {
-                                if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                                if($fromMonth == 1)
                                 {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                                    $weekyear = date('Y', strtotime($date_start_from));
+                                    $day = $this->Common->getStartAndEndDate(1,$fromYear);
                                 } else {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                                    $weekyear = date('Y', strtotime("This Week"));
+                                    $day = '01';
                                 }
+                                $endYear = $fromYear;
+                                $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                                $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                                $weekyear = $fromYear;
                                 
                                 $orderCoupon = $this->orderCouponWeeklyListing($storeId, $startFrom, $endFrom, $orderType, $couponCode, $page, $sort, $sort_direction);
 
                                 $this->set(compact('orderCoupon', 'storeId'));
                                 $this->render('/Elements/storeReports/coupon/pagination');
                             }
-                            else if ($type == 3) 
+                            else if($type == 3) 
                             {//Monthly
-                                $dateFrom   = $year . '-' . $month . '-01';
-                                $dateTo     = $year . '-' . $month . '-31';
+                                $year = $fromYear;
+                                $month = $fromMonth;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                                 $orderCoupon  = $this->orderCouponListing($storeId, $dateFrom, $dateTo, $couponCode, $orderType, $page, $sort, $sort_direction);
                                 $this->set(compact('orderCoupon', 'storeId'));
                                 $this->render('/Elements/storeReports/coupon/pagination');
-                            } else if ($type == 4) {//Yearly
-                                $yearFrom = $fromYearReq;
-                                $yearTo = $toYearReq;
-
-                                $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                                $dateTo     = $toYearReq . '-' . '12' . '-31';
+                            } else if($type == 4) {//Yearly
+                                $yearFrom = $fromYear;
+                                $yearTo = $toYear;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
+                                
                                 $orderCoupon = $this->orderCouponListing($storeId, $dateFrom, $dateTo, $couponCode, $orderType, $page, $sort, $sort_direction);
                                 $this->set(compact('orderCoupon', 'storeId'));
                                 $this->render('/Elements/storeReports/coupon/pagination');
@@ -2242,41 +2087,41 @@ class StoreReportsController extends StoreAppController
                                 $today = date('Y-m-d');
                                 $startDate = $today;
                                 $endDate = $today;
-                            } elseif ($merchantOption == 2) {
+                            } else if($merchantOption == 2) {
                                 $yesterday = date('Y-m-d', strtotime("-1 days"));
                                 $startDate = $yesterday;
                                 $endDate = $yesterday;
-                            } elseif ($merchantOption == 3) {
+                            } else if($merchantOption == 3) {
                                 $startDate = date('Y-m-d', strtotime('last sunday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 4) {
+                            } else if($merchantOption == 4) {
                                 $startDate = date('Y-m-d', strtotime('last monday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 5) {
+                            } else if($merchantOption == 5) {
                                 $startDate = date('Y-m-d', strtotime('-6 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 6) {
+                            } else if($merchantOption == 6) {
                                 $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                                 $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                            } elseif ($merchantOption == 7) {
+                            } else if($merchantOption == 7) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week sunday'));
-                            } elseif ($merchantOption == 8) {
+                            } else if($merchantOption == 8) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week friday'));
-                            } elseif ($merchantOption == 9) {
+                            } else if($merchantOption == 9) {
                                 $startDate = date('Y-m-d', strtotime('-13 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 10) {
+                            } else if($merchantOption == 10) {
                                 $startDate = date('Y-m-01');
                                 $endDate = date("Y-m-t");
-                            } elseif ($merchantOption == 11) {
+                            } else if($merchantOption == 11) {
                                 $startDate = date('Y-m-d', strtotime('-29 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 12) {
+                            } else if($merchantOption == 12) {
                                 $startDate = date('Y-m-d', strtotime("first day of last month"));
                                 $endDate = date('Y-m-d', strtotime("last day of last month"));
-                            } elseif ($merchantOption == 13) {
+                            } else if($merchantOption == 13) {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
                                 $startDate = $yearFrom . '-' . '01' . '-01';
@@ -2298,58 +2143,59 @@ class StoreReportsController extends StoreAppController
                             {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
-                                $dateFrom = $yearFrom . '-' . '01' . '-01';
-                                $dateTo = $yearTo . '-' . '12' . '-31';
+                                $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                                $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                                 $orderCoupon = $this->orderCouponListing($storeId, $dateFrom, $dateTo, $couponCode, $orderType, $page, $sort, $sort_direction);
                                 $this->set(compact('orderCoupon', 'storeId'));
                                 $this->render('/Elements/storeReports/coupon/pagination');
                             }
                         }
                     }
-                    elseif ($reportType == 5) 
+                    else if($reportType == 5) 
                     {
                         // Report For Promotions
                         if(isset($type) && $merchantOption == 0)
                         {
                             if ($type == 1) {//Daily
-                                $startDate = date("Y-m-d", strtotime($startDateReq));
-                                $endDate = date("Y-m-d", strtotime($endDateReq));
+                                $startDate = date("Y-m-d", strtotime($startDate));
+                                $endDate = date("Y-m-d", strtotime($endDate));
                                 
                                 $orderPromo= $this->orderPromoListing($storeId, $startDate, $endDate, $promoId, $orderType, $page, $sort, $sort_direction);
                                 $this->set(compact('orderPromo', 'storeId'));
                                 $this->render('/Elements/storeReports/promo/pagination');
                             }
-                            else if ($type == 2) 
+                            else if($type == 2) 
                             {
-                                if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                                if($fromMonth == 1)
                                 {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                                    $weekyear = date('Y', strtotime($date_start_from));
+                                    $day = $this->Common->getStartAndEndDate(1,$fromYear);
                                 } else {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                                    $weekyear = date('Y', strtotime("This Week"));
+                                    $day = '01';
                                 }
+                                $endYear = $fromYear;
+                                $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                                $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                                $weekyear = $fromYear;
                                 
                                 $orderPromo = $this->orderPromoWeeklyListing($storeId, $startFrom, $endFrom, $orderType, $promoId, $page, $sort, $sort_direction);
                                 $this->set(compact('orderPromo', 'storeId'));
                                 $this->render('/Elements/storeReports/promo/pagination');
                             }
-                            else if ($type == 3) 
+                            else if($type == 3) 
                             {//Monthly
-                                $dateFrom   = $year . '-' . $month . '-01';
-                                $dateTo     = $year . '-' . $month . '-31';
+                                $year = $fromYear;
+                                $month = $fromMonth;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                                 
                                 $orderPromo  = $this->orderPromoListing($storeId, $dateFrom, $dateTo, $promoId, $orderType, $page, $sort, $sort_direction);
                                 $this->set(compact('orderPromo', 'storeId'));
                                 $this->render('/Elements/storeReports/promo/pagination');
-                            } else if ($type == 4) {//Yearly
-                                $yearFrom = $fromYearReq;
-                                $yearTo = $toYearReq;
-
-                                $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                                $dateTo     = $toYearReq . '-' . '12' . '-31';
+                            } else if($type == 4) {//Yearly
+                                $yearFrom = $fromYear;
+                                $yearTo = $toYear;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                                 
                                 $orderPromo = $this->orderPromoListing($storeId, $dateFrom, $dateTo, $promoId, $orderType, $page, $sort, $sort_direction);
                                 $this->set(compact('orderPromo', 'storeId'));
@@ -2362,41 +2208,41 @@ class StoreReportsController extends StoreAppController
                                 $today = date('Y-m-d');
                                 $startDate = $today;
                                 $endDate = $today;
-                            } elseif ($merchantOption == 2) {
+                            } else if($merchantOption == 2) {
                                 $yesterday = date('Y-m-d', strtotime("-1 days"));
                                 $startDate = $yesterday;
                                 $endDate = $yesterday;
-                            } elseif ($merchantOption == 3) {
+                            } else if($merchantOption == 3) {
                                 $startDate = date('Y-m-d', strtotime('last sunday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 4) {
+                            } else if($merchantOption == 4) {
                                 $startDate = date('Y-m-d', strtotime('last monday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 5) {
+                            } else if($merchantOption == 5) {
                                 $startDate = date('Y-m-d', strtotime('-6 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 6) {
+                            } else if($merchantOption == 6) {
                                 $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                                 $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                            } elseif ($merchantOption == 7) {
+                            } else if($merchantOption == 7) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week sunday'));
-                            } elseif ($merchantOption == 8) {
+                            } else if($merchantOption == 8) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week friday'));
-                            } elseif ($merchantOption == 9) {
+                            } else if($merchantOption == 9) {
                                 $startDate = date('Y-m-d', strtotime('-13 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 10) {
+                            } else if($merchantOption == 10) {
                                 $startDate = date('Y-m-01');
                                 $endDate = date("Y-m-t");
-                            } elseif ($merchantOption == 11) {
+                            } else if($merchantOption == 11) {
                                 $startDate = date('Y-m-d', strtotime('-29 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 12) {
+                            } else if($merchantOption == 12) {
                                 $startDate = date('Y-m-d', strtotime("first day of last month"));
                                 $endDate = date('Y-m-d', strtotime("last day of last month"));
-                            } elseif ($merchantOption == 13) {
+                            } else if($merchantOption == 13) {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
                                 $startDate = $yearFrom . '-' . '01' . '-01';
@@ -2418,8 +2264,8 @@ class StoreReportsController extends StoreAppController
                             {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
-                                $dateFrom = $yearFrom . '-' . '01' . '-01';
-                                $dateTo = $yearTo . '-' . '12' . '-31';
+                                $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                                $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                                 
                                 $orderPromo = $this->orderPromoListing($storeId, $dateFrom, $dateTo, $promoId, $orderType, $page, $sort, $sort_direction);
                                 $this->set(compact('orderPromo', 'storeId'));
@@ -2427,51 +2273,52 @@ class StoreReportsController extends StoreAppController
                             }
                         }
                     }
-                    elseif ($reportType == 6) 
+                    else if($reportType == 6) 
                     {
                         // Report For Extended Offers
                         if(isset($type) && $merchantOption == 0)
                         {
                             if ($type == 1) {//Daily
                                 
-                                $startDate = date("Y-m-d", strtotime($startDateReq));
-                                $endDate = date("Y-m-d", strtotime($endDateReq));
+                                $startDate = date("Y-m-d", strtotime($startDate));
+                                $endDate = date("Y-m-d", strtotime($endDate));
                                 
                                 $orderExtendedOffer= $this->orderExtendedOfferListing($storeId, $startDate, $endDate, $extendedOfferId, $orderType, $page, $sort, $sort_direction);
                                 $this->set(compact('orderExtendedOffer', 'storeId'));
                                 $this->render('/Elements/storeReports/extended_promo/pagination');
                             }
-                            else if ($type == 2) 
+                            else if($type == 2) 
                             {
-                                if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                                if($fromMonth == 1)
                                 {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                                    $weekyear = date('Y', strtotime($date_start_from));
+                                    $day = $this->Common->getStartAndEndDate(1,$fromYear);
                                 } else {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                                    $weekyear = date('Y', strtotime("This Week"));
+                                    $day = '01';
                                 }
+                                $endYear = $fromYear;
+                                $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                                $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                                $weekyear = $fromYear;
                                 
                                 $orderExtendedOffer = $this->orderExtendedOfferWeeklyListing($storeId, $startFrom, $endFrom, $orderType, $extendedOfferId, $page, $sort, $sort_direction);
                                 $this->set(compact('orderExtendedOffer', 'storeId'));
                                 $this->render('/Elements/storeReports/extended_promo/pagination');
                             }
-                            else if ($type == 3) 
+                            else if($type == 3) 
                             {//Monthly
-                                $dateFrom   = $year . '-' . $month . '-01';
-                                $dateTo     = $year . '-' . $month . '-31';
+                                $year = $fromYear;
+                                $month = $fromMonth;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                                 
                                 $orderExtendedOffer  = $this->orderExtendedOfferListing($storeId, $dateFrom, $dateTo, $extendedOfferId, $orderType, $page, $sort, $sort_direction);
                                 $this->set(compact('orderExtendedOffer', 'storeId'));
                                 $this->render('/Elements/storeReports/extended_promo/pagination');
-                            } else if ($type == 4) {//Yearly
-                                $yearFrom = $fromYearReq;
-                                $yearTo = $toYearReq;
-
-                                $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                                $dateTo     = $toYearReq . '-' . '12' . '-31';
+                            } else if($type == 4) {//Yearly
+                                $yearFrom = $fromYear;
+                                $yearTo = $toYear;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                                 
                                 $orderExtendedOffer = $this->orderExtendedOfferListing($storeId, $dateFrom, $dateTo, $extendedOfferId, $orderType, $page, $sort, $sort_direction);
                                 $this->set(compact('orderExtendedOffer', 'storeId'));
@@ -2484,41 +2331,41 @@ class StoreReportsController extends StoreAppController
                                 $today = date('Y-m-d');
                                 $startDate = $today;
                                 $endDate = $today;
-                            } elseif ($merchantOption == 2) {
+                            } else if($merchantOption == 2) {
                                 $yesterday = date('Y-m-d', strtotime("-1 day"));
                                 $startDate = $yesterday;
                                 $endDate = $yesterday;
-                            } elseif ($merchantOption == 3) {
+                            } else if($merchantOption == 3) {
                                 $startDate = date('Y-m-d', strtotime('last sunday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 4) {
+                            } else if($merchantOption == 4) {
                                 $startDate = date('Y-m-d', strtotime('last monday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 5) {
+                            } else if($merchantOption == 5) {
                                 $startDate = date('Y-m-d', strtotime('-6 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 6) {
+                            } else if($merchantOption == 6) {
                                 $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                                 $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                            } elseif ($merchantOption == 7) {
+                            } else if($merchantOption == 7) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week sunday'));
-                            } elseif ($merchantOption == 8) {
+                            } else if($merchantOption == 8) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week friday'));
-                            } elseif ($merchantOption == 9) {
+                            } else if($merchantOption == 9) {
                                 $startDate = date('Y-m-d', strtotime('-13 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 10) {
+                            } else if($merchantOption == 10) {
                                 $startDate = date('Y-m-01');
                                 $endDate = date("Y-m-t");
-                            } elseif ($merchantOption == 11) {
+                            } else if($merchantOption == 11) {
                                 $startDate = date('Y-m-d', strtotime('-29 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 12) {
+                            } else if($merchantOption == 12) {
                                 $startDate = date('Y-m-d', strtotime("first day of last month"));
                                 $endDate = date('Y-m-d', strtotime("last day of last month"));
-                            } elseif ($merchantOption == 13) {
+                            } else if($merchantOption == 13) {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
                                 $startDate = $yearFrom . '-' . '01' . '-01';
@@ -2540,8 +2387,8 @@ class StoreReportsController extends StoreAppController
                             {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
-                                $dateFrom = $yearFrom . '-' . '01' . '-01';
-                                $dateTo = $yearTo . '-' . '12' . '-31';
+                                $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                                $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                                 
                                 $orderExtendedOffer = $this->orderExtendedOfferListing($storeId, $dateFrom, $dateTo, $extendedOfferId, $orderType, $page, $sort, $sort_direction);
                                 $this->set(compact('orderExtendedOffer', 'storeId'));
@@ -2549,52 +2396,53 @@ class StoreReportsController extends StoreAppController
                             }
                         }
                     }
-                    elseif ($reportType == 7) 
+                    else if($reportType == 7) 
                     {
                         // Report For Dine In
                         if(isset($type) && $merchantOption == 0)
                         {
                             if ($type == 1) 
                             {//Daily
-                                $startDate = date("Y-m-d", strtotime($startDateReq));
-                                $endDate = date("Y-m-d", strtotime($endDateReq));
+                                $startDate = date("Y-m-d", strtotime($startDate));
+                                $endDate = date("Y-m-d", strtotime($endDate));
                                 
                                 $dineInData= $this->dineInListing($storeId, $startDate, $endDate, $page, $sort, $sort_direction);
                                 $this->set(compact('dineInData', 'storeId'));
                                 $this->render('/Elements/storeReports/dine_in/pagination');
                             }
-                            else if ($type == 2) 
+                            else if($type == 2) 
                             {
-                                if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                                if($fromMonth == 1)
                                 {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                                    $weekyear = date('Y', strtotime($date_start_from));
+                                    $day = $this->Common->getStartAndEndDate(1,$fromYear);
                                 } else {
-                                    $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                                    $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                                    $weekyear = date('Y', strtotime("This Week"));
+                                    $day = '01';
                                 }
+                                $endYear = $fromYear;
+                                $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                                $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                                $weekyear = $fromYear;
                                 $dineInData = $this->dineInWeeklyListing($storeId, $startFrom, $endFrom, $page, $sort, $sort_direction);
                                 $this->set(compact('dineInData', 'storeId'));
                                 $this->render('/Elements/storeReports/dine_in/pagination');
                             }
-                            else if ($type == 3) 
+                            else if($type == 3) 
                             {//Monthly
-                                $dateFrom   = $yearReq . '-' . $monthReq . '-01';
-                                $dateTo     = $yearReq . '-' . $monthReq . '-31';
+                                $year = $fromYear;
+                                $month = $fromMonth;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                                 
                                 $dineInData  = $this->dineInListing($storeId, $dateFrom, $dateTo, $page, $sort, $sort_direction);
                                 $this->set(compact('dineInData', 'storeId'));
                                 $this->render('/Elements/storeReports/dine_in/pagination');
                             }
-                            else if ($type == 4) 
+                            else if($type == 4) 
                             {//Yearly
-                                $yearFrom = $fromYearReq;
-                                $yearTo = $toYearReq;
-
-                                $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                                $dateTo     = $toYearReq . '-' . '12' . '-31';
+                                $yearFrom = $fromYear;
+                                $yearTo = $toYear;
+                                $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                                $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                                 
                                 $dineInData = $this->dineInListing($storeId, $dateFrom, $dateTo, $page, $sort, $sort_direction);
                                 $this->set(compact('dineInData', 'storeId'));
@@ -2607,41 +2455,41 @@ class StoreReportsController extends StoreAppController
                                 $today = date('Y-m-d');
                                 $startDate = $today;
                                 $endDate = $today;
-                            } elseif ($merchantOption == 2) {
+                            } else if($merchantOption == 2) {
                                 $yesterday = date('Y-m-d', strtotime("-1 day"));
                                 $startDate = $yesterday;
                                 $endDate = $yesterday;
-                            } elseif ($merchantOption == 3) {
+                            } else if($merchantOption == 3) {
                                 $startDate = date('Y-m-d', strtotime('last sunday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 4) {
+                            } else if($merchantOption == 4) {
                                 $startDate = date('Y-m-d', strtotime('last monday'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 5) {
+                            } else if($merchantOption == 5) {
                                 $startDate = date('Y-m-d', strtotime('-6 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 6) {
+                            } else if($merchantOption == 6) {
                                 $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                                 $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                            } elseif ($merchantOption == 7) {
+                            } else if($merchantOption == 7) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week sunday'));
-                            } elseif ($merchantOption == 8) {
+                            } else if($merchantOption == 8) {
                                 $startDate = date('Y-m-d', strtotime('last week monday'));
                                 $endDate = date('Y-m-d', strtotime('last week friday'));
-                            } elseif ($merchantOption == 9) {
+                            } else if($merchantOption == 9) {
                                 $startDate = date('Y-m-d', strtotime('-13 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 10) {
+                            } else if($merchantOption == 10) {
                                 $startDate = date('Y-m-01');
                                 $endDate = date("Y-m-t");
-                            } elseif ($merchantOption == 11) {
+                            } else if($merchantOption == 11) {
                                 $startDate = date('Y-m-d', strtotime('-29 days'));
                                 $endDate = date('Y-m-d');
-                            } elseif ($merchantOption == 12) {
+                            } else if($merchantOption == 12) {
                                 $startDate = date('Y-m-d', strtotime("first day of last month"));
                                 $endDate = date('Y-m-d', strtotime("last day of last month"));
-                            } elseif ($merchantOption == 13) {
+                            } else if($merchantOption == 13) {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
                                 $startDate = $yearFrom . '-' . '01' . '-01';
@@ -2664,8 +2512,8 @@ class StoreReportsController extends StoreAppController
                             {
                                 $yearFrom = date('Y',strtotime('-5 Years'));
                                 $yearTo = date('Y');
-                                $dateFrom = $yearFrom . '-' . '01' . '-01';
-                                $dateTo = $yearTo . '-' . '12' . '-31';
+                                $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                                $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                                 $dineInData = $this->dineInListing($storeId, $dateFrom, $dateTo, $page, $sort, $sort_direction);
                                 $this->set(compact('dineInData', 'storeId'));
                                 $this->render('/Elements/storeReports/dine_in/pagination');
@@ -2685,8 +2533,9 @@ class StoreReportsController extends StoreAppController
      *
      * ********************* */
 
-    public function itemListings($storeID = null, $startDate = null, $endDate = null, $itemId = null, $orderType = null) {
-        $this->OrderItem->bindModel(array('belongsTo' => array('Order')));
+    public function itemListings($storeID = null, $startDate = null, $endDate = null, $orderType = null, $productCount = null) 
+    {
+        $this->OrderItem->bindModel(array('belongsTo' => array('Order','Item')));
         if ($startDate && $endDate) {
             $conditions = array('DATE(Order.created) >=' => $startDate, 'DATE(Order.created) <=' => $endDate, 'Order.is_active' => 1, 'Order.is_deleted' => 0, 'Order.is_future_order' => 0);
         } else {
@@ -2703,7 +2552,8 @@ class StoreReportsController extends StoreAppController
             $conditions['Order.seqment_id IN '] = array('2','3');
         }
         
-        $orderdetail = $this->OrderItem->find('all', array('fields' => array('DATE(OrderItem.created) AS order_date', 'Count(OrderItem.created) AS number'), 'group' => array("DATE_FORMAT(OrderItem.created, '%Y-%m-%d')"), 'conditions' => array($conditions), 'order' => array('OrderItem.created' => 'DESC')));
+        $limitProduct = ($productCount != 'All') ? $productCount : '';
+        $orderdetail = $this->OrderItem->find('all', array('fields' => array('Item.name', 'Count(OrderItem.created) AS number', 'sum(OrderItem.total_item_price) AS total_amount'), 'group' => array("Item.id"), 'conditions' => array($conditions), 'order' => array('total_amount' => 'DESC'), 'limit' => $limitProduct));
         return $orderdetail;
     }
     
@@ -2715,9 +2565,9 @@ class StoreReportsController extends StoreAppController
      *
      * ********************* */
 
-    public function itemListingsWeekly($storeID = null, $start = null, $end = null, $orderType = null, $endYear = null) 
+    public function itemListingsWeekly($storeID = null, $start = null, $end = null, $orderType = null, $endYear = null, $productCount = null) 
     {
-        $this->OrderItem->bindModel(array('belongsTo' => array('Order')));
+        $this->OrderItem->bindModel(array('belongsTo' => array('Order','Item')));
         
         $conditions = array('Order.is_active' => 1, 'Order.is_deleted' => 0, 'Order.is_future_order' => 0);
         
@@ -2738,7 +2588,8 @@ class StoreReportsController extends StoreAppController
             $conditions['Order.seqment_id IN '] = array('2','3');
         }
         
-        $orderdetail = $this->OrderItem->find('all', array('fields' => array('WEEK(OrderItem.created) AS WEEKno', 'Count(OrderItem.created) AS number'), 'group' => array("DATE_FORMAT(OrderItem.created, '%Y-%m-%d')"), 'conditions' => array($conditions), 'order' => array('OrderItem.created' => 'DESC')));
+        $limitProduct = ($productCount != 'All') ? $productCount : '';
+        $orderdetail = $this->OrderItem->find('all', array('fields' => array('Item.name', 'Count(OrderItem.created) AS number', 'sum(OrderItem.total_item_price) AS total_amount'), 'group' => array("Item.id"), 'conditions' => array($conditions), 'order' => array('total_amount' => 'DESC'), 'limit' => $limitProduct));
         return $orderdetail;
     }
     
@@ -2749,58 +2600,25 @@ class StoreReportsController extends StoreAppController
      *
      * ********************* */
 
-    public function orderProductListing($storeID, $startDate = null, $endDate = null, $item = null, $orderType = null, $page = 1, $sort = null, $sort_direction = null) 
+    public function orderProductListing($storeID, $startDate = null, $endDate = null, $orderType = null, $productCount = null, $page = 1, $sort = null, $sort_direction = null) 
     {
-        
-        $this->Order->bindModel(
-                array(
-            'belongsTo' => array(
-                'User' => array(
-                    'className' => 'User',
-                    'foreignKey' => 'user_id',
-                    'fields' => array('id', 'email', 'fname', 'lname', 'phone')
-                ),
-                'OrderStatus' => array(
-                    'className' => 'OrderStatus',
-                    'foreignKey' => 'order_status_id',
-                    'fields' => array('id', 'name')
-                ),
-                'Segment' => array(
-                    'className' => 'Segment',
-                    'foreignKey' => 'seqment_id',
-                    'fields' => array('id', 'name')
-                ),
-                'DeliveryAddress' => array(
-                    'className' => 'DeliveryAddress',
-                    'foreignKey' => 'delivery_address_id',
-                    'fields' => array('id', 'address', 'email', 'city', 'state', 'zipcode', 'name_on_bell', 'phone')
-                )
-            )
-                ), false
-        );
         $this->OrderItem->bindModel(array('belongsTo' => array(
                 'Order' => array('className' => 'Order', 'foreignKey' => 'order_id', 'fields' => array('id', 'store_id', 'order_number', 'seqment_id', 'order_status_id', 'user_id', 'amount', 'pickup_time', 'delivery_address_id', 'is_pre_order', 'created', 'coupon_discount', 'tip')),
                 'Item' => array('className' => 'Item', 'foreignKey' => 'item_id', 'fields' => array('id', 'name', 'category_id', 'description', 'units')),
-                'Type' => array('className' => 'Type', 'foreignKey' => 'type_id'),
-                'Size' => array('className' => 'Size', 'foreignKey' => 'size_id', 'fields' => array('id', 'size', 'category_id')))), false);
-        $this->Store->unbindModel(array('hasOne' => array('SocialMedia'), 'belongsTo' => array('StoreTheme', 'StoreFont'), 'hasMany' => array('StoreGallery', 'StoreContent')));
-        $this->Order->bindModel(
-                array('belongsTo' => array(
-                'Store' => array(
-                    'className' => 'Store',
-                    'foreignKey' => 'store_id',
-                    'fields' => array('id', 'store_name')
+                )), false);
+        
+        $this->OrderItem->Item->bindModel(
+                array(
+                'belongsTo' => array(
+                    'Category' => array(
+                        'className' => 'Category',
+                        'foreignKey' => 'category_id',
+                        'fields' => array('id', 'name')
+                    )
                 )
-            ),
-            'hasMany' => array(
-                'OrderItem' => array(
-                    'className' => 'OrderItem',
-                    'foreignKey' => 'order_id',
-                    'fields' => array('id', 'order_id', 'quantity', 'item_id', 'size_id', 'type_id', 'total_item_price', 'discount', 'tax_price', 'user_id', 'created')
-                ),
-            )
-                ), false
+            ), false
         );
+        
         if ($startDate && $endDate) {
             $conditions = array('DATE(Order.created) >=' => $startDate, 'DATE(Order.created) <=' => $endDate, 'Order.is_active' => 1, 'Order.is_deleted' => 0, 'Order.is_future_order' => 0);
         } else {
@@ -2818,22 +2636,23 @@ class StoreReportsController extends StoreAppController
         
         $conditions = array_merge(array($conditions), array('OrderItem.store_id' => $storeID));
         if (empty($sort)){
-            $sort = 'Order.created';
+            $sort = 'total_amount';
         }
         if (empty($sort_direction)){
             $sort_direction = 'DESC';
         }
-        $this->paginate = array(
-                    'fields'        => array('id', 'order_id', 'quantity', 'item_id', 'size_id', 'type_id', 'total_item_price', 'discount', 'tax_price', 'user_id', 'created'),
+        
+        $limitProduct = ($productCount != 'All') ? $productCount : '';
+        
+        $orderdetail = $this->OrderItem->find('all', array(
+                    'fields'        => array('id', 'Item.name', 'Item.category_id', 'sum(OrderItem.quantity) AS number', 'sum(OrderItem.total_item_price) AS total_amount', '(OrderItem.total_item_price / OrderItem.quantity) as unit_price', 'order_id', 'quantity', 'item_id', 'size_id', 'type_id', 'total_item_price', 'discount', 'tax_price', 'user_id', 'created'),
                     'recursive'     => 3, 
                     'conditions'    => array($conditions), 
                     'order'         => array($sort => $sort_direction), 
-                    'group'         => array('OrderItem.order_id'),
-                    'page'          => $page,
-                    'limit'         => $this->pageLimit
+                    'group'         => array('Item.id'),
+                    'limit'         => $limitProduct
            
-           );
-        $orderdetail = $this->paginate('OrderItem');
+           ));
         return $orderdetail;
     }
     
@@ -2844,56 +2663,23 @@ class StoreReportsController extends StoreAppController
      *
      * ********************* */
 
-    public function orderProductListingWeekly($storeID, $startDate = null, $endDate = null, $orderType = null, $endYear = null, $page = 1, $sort = null, $sort_direction = null) 
+    public function orderProductListingWeekly($storeID, $startDate = null, $endDate = null, $orderType = null, $productCount = null, $page = 1, $sort = null, $sort_direction = null) 
     {
-        $this->Order->bindModel(
-                array(
-            'belongsTo' => array(
-                'User' => array(
-                    'className' => 'User',
-                    'foreignKey' => 'user_id',
-                    'fields' => array('id', 'email', 'fname', 'lname', 'phone')
-                ),
-                'OrderStatus' => array(
-                    'className' => 'OrderStatus',
-                    'foreignKey' => 'order_status_id',
-                    'fields' => array('id', 'name')
-                ),
-                'Segment' => array(
-                    'className' => 'Segment',
-                    'foreignKey' => 'seqment_id',
-                    'fields' => array('id', 'name')
-                ),
-                'DeliveryAddress' => array(
-                    'className' => 'DeliveryAddress',
-                    'foreignKey' => 'delivery_address_id',
-                    'fields' => array('id', 'address', 'email', 'city', 'state', 'zipcode', 'name_on_bell', 'phone')
-                )
-            )
-                ), false
-        );
         $this->OrderItem->bindModel(array('belongsTo' => array(
                 'Order' => array('className' => 'Order', 'foreignKey' => 'order_id', 'fields' => array('id', 'store_id', 'order_number', 'seqment_id', 'order_status_id', 'user_id', 'amount', 'pickup_time', 'delivery_address_id', 'is_pre_order', 'created', 'coupon_discount', 'tip')),
                 'Item' => array('className' => 'Item', 'foreignKey' => 'item_id', 'fields' => array('id', 'name', 'category_id', 'description', 'units')),
-                'Type' => array('className' => 'Type', 'foreignKey' => 'type_id'),
-                'Size' => array('className' => 'Size', 'foreignKey' => 'size_id', 'fields' => array('id', 'size', 'category_id')))), false);
-        $this->Store->unbindModel(array('hasOne' => array('SocialMedia'), 'belongsTo' => array('StoreTheme', 'StoreFont'), 'hasMany' => array('StoreGallery', 'StoreContent')));
-        $this->Order->bindModel(
-                array('belongsTo' => array(
-                'Store' => array(
-                    'className' => 'Store',
-                    'foreignKey' => 'store_id',
-                    'fields' => array('id', 'store_name')
+              )), false);
+        
+        $this->OrderItem->Item->bindModel(
+                array(
+                'belongsTo' => array(
+                    'Category' => array(
+                        'className' => 'Category',
+                        'foreignKey' => 'category_id',
+                        'fields' => array('id', 'name')
+                    )
                 )
-            ),
-            'hasMany' => array(
-                'OrderItem' => array(
-                    'className' => 'OrderItem',
-                    'foreignKey' => 'order_id',
-                    'fields' => array('id', 'order_id', 'quantity', 'item_id', 'size_id', 'type_id', 'total_item_price', 'discount', 'tax_price', 'user_id', 'created')
-                ),
-            )
-                ), false
+            ), false
         );
         
          $conditions = array('Order.is_active' => 1, 'Order.is_deleted' => 0, 'Order.is_future_order' => 0);
@@ -2917,22 +2703,22 @@ class StoreReportsController extends StoreAppController
         }
         
         if (empty($sort)){
-            $sort = 'Order.created';
+            $sort = 'total_amount';
         }
         if (empty($sort_direction)){
             $sort_direction = 'DESC';
         }
-        $this->paginate = array(
-                    'fields'        => array('id', 'order_id', 'quantity', 'item_id', 'size_id', 'type_id', 'total_item_price', 'discount', 'tax_price', 'user_id', 'created'),
+        $limitProduct = ($productCount != 'All') ? $productCount : '';
+        
+        $orderdetail = $this->OrderItem->find('all', array(
+                    'fields'        => array('id', 'Item.name', 'Item.category_id', 'sum(OrderItem.quantity) AS number', 'sum(OrderItem.total_item_price) AS total_amount', '(OrderItem.total_item_price / OrderItem.quantity) as unit_price', 'order_id', 'quantity', 'item_id', 'size_id', 'type_id', 'total_item_price', 'discount', 'tax_price', 'user_id', 'created'),
                     'recursive'     => 3, 
                     'conditions'    => array($conditions), 
                     'order'         => array($sort => $sort_direction), 
-                    'group'         => array('OrderItem.order_id'),
-                    'page'          => $page,
-                    'limit'         => $this->pageLimit
+                    'group'         => array('Item.id'),
+                    'limit'         => $limitProduct
            
-           );
-        $orderdetail = $this->paginate('OrderItem');
+           ));
         return $orderdetail;
     }
     
@@ -3973,17 +3759,16 @@ class StoreReportsController extends StoreAppController
         $orderType          = (isset($dataRequest['orderType']) ? $dataRequest['orderType'] : 1);
         $startDate          = (isset($dataRequest['startDate']) ? $this->Dateform->formatDate($dataRequest['startDate']) : $sdate);
         $endDate            = (isset($dataRequest['endDate']) ? $this->Dateform->formatDate($dataRequest['endDate']) : $edate);
-        $month              = (isset($dataRequest['month']) ? $dataRequest['month'] : $Month);
-        $year               = (isset($dataRequest['year']) ? $dataRequest['year'] : $Year);
+        $fromMonth          = (isset($dataRequest['fromMonth']) ? $dataRequest['fromMonth'] : null);
+        $fromYear           = (isset($dataRequest['fromYear']) ? $dataRequest['fromYear'] : null);
+        $toMonth            = (isset($dataRequest['toMonth']) ? $dataRequest['toMonth'] : null);
+        $toYear             = (isset($dataRequest['toYear']) ? $dataRequest['toYear'] : null);
         $itemId             = (isset($dataRequest['itemId']) ? $dataRequest['itemId'] : null);
         $merchantOption     = (isset($dataRequest['merchantOption']) ? $dataRequest['merchantOption'] : null);
-        $fromYearReq        = (isset($dataRequest['fromYear']) ? $dataRequest['fromYear'] : $yearFrom);
-        $toYearReq          = (isset($dataRequest['toYear']) ? $dataRequest['toYear'] : $yearTo);
-        $date_start_from    = (isset($dataRequest['date_start_from']) ? $dataRequest['date_start_from'] : $dateFrom);
-        $date_end_from      = (isset($dataRequest['date_end_from']) ? $dataRequest['date_end_from'] : $dateTo);
         $couponCode         = (isset($dataRequest['coupon_code']) ? $dataRequest['coupon_code'] : null);       
         $promoId            = (isset($dataRequest['promo_id']) ? $dataRequest['promo_id'] : null);
         $extendedOfferId    = (isset($dataRequest['extended_offer_id']) ? $dataRequest['extended_offer_id'] : null);
+        $productCount    = (isset($dataRequest['product_count']) ? $dataRequest['product_count'] : null);
         
         if (!empty($storeId) && ($storeId !== 'All')) {
             $storeDate      = $this->Common->getcurrentTime($storeId, 1);
@@ -3996,12 +3781,10 @@ class StoreReportsController extends StoreAppController
             $startdate      = $storeDate;
             $enddate        = $storeDate;
             $expoladDate    = explode("-", $startdate);
-            $Month          = $expoladDate[1];
-            $Year           = $expoladDate[0];
-            $yearFrom       = date('Y', strtotime('-1 year', strtotime($Year)));
-            $yearTo         = $Year;
-            $dateFrom       = date('Y-m-d', strtotime('last Sunday', strtotime($startdate)));
-            $dateTo         = date('Y-m-d', strtotime('next saturday', strtotime($dateFrom)));
+            $fromMonthDefault   = $expoladDate[1];
+            $fromYearDefault    = $expoladDate[0];
+            $toMonthDefault     = $expoladDate[1];
+            $toYearDefault      = $expoladDate[0];
 
             $timezoneStore  = array();
             $store_data = $this->Store->fetchStoreDetail($storeId);
@@ -4022,12 +3805,10 @@ class StoreReportsController extends StoreAppController
             $edate      = null;
             $startdate  = null;
             $enddate    = null;
-            $Month      = null;
-            $Year       = null;
-            $yearFrom   = null;
-            $yearTo     = null;
-            $dateFrom   = null;
-            $dateTo     = null;
+            $fromMonthDefault   = null;
+            $fromYearDefault    = null;
+            $toMonthDefault     = null;
+            $toYearDefault      = null;
         }
 
         
@@ -4082,32 +3863,33 @@ class StoreReportsController extends StoreAppController
                         $enddate = date('Y-m-d 23:59:59', strtotime($endDate));
                         $order = $this->orderListingDownloadReport($storeId, $startdate, $enddate, $orderType);
                     } 
-                    else if ($type == 2)
+                    else if($type == 2)
                     {
-                        
-                        if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                        if($fromMonth == 1)
                         {
-                            $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                            $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                            $weekyear = date('Y', strtotime($date_start_from));
+                            $day = $this->Common->getStartAndEndDate(1,$fromYear);
                         } else {
-                            $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                            $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                            $weekyear = date('Y', strtotime("This Week"));
+                            $day = '01';
                         }
+                        $endYear = $fromYear;
+                        $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                        $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                        $weekyear = $fromYear;
                         
                         $order = $this->orderListingWeekDownloadReport($storeId, $startFrom, $endFrom, $orderType);
                     }
-                    else if ($type == 3)
+                    else if($type == 3)
                     {
-                        $dateFrom   = $year . '-' . $month . '-01';
-                        $dateTo     = $year . '-' . $month . '-31';
+                        $year = $fromYear;
+                        $month = $fromMonth;
+                        $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                        $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                         $order = $this->orderListingDownloadReport($storeId, $dateFrom, $dateTo, $orderType);
                     }
-                    else if ($type == 4)
+                    else if($type == 4)
                     {
-                        $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                        $dateTo     = $toYearReq . '-' . '12' . '-31';
+                        $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                        $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                         $order = $this->orderListingDownloadReport($storeId, $dateFrom, $dateTo, $orderType);
                     }
                 }
@@ -4117,41 +3899,41 @@ class StoreReportsController extends StoreAppController
                         $today = date('Y-m-d');
                         $startDate = $today;
                         $endDate = $today;
-                    } elseif ($merchantOption == 2) {
+                    } else if($merchantOption == 2) {
                         $yesterday = date('Y-m-d', strtotime("-1 days"));
                         $startDate = $yesterday;
                         $endDate = $yesterday;
-                    } elseif ($merchantOption == 3) {
+                    } else if($merchantOption == 3) {
                         $startDate = date('Y-m-d', strtotime('last sunday'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 4) {
+                    } else if($merchantOption == 4) {
                         $startDate = date('Y-m-d', strtotime('last monday'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 5) {
+                    } else if($merchantOption == 5) {
                         $startDate = date('Y-m-d', strtotime('-6 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 6) {
+                    } else if($merchantOption == 6) {
                         $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                         $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                    } elseif ($merchantOption == 7) {
+                    } else if($merchantOption == 7) {
                         $startDate = date('Y-m-d', strtotime('last week monday'));
                         $endDate = date('Y-m-d', strtotime('last week sunday'));
-                    } elseif ($merchantOption == 8) {
+                    } else if($merchantOption == 8) {
                         $startDate = date('Y-m-d', strtotime('last week monday'));
                         $endDate = date('Y-m-d', strtotime('last week friday'));
-                    } elseif ($merchantOption == 9) {
+                    } else if($merchantOption == 9) {
                         $startDate = date('Y-m-d', strtotime('-13 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 10) {
+                    } else if($merchantOption == 10) {
                         $startDate = date('Y-m-01');
                         $endDate = date("Y-m-t");
-                    } elseif ($merchantOption == 11) {
+                    } else if($merchantOption == 11) {
                         $startDate = date('Y-m-d', strtotime('-29 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 12) {
+                    } else if($merchantOption == 12) {
                         $startDate = date('Y-m-d', strtotime("first day of last month"));
                         $endDate = date('Y-m-d', strtotime("last day of last month"));
-                    } elseif ($merchantOption == 13) {
+                    } else if($merchantOption == 13) {
                         $yearFrom = date('Y',strtotime('-5 Years'));
                         $yearTo = date('Y');
                         $startDate = $yearFrom . '-' . '01' . '-01';
@@ -4168,10 +3950,8 @@ class StoreReportsController extends StoreAppController
                     }
                     if($merchantOption == 13)
                     {
-                        $yearFrom = date('Y',strtotime('-5 Years'));
-                        $yearTo = date('Y');
-                        $dateFrom = $yearFrom . '-' . '01' . '-01';
-                        $dateTo = $yearTo . '-' . '12' . '-31';
+                        $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                        $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                         $order = $this->orderListingDownloadReport($storeId, $dateFrom, $dateTo, $orderType);
                     }
                 }
@@ -4185,35 +3965,36 @@ class StoreReportsController extends StoreAppController
                     {
                         $startdate = date('Y-m-d 00:00:00', strtotime($startDate));
                         $enddate = date('Y-m-d 23:59:59', strtotime($endDate));
-                        $order = $this->orderProductListingDownloadReport($storeId, $startdate, $enddate, $orderType);
+                        $order = $this->orderProductListingDownloadReport($storeId, $startdate, $enddate, $orderType, $productCount);
                     } 
-                    else if ($type == 2)
+                    else if($type == 2)
                     {
-                        
-                        if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                        if($fromMonth == 1)
                         {
-                            $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                            $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                            $weekyear = date('Y', strtotime($date_start_from));
+                            $day = $this->Common->getStartAndEndDate(1,$fromYear);
                         } else {
-                            $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                            $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                            $weekyear = date('Y', strtotime("This Week"));
+                            $day = '01';
                         }
+                        $endYear = $fromYear;
+                        $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                        $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                        $weekyear = $fromYear;
                         
-                        $order = $this->orderProductListingWeekDownloadReport($storeId, $startFrom, $endFrom, $orderType);
+                        $order = $this->orderProductListingWeekDownloadReport($storeId, $startFrom, $endFrom, $orderType, $productCount);
                     }
-                    else if ($type == 3)
+                    else if($type == 3)
                     {
-                        $dateFrom   = $year . '-' . $month . '-01';
-                        $dateTo     = $year . '-' . $month . '-31';
-                        $order = $this->orderProductListingDownloadReport($storeId, $dateFrom, $dateTo, $orderType);
+                        $year = $fromYear;
+                        $month = $fromMonth;
+                        $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                        $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
+                        $order = $this->orderProductListingDownloadReport($storeId, $dateFrom, $dateTo, $orderType, $productCount);
                     }
-                    else if ($type == 4)
+                    else if($type == 4)
                     {
-                        $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                        $dateTo     = $toYearReq . '-' . '12' . '-31';
-                        $order = $this->orderProductListingDownloadReport($storeId, $dateFrom, $dateTo, $orderType);
+                        $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                        $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
+                        $order = $this->orderProductListingDownloadReport($storeId, $dateFrom, $dateTo, $orderType, $productCount);
                     }
                 }
                 else if(isset($merchantOption))
@@ -4222,41 +4003,41 @@ class StoreReportsController extends StoreAppController
                         $today = date('Y-m-d');
                         $startDate = $today;
                         $endDate = $today;
-                    } elseif ($merchantOption == 2) {
+                    } else if($merchantOption == 2) {
                         $yesterday = date('Y-m-d', strtotime("-1 days"));
                         $startDate = $yesterday;
                         $endDate = $yesterday;
-                    } elseif ($merchantOption == 3) {
+                    } else if($merchantOption == 3) {
                         $startDate = date('Y-m-d', strtotime('last sunday'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 4) {
+                    } else if($merchantOption == 4) {
                         $startDate = date('Y-m-d', strtotime('last monday'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 5) {
+                    } else if($merchantOption == 5) {
                         $startDate = date('Y-m-d', strtotime('-6 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 6) {
+                    } else if($merchantOption == 6) {
                         $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                         $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                    } elseif ($merchantOption == 7) {
+                    } else if($merchantOption == 7) {
                         $startDate = date('Y-m-d', strtotime('last week monday'));
                         $endDate = date('Y-m-d', strtotime('last week sunday'));
-                    } elseif ($merchantOption == 8) {
+                    } else if($merchantOption == 8) {
                         $startDate = date('Y-m-d', strtotime('last week monday'));
                         $endDate = date('Y-m-d', strtotime('last week friday'));
-                    } elseif ($merchantOption == 9) {
+                    } else if($merchantOption == 9) {
                         $startDate = date('Y-m-d', strtotime('-13 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 10) {
+                    } else if($merchantOption == 10) {
                         $startDate = date('Y-m-01');
                         $endDate = date("Y-m-t");
-                    } elseif ($merchantOption == 11) {
+                    } else if($merchantOption == 11) {
                         $startDate = date('Y-m-d', strtotime('-29 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 12) {
+                    } else if($merchantOption == 12) {
                         $startDate = date('Y-m-d', strtotime("first day of last month"));
                         $endDate = date('Y-m-d', strtotime("last day of last month"));
-                    } elseif ($merchantOption == 13) {
+                    } else if($merchantOption == 13) {
                         $yearFrom = date('Y',strtotime('-5 Years'));
                         $yearTo = date('Y');
                         $startDate = $yearFrom . '-' . '01' . '-01';
@@ -4269,15 +4050,13 @@ class StoreReportsController extends StoreAppController
 
                     if(($merchantOption >= 1 && $merchantOption <= 9)  || $merchantOption == 11 || $merchantOption == 10 || $merchantOption == 12)
                     {
-                        $order = $this->orderProductListingDownloadReport($storeId, $startDate, $endDate, $orderType);
+                        $order = $this->orderProductListingDownloadReport($storeId, $startDate, $endDate, $orderType, $productCount);
                     }
                     if($merchantOption == 13)
                     {
-                        $yearFrom = date('Y',strtotime('-5 Years'));
-                        $yearTo = date('Y');
-                        $dateFrom = $yearFrom . '-' . '01' . '-01';
-                        $dateTo = $yearTo . '-' . '12' . '-31';
-                        $order = $this->orderProductListingDownloadReport($storeId, $dateFrom, $dateTo, $orderType);
+                        $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                        $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
+                        $order = $this->orderProductListingDownloadReport($storeId, $dateFrom, $dateTo, $orderType, $productCount);
                     }
                 }
             }
@@ -4292,32 +4071,33 @@ class StoreReportsController extends StoreAppController
                         $enddate = date('Y-m-d 23:59:59', strtotime($endDate));
                         $order = $this->customerListingDownloadReport($storeId, $startdate, $enddate);
                     } 
-                    else if ($type == 2)
+                    else if($type == 2)
                     {
-                        
-                        if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                        if($fromMonth == 1)
                         {
-                            $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                            $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                            $weekyear = date('Y', strtotime($date_start_from));
+                            $day = $this->Common->getStartAndEndDate(1,$fromYear);
                         } else {
-                            $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                            $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                            $weekyear = date('Y', strtotime("This Week"));
+                            $day = '01';
                         }
+                        $endYear = $fromYear;
+                        $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                        $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                        $weekyear = $fromYear;
                         
                         $order = $this->customerWeekListingDownloadReport($storeId, $startFrom, $endFrom, $weekyear);
                     }
-                    else if ($type == 3)
+                    else if($type == 3)
                     {
-                        $dateFrom   = $year . '-' . $month . '-01';
-                        $dateTo     = $year . '-' . $month . '-31';
+                        $year = $fromYear;
+                        $month = $fromMonth;
+                        $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                        $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                         $order = $this->customerListingDownloadReport($storeId, $dateFrom, $dateTo);
                     }
-                    else if ($type == 4)
+                    else if($type == 4)
                     {
-                        $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                        $dateTo     = $toYearReq . '-' . '12' . '-31';
+                        $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                        $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                         $order = $this->customerListingDownloadReport($storeId, $dateFrom, $dateTo);
                     }
                 }
@@ -4327,41 +4107,41 @@ class StoreReportsController extends StoreAppController
                         $today = date('Y-m-d');
                         $startDate = $today;
                         $endDate = $today;
-                    } elseif ($merchantOption == 2) {
+                    } else if($merchantOption == 2) {
                         $yesterday = date('Y-m-d', strtotime("-1 days"));
                         $startDate = $yesterday;
                         $endDate = $yesterday;
-                    } elseif ($merchantOption == 3) {
+                    } else if($merchantOption == 3) {
                         $startDate = date('Y-m-d', strtotime('last sunday'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 4) {
+                    } else if($merchantOption == 4) {
                         $startDate = date('Y-m-d', strtotime('last monday'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 5) {
+                    } else if($merchantOption == 5) {
                         $startDate = date('Y-m-d', strtotime('-6 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 6) {
+                    } else if($merchantOption == 6) {
                         $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                         $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                    } elseif ($merchantOption == 7) {
+                    } else if($merchantOption == 7) {
                         $startDate = date('Y-m-d', strtotime('last week monday'));
                         $endDate = date('Y-m-d', strtotime('last week sunday'));
-                    } elseif ($merchantOption == 8) {
+                    } else if($merchantOption == 8) {
                         $startDate = date('Y-m-d', strtotime('last week monday'));
                         $endDate = date('Y-m-d', strtotime('last week friday'));
-                    } elseif ($merchantOption == 9) {
+                    } else if($merchantOption == 9) {
                         $startDate = date('Y-m-d', strtotime('-13 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 10) {
+                    } else if($merchantOption == 10) {
                         $startDate = date('Y-m-01');
                         $endDate = date("Y-m-t");
-                    } elseif ($merchantOption == 11) {
+                    } else if($merchantOption == 11) {
                         $startDate = date('Y-m-d', strtotime('-29 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 12) {
+                    } else if($merchantOption == 12) {
                         $startDate = date('Y-m-d', strtotime("first day of last month"));
                         $endDate = date('Y-m-d', strtotime("last day of last month"));
-                    } elseif ($merchantOption == 13) {
+                    } else if($merchantOption == 13) {
                         $yearFrom = date('Y',strtotime('-5 Years'));
                         $yearTo = date('Y');
                         $startDate = $yearFrom . '-' . '01' . '-01';
@@ -4378,10 +4158,8 @@ class StoreReportsController extends StoreAppController
                     }
                     if($merchantOption == 13)
                     {
-                        $yearFrom = date('Y',strtotime('-5 Years'));
-                        $yearTo = date('Y');
-                        $dateFrom = $yearFrom . '-' . '01' . '-01';
-                        $dateTo = $yearTo . '-' . '12' . '-31';
+                        $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                        $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                         $order = $this->customerListingDownloadReport($storeId, $dateFrom, $dateTo);
                     }
                 }
@@ -4397,32 +4175,33 @@ class StoreReportsController extends StoreAppController
                         $enddate = date('Y-m-d 23:59:59', strtotime($endDate));
                         $order = $this->couponListingDownloadReport($storeId, $startdate, $enddate, $couponCode, $orderType);
                     } 
-                    else if ($type == 2)
+                    else if($type == 2)
                     {
-                        
-                        if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                        if($fromMonth == 1)
                         {
-                            $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                            $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                            $weekyear = date('Y', strtotime($date_start_from));
+                            $day = $this->Common->getStartAndEndDate(1,$fromYear);
                         } else {
-                            $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                            $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                            $weekyear = date('Y', strtotime("This Week"));
+                            $day = '01';
                         }
+                        $endYear = $fromYear;
+                        $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                        $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                        $weekyear = $fromYear;
                         
                         $order = $this->couponWeeklyListingDownloadReport($storeId, $startFrom, $endFrom, $orderType, $couponCode);
                     }
-                    else if ($type == 3)
+                    else if($type == 3)
                     {
-                        $dateFrom   = $year . '-' . $month . '-01';
-                        $dateTo     = $year . '-' . $month . '-31';
+                        $year = $fromYear;
+                        $month = $fromMonth;
+                        $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                        $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                         $order = $this->couponListingDownloadReport($storeId, $dateFrom, $dateTo, $couponCode, $orderType);
                     }
-                    else if ($type == 4)
+                    else if($type == 4)
                     {
-                        $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                        $dateTo     = $toYearReq . '-' . '12' . '-31';
+                        $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                        $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                         $order = $this->couponListingDownloadReport($storeId, $dateFrom, $dateTo, $couponCode, $orderType);
                     }
                 }
@@ -4432,41 +4211,41 @@ class StoreReportsController extends StoreAppController
                         $today = date('Y-m-d');
                         $startDate = $today;
                         $endDate = $today;
-                    } elseif ($merchantOption == 2) {
+                    } else if($merchantOption == 2) {
                         $yesterday = date('Y-m-d', strtotime("-1 days"));
                         $startDate = $yesterday;
                         $endDate = $yesterday;
-                    } elseif ($merchantOption == 3) {
+                    } else if($merchantOption == 3) {
                         $startDate = date('Y-m-d', strtotime('last sunday'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 4) {
+                    } else if($merchantOption == 4) {
                         $startDate = date('Y-m-d', strtotime('last monday'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 5) {
+                    } else if($merchantOption == 5) {
                         $startDate = date('Y-m-d', strtotime('-6 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 6) {
+                    } else if($merchantOption == 6) {
                         $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                         $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                    } elseif ($merchantOption == 7) {
+                    } else if($merchantOption == 7) {
                         $startDate = date('Y-m-d', strtotime('last week monday'));
                         $endDate = date('Y-m-d', strtotime('last week sunday'));
-                    } elseif ($merchantOption == 8) {
+                    } else if($merchantOption == 8) {
                         $startDate = date('Y-m-d', strtotime('last week monday'));
                         $endDate = date('Y-m-d', strtotime('last week friday'));
-                    } elseif ($merchantOption == 9) {
+                    } else if($merchantOption == 9) {
                         $startDate = date('Y-m-d', strtotime('-13 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 10) {
+                    } else if($merchantOption == 10) {
                         $startDate = date('Y-m-01');
                         $endDate = date("Y-m-t");
-                    } elseif ($merchantOption == 11) {
+                    } else if($merchantOption == 11) {
                         $startDate = date('Y-m-d', strtotime('-29 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 12) {
+                    } else if($merchantOption == 12) {
                         $startDate = date('Y-m-d', strtotime("first day of last month"));
                         $endDate = date('Y-m-d', strtotime("last day of last month"));
-                    } elseif ($merchantOption == 13) {
+                    } else if($merchantOption == 13) {
                         $yearFrom = date('Y',strtotime('-5 Years'));
                         $yearTo = date('Y');
                         $startDate = $yearFrom . '-' . '01' . '-01';
@@ -4483,10 +4262,8 @@ class StoreReportsController extends StoreAppController
                     }
                     if($merchantOption == 13)
                     {
-                        $yearFrom = date('Y',strtotime('-5 Years'));
-                        $yearTo = date('Y');
-                        $dateFrom = $yearFrom . '-' . '01' . '-01';
-                        $dateTo = $yearTo . '-' . '12' . '-31';
+                        $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                        $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                         $order = $this->couponListingDownloadReport($storeId, $dateFrom, $dateTo, $couponCode, $orderType);
                     }
                 }
@@ -4502,32 +4279,33 @@ class StoreReportsController extends StoreAppController
                         $enddate = date('Y-m-d 23:59:59', strtotime($endDate));
                         $order = $this->promoListingDownloadReport($storeId, $startdate, $enddate, $promoId, $orderType);
                     } 
-                    else if ($type == 2)
+                    else if($type == 2)
                     {
-                        
-                        if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                        if($fromMonth == 1)
                         {
-                            $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                            $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                            $weekyear = date('Y', strtotime($date_start_from));
+                            $day = $this->Common->getStartAndEndDate(1,$fromYear);
                         } else {
-                            $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                            $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                            $weekyear = date('Y', strtotime("This Week"));
+                            $day = '01';
                         }
+                        $endYear = $fromYear;
+                        $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                        $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                        $weekyear = $fromYear;
                         
                         $order = $this->promoWeeklyListingDownloadReport($storeId, $startFrom, $endFrom, $promoId, $orderType);
                     }
-                    else if ($type == 3)
+                    else if($type == 3)
                     {
-                        $dateFrom   = $year . '-' . $month . '-01';
-                        $dateTo     = $year . '-' . $month . '-31';
+                        $year = $fromYear;
+                        $month = $fromMonth;
+                        $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                        $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                         $order = $this->promoListingDownloadReport($storeId, $dateFrom, $dateTo, $promoId, $orderType);
                     }
-                    else if ($type == 4)
+                    else if($type == 4)
                     {
-                        $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                        $dateTo     = $toYearReq . '-' . '12' . '-31';
+                        $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                        $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                         $order = $this->promoListingDownloadReport($storeId, $dateFrom, $dateTo, $promoId, $orderType);
                     }
                 }
@@ -4537,41 +4315,41 @@ class StoreReportsController extends StoreAppController
                         $today = date('Y-m-d');
                         $startDate = $today;
                         $endDate = $today;
-                    } elseif ($merchantOption == 2) {
+                    } else if($merchantOption == 2) {
                         $yesterday = date('Y-m-d', strtotime("-1 days"));
                         $startDate = $yesterday;
                         $endDate = $yesterday;
-                    } elseif ($merchantOption == 3) {
+                    } else if($merchantOption == 3) {
                         $startDate = date('Y-m-d', strtotime('last sunday'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 4) {
+                    } else if($merchantOption == 4) {
                         $startDate = date('Y-m-d', strtotime('last monday'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 5) {
+                    } else if($merchantOption == 5) {
                         $startDate = date('Y-m-d', strtotime('-6 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 6) {
+                    } else if($merchantOption == 6) {
                         $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                         $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                    } elseif ($merchantOption == 7) {
+                    } else if($merchantOption == 7) {
                         $startDate = date('Y-m-d', strtotime('last week monday'));
                         $endDate = date('Y-m-d', strtotime('last week sunday'));
-                    } elseif ($merchantOption == 8) {
+                    } else if($merchantOption == 8) {
                         $startDate = date('Y-m-d', strtotime('last week monday'));
                         $endDate = date('Y-m-d', strtotime('last week friday'));
-                    } elseif ($merchantOption == 9) {
+                    } else if($merchantOption == 9) {
                         $startDate = date('Y-m-d', strtotime('-13 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 10) {
+                    } else if($merchantOption == 10) {
                         $startDate = date('Y-m-01');
                         $endDate = date("Y-m-t");
-                    } elseif ($merchantOption == 11) {
+                    } else if($merchantOption == 11) {
                         $startDate = date('Y-m-d', strtotime('-29 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 12) {
+                    } else if($merchantOption == 12) {
                         $startDate = date('Y-m-d', strtotime("first day of last month"));
                         $endDate = date('Y-m-d', strtotime("last day of last month"));
-                    } elseif ($merchantOption == 13) {
+                    } else if($merchantOption == 13) {
                         $yearFrom = date('Y',strtotime('-5 Years'));
                         $yearTo = date('Y');
                         $startDate = $yearFrom . '-' . '01' . '-01';
@@ -4588,10 +4366,8 @@ class StoreReportsController extends StoreAppController
                     }
                     if($merchantOption == 13)
                     {
-                        $yearFrom = date('Y',strtotime('-5 Years'));
-                        $yearTo = date('Y');
-                        $dateFrom = $yearFrom . '-' . '01' . '-01';
-                        $dateTo = $yearTo . '-' . '12' . '-31';
+                        $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                        $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                         $order = $this->promoListingDownloadReport($storeId, $dateFrom, $dateTo, $promoId, $orderType);
                     }
                 }
@@ -4607,32 +4383,33 @@ class StoreReportsController extends StoreAppController
                         $enddate = date('Y-m-d 23:59:59', strtotime($endDate));
                         $order = $this->extendedOfferListingDownloadReport($storeId, $startdate, $enddate, $extendedOfferId, $orderType);
                     } 
-                    else if ($type == 2)
+                    else if($type == 2)
                     {
-                        
-                        if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                        if($fromMonth == 1)
                         {
-                            $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                            $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                            $weekyear = date('Y', strtotime($date_start_from));
+                            $day = $this->Common->getStartAndEndDate(1,$fromYear);
                         } else {
-                            $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                            $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                            $weekyear = date('Y', strtotime("This Week"));
+                            $day = '01';
                         }
+                        $endYear = $fromYear;
+                        $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                        $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                        $weekyear = $fromYear;
                         
                         $order = $this->extendedOfferWeeklyListingDownloadReport($storeId, $startFrom, $endFrom, $extendedOfferId, $orderType);
                     }
-                    else if ($type == 3)
+                    else if($type == 3)
                     {
-                        $dateFrom   = $year . '-' . $month . '-01';
-                        $dateTo     = $year . '-' . $month . '-31';
+                        $year = $fromYear;
+                        $month = $fromMonth;
+                        $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                        $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                         $order = $this->extendedOfferListingDownloadReport($storeId, $dateFrom, $dateTo, $extendedOfferId, $orderType);
                     }
-                    else if ($type == 4)
+                    else if($type == 4)
                     {
-                        $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                        $dateTo     = $toYearReq . '-' . '12' . '-31';
+                        $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                        $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                         $order = $this->extendedOfferListingDownloadReport($storeId, $dateFrom, $dateTo, $extendedOfferId, $orderType);
                     }
                 }
@@ -4642,41 +4419,41 @@ class StoreReportsController extends StoreAppController
                         $today = date('Y-m-d');
                         $startDate = $today;
                         $endDate = $today;
-                    } elseif ($merchantOption == 2) {
+                    } else if($merchantOption == 2) {
                         $yesterday = date('Y-m-d', strtotime("-1 days"));
                         $startDate = $yesterday;
                         $endDate = $yesterday;
-                    } elseif ($merchantOption == 3) {
+                    } else if($merchantOption == 3) {
                         $startDate = date('Y-m-d', strtotime('last sunday'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 4) {
+                    } else if($merchantOption == 4) {
                         $startDate = date('Y-m-d', strtotime('last monday'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 5) {
+                    } else if($merchantOption == 5) {
                         $startDate = date('Y-m-d', strtotime('-6 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 6) {
+                    } else if($merchantOption == 6) {
                         $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                         $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                    } elseif ($merchantOption == 7) {
+                    } else if($merchantOption == 7) {
                         $startDate = date('Y-m-d', strtotime('last week monday'));
                         $endDate = date('Y-m-d', strtotime('last week sunday'));
-                    } elseif ($merchantOption == 8) {
+                    } else if($merchantOption == 8) {
                         $startDate = date('Y-m-d', strtotime('last week monday'));
                         $endDate = date('Y-m-d', strtotime('last week friday'));
-                    } elseif ($merchantOption == 9) {
+                    } else if($merchantOption == 9) {
                         $startDate = date('Y-m-d', strtotime('-13 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 10) {
+                    } else if($merchantOption == 10) {
                         $startDate = date('Y-m-01');
                         $endDate = date("Y-m-t");
-                    } elseif ($merchantOption == 11) {
+                    } else if($merchantOption == 11) {
                         $startDate = date('Y-m-d', strtotime('-29 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 12) {
+                    } else if($merchantOption == 12) {
                         $startDate = date('Y-m-d', strtotime("first day of last month"));
                         $endDate = date('Y-m-d', strtotime("last day of last month"));
-                    } elseif ($merchantOption == 13) {
+                    } else if($merchantOption == 13) {
                         $yearFrom = date('Y',strtotime('-5 Years'));
                         $yearTo = date('Y');
                         $startDate = $yearFrom . '-' . '01' . '-01';
@@ -4693,10 +4470,8 @@ class StoreReportsController extends StoreAppController
                     }
                     if($merchantOption == 13)
                     {
-                        $yearFrom = date('Y',strtotime('-5 Years'));
-                        $yearTo = date('Y');
-                        $dateFrom = $yearFrom . '-' . '01' . '-01';
-                        $dateTo = $yearTo . '-' . '12' . '-31';
+                        $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                        $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                         $order = $this->extendedOfferListingDownloadReport($storeId, $dateFrom, $dateTo, $extendedOfferId, $orderType);
                     }
                 }
@@ -4712,32 +4487,33 @@ class StoreReportsController extends StoreAppController
                         $enddate = date('Y-m-d 23:59:59', strtotime($endDate));
                         $order = $this->dineInListingDownloadReport($storeId, $startdate, $enddate);
                     } 
-                    else if ($type == 2)
+                    else if($type == 2)
                     {
-                        
-                        if(isset($date_start_from) && isset($date_end_from) && $date_start_from != '' && $date_end_from != '')
+                        if($fromMonth == 1)
                         {
-                            $startFrom = date('Y-m-d 00:00:00', strtotime($date_start_from));
-                            $endFrom = date('Y-m-d 23:59:59', strtotime($date_end_from));
-                            $weekyear = date('Y', strtotime($date_start_from));
+                            $day = $this->Common->getStartAndEndDate(1,$fromYear);
                         } else {
-                            $startFrom = date('Y-m-d 00:00:00', strtotime("first day of this month"));
-                            $endFrom = date('Y-m-d 23:59:59', strtotime("today"));
-                            $weekyear = date('Y', strtotime("This Week"));
+                            $day = '01';
                         }
+                        $endYear = $fromYear;
+                        $startFrom = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-' . $day));
+                        $endFrom = date('Y-m-d', strtotime($toYear . '-' . $toMonth));
+                        $weekyear = $fromYear;
                         $order = $this->dineInWeeklyListingDownloadReport($storeId, $startFrom, $endFrom);
                     }
-                    else if ($type == 3)
+                    else if($type == 3)
                     {
-                        $dateFrom   = $year . '-' . $month . '-01';
-                        $dateTo     = $year . '-' . $month . '-31';
+                        $year = $fromYear;
+                        $month = $fromMonth;
+                        $dateFrom   = date('Y-m-d', strtotime($fromYear . '-' . $fromMonth . '-01'));
+                        $dateTo     = date('Y-m-t', strtotime($toYear . '-' . $toMonth));
                         
                         $order = $this->dineInListingDownloadReport($storeId, $dateFrom, $dateTo);
                     }
-                    else if ($type == 4)
+                    else if($type == 4)
                     {
-                        $dateFrom   = $fromYearReq . '-' . '01' . '-01';
-                        $dateTo     = $toYearReq . '-' . '12' . '-31';
+                        $dateFrom   = date('Y-m-d', strtotime($fromYear . '-01-01'));
+                        $dateTo     = date('Y-m-t', strtotime($toYear . '-12'));
                         $order = $this->dineInListingDownloadReport($storeId, $dateFrom, $dateTo);
                     }
                 }
@@ -4747,41 +4523,41 @@ class StoreReportsController extends StoreAppController
                         $today = date('Y-m-d');
                         $startDate = $today;
                         $endDate = $today;
-                    } elseif ($merchantOption == 2) {
+                    } else if($merchantOption == 2) {
                         $yesterday = date('Y-m-d', strtotime("-1 days"));
                         $startDate = $yesterday;
                         $endDate = $yesterday;
-                    } elseif ($merchantOption == 3) {
+                    } else if($merchantOption == 3) {
                         $startDate = date('Y-m-d', strtotime('last sunday'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 4) {
+                    } else if($merchantOption == 4) {
                         $startDate = date('Y-m-d', strtotime('last monday'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 5) {
+                    } else if($merchantOption == 5) {
                         $startDate = date('Y-m-d', strtotime('-6 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 6) {
+                    } else if($merchantOption == 6) {
                         $startDate = date('Y-m-d', strtotime('-2 week sunday'));
                         $endDate = date('Y-m-d', strtotime('-1 week saturday'));
-                    } elseif ($merchantOption == 7) {
+                    } else if($merchantOption == 7) {
                         $startDate = date('Y-m-d', strtotime('last week monday'));
                         $endDate = date('Y-m-d', strtotime('last week sunday'));
-                    } elseif ($merchantOption == 8) {
+                    } else if($merchantOption == 8) {
                         $startDate = date('Y-m-d', strtotime('last week monday'));
                         $endDate = date('Y-m-d', strtotime('last week friday'));
-                    } elseif ($merchantOption == 9) {
+                    } else if($merchantOption == 9) {
                         $startDate = date('Y-m-d', strtotime('-13 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 10) {
+                    } else if($merchantOption == 10) {
                         $startDate = date('Y-m-01');
                         $endDate = date("Y-m-t");
-                    } elseif ($merchantOption == 11) {
+                    } else if($merchantOption == 11) {
                         $startDate = date('Y-m-d', strtotime('-29 days'));
                         $endDate = date('Y-m-d');
-                    } elseif ($merchantOption == 12) {
+                    } else if($merchantOption == 12) {
                         $startDate = date('Y-m-d', strtotime("first day of last month"));
                         $endDate = date('Y-m-d', strtotime("last day of last month"));
-                    } elseif ($merchantOption == 13) {
+                    } else if($merchantOption == 13) {
                         $yearFrom = date('Y',strtotime('-5 Years'));
                         $yearTo = date('Y');
                         $startDate = $yearFrom . '-' . '01' . '-01';
@@ -4799,10 +4575,8 @@ class StoreReportsController extends StoreAppController
                     }
                     if($merchantOption == 13)
                     {
-                        $yearFrom = date('Y',strtotime('-5 Years'));
-                        $yearTo = date('Y');
-                        $dateFrom = $yearFrom . '-' . '01' . '-01';
-                        $dateTo = $yearTo . '-' . '12' . '-31';
+                        $dateFrom = date('Y-m-d', strtotime($yearFrom . '-' . '01' . '-01'));
+                        $dateTo = date('Y-m-t', strtotime($yearTo . '-' . '12'));
                         
                         $order = $this->dineInListingDownloadReport($storeId, $dateFrom, $dateTo);
                     }
@@ -4837,7 +4611,28 @@ class StoreReportsController extends StoreAppController
             $objPHPExcel->getDefaultStyle()->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
             
             $text = substr($text, 0, 31);
-            if($reportType == 3)
+            if($reportType == 2)
+            {
+                $objPHPExcel->getActiveSheet()->setTitle($text);
+                $objPHPExcel->getActiveSheet()->setCellValue('A1', 'Product Name');
+                $objPHPExcel->getActiveSheet()->setCellValue('B1', 'Category');
+                $objPHPExcel->getActiveSheet()->setCellValue('C1', '# of Items');
+                $objPHPExcel->getActiveSheet()->setCellValue('D1', 'Revenue ($)');
+                $objPHPExcel->getActiveSheet()->getStyle('A1')->applyFromArray($styleArray);
+                $objPHPExcel->getActiveSheet()->getStyle('B1')->applyFromArray($styleArray);
+                $objPHPExcel->getActiveSheet()->getStyle('C1')->applyFromArray($styleArray);
+                $objPHPExcel->getActiveSheet()->getStyle('D1')->applyFromArray($styleArray);
+                $i = 2;
+                foreach ($order as $data) 
+                {
+                    $objPHPExcel->getActiveSheet()->setCellValue("A$i", (isset($data['Item']['name']) ? $data['Item']['name'] : '-'));
+                    $objPHPExcel->getActiveSheet()->setCellValue("B$i", (isset($data['Item']['Category']['name']) ? $data['Item']['Category']['name'] : '-'));
+                    $objPHPExcel->getActiveSheet()->setCellValue("C$i", (isset($data[0]['number']) ? $data[0]['number'] : '-'));
+                    $objPHPExcel->getActiveSheet()->setCellValue("D$i", (isset($data[0]['total_amount']) ? $this->Common->amount_format($data[0]['total_amount']) : '-'));
+                    $i++;
+                }
+            }
+            else if($reportType == 3)
             {
                 $objPHPExcel->getActiveSheet()->setTitle($text);
                 $objPHPExcel->getActiveSheet()->setCellValue('A1', 'Customer Name');
@@ -4869,16 +4664,14 @@ class StoreReportsController extends StoreAppController
             {
                 $objPHPExcel->getActiveSheet()->setTitle($text);
                 $objPHPExcel->getActiveSheet()->setCellValue('A1', 'Customer Name');
-                $objPHPExcel->getActiveSheet()->setCellValue('B1', 'Store Name');
-                $objPHPExcel->getActiveSheet()->setCellValue('C1', 'Reservation Date');
-                $objPHPExcel->getActiveSheet()->setCellValue('D1', 'Reservation Time');
-                $objPHPExcel->getActiveSheet()->setCellValue('E1', 'No. of Person');
-                $objPHPExcel->getActiveSheet()->setCellValue('F1', 'Special Request');
-                $objPHPExcel->getActiveSheet()->setCellValue('G1', 'Phone');
-                $objPHPExcel->getActiveSheet()->setCellValue('H1', 'Address');
-                $objPHPExcel->getActiveSheet()->setCellValue('I1', 'Email');
-                $objPHPExcel->getActiveSheet()->setCellValue('J1', 'Status');
-                $objPHPExcel->getActiveSheet()->setCellValue('K1', 'Created');
+                $objPHPExcel->getActiveSheet()->setCellValue('B1', 'Reservation Date');
+                $objPHPExcel->getActiveSheet()->setCellValue('C1', 'Reservation Time');
+                $objPHPExcel->getActiveSheet()->setCellValue('D1', 'No. of Persons');
+                $objPHPExcel->getActiveSheet()->setCellValue('E1', 'Special Request');
+                $objPHPExcel->getActiveSheet()->setCellValue('F1', 'Phone #');
+                $objPHPExcel->getActiveSheet()->setCellValue('G1', 'Email');
+                $objPHPExcel->getActiveSheet()->setCellValue('H1', 'Status');
+                $objPHPExcel->getActiveSheet()->setCellValue('I1', 'Created Date');
                 $objPHPExcel->getActiveSheet()->getStyle('A1')->applyFromArray($styleArray);
                 $objPHPExcel->getActiveSheet()->getStyle('B1')->applyFromArray($styleArray);
                 $objPHPExcel->getActiveSheet()->getStyle('C1')->applyFromArray($styleArray);
@@ -4888,24 +4681,20 @@ class StoreReportsController extends StoreAppController
                 $objPHPExcel->getActiveSheet()->getStyle('G1')->applyFromArray($styleArray);
                 $objPHPExcel->getActiveSheet()->getStyle('H1')->applyFromArray($styleArray);
                 $objPHPExcel->getActiveSheet()->getStyle('I1')->applyFromArray($styleArray);
-                $objPHPExcel->getActiveSheet()->getStyle('J1')->applyFromArray($styleArray);
-                $objPHPExcel->getActiveSheet()->getStyle('K1')->applyFromArray($styleArray);
                 $i = 2;
                 foreach ($order as $data) 
                 {
                     $name = $data['User']['fname'] . " " . $data['User']['lname'];
                     
                     $objPHPExcel->getActiveSheet()->setCellValue("A$i", $name);
-                    $objPHPExcel->getActiveSheet()->setCellValue("B$i", $data['Store']['store_name']);
-                    $objPHPExcel->getActiveSheet()->setCellValue("C$i", $this->Dateform->us_format($data['Booking']['reservation_date']));
-                    $objPHPExcel->getActiveSheet()->setCellValue("D$i", date('h:i A', strtotime($data['Booking']['reservation_date'])));
-                    $objPHPExcel->getActiveSheet()->setCellValue("E$i", (isset($data['Booking']['number_person']) ? $data['Booking']['number_person'] : '0'));
-                    $objPHPExcel->getActiveSheet()->setCellValue("F$i", $data['Booking']['special_request']);
-                    $objPHPExcel->getActiveSheet()->setCellValue("G$i", $data['User']['phone']);
-                    $objPHPExcel->getActiveSheet()->setCellValue("H$i", $data['User']['address']);
-                    $objPHPExcel->getActiveSheet()->setCellValue("I$i", $data['User']['email']);
-                    $objPHPExcel->getActiveSheet()->setCellValue("J$i", $data['BookingStatus']['name']);
-                    $objPHPExcel->getActiveSheet()->setCellValue("K$i", $this->Dateform->us_format($data['Booking']['created']));
+                    $objPHPExcel->getActiveSheet()->setCellValue("B$i", $this->Dateform->us_format($data['Booking']['reservation_date']));
+                    $objPHPExcel->getActiveSheet()->setCellValue("C$i", date('h:i A', strtotime($data['Booking']['reservation_date'])));
+                    $objPHPExcel->getActiveSheet()->setCellValue("D$i", (isset($data['Booking']['number_person']) ? $data['Booking']['number_person'] : '0'));
+                    $objPHPExcel->getActiveSheet()->setCellValue("E$i", $data['Booking']['special_request']);
+                    $objPHPExcel->getActiveSheet()->setCellValue("F$i", $data['User']['phone']);
+                    $objPHPExcel->getActiveSheet()->setCellValue("G$i", $data['User']['email']);
+                    $objPHPExcel->getActiveSheet()->setCellValue("H$i", $data['BookingStatus']['name']);
+                    $objPHPExcel->getActiveSheet()->setCellValue("I$i", $this->Dateform->us_format($data['Booking']['created']));
                     $i++;
                 }
             }
@@ -5306,7 +5095,7 @@ class StoreReportsController extends StoreAppController
      *
      * ********************* */
 
-    public function orderProductListingDownloadReport($storeID = null, $startDate = null, $endDate = null, $orderType = null) {
+    public function orderProductListingDownloadReport($storeID = null, $startDate = null, $endDate = null, $orderType = null, $productCount = null) {
         $criteria = "Order.is_deleted=0 AND Order.is_active=1 AND Order.is_future_order=0 AND Order.store_id = $storeID";
         
         if ($startDate && $endDate) 
@@ -5324,45 +5113,34 @@ class StoreReportsController extends StoreAppController
         {
             $criteria .=" AND Order.seqment_id IN (2,3)";
         }
-        $this->Store->unbindModel(array('hasOne' => array('SocialMedia'), 'belongsTo' => array('StoreTheme', 'StoreFont'), 'hasMany' => array('StoreGallery', 'StoreContent')));
         $this->OrderItem->bindModel(array('belongsTo' => array(
-                'Item' => array('className' => 'Item', 'foreignKey' => 'item_id'),
-                'Type' => array('className' => 'Type', 'foreignKey' => 'type_id'),
-                'Size' => array('className' => 'Size', 'foreignKey' => 'size_id'))), false);
-        $this->Order->bindModel(
+                'Order' => array('className' => 'Order', 'foreignKey' => 'order_id', 'fields' => array('id', 'store_id', 'order_number', 'seqment_id', 'order_status_id', 'user_id', 'amount', 'pickup_time', 'delivery_address_id', 'is_pre_order', 'created', 'coupon_discount', 'tip')),
+                'Item' => array('className' => 'Item', 'foreignKey' => 'item_id', 'fields' => array('id', 'name', 'category_id', 'description', 'units')),
+                )), false);
+        
+        $this->OrderItem->Item->bindModel(
                 array(
-            'belongsTo' => array(
-                'User' => array(
-                    'className' => 'User',
-                    'foreignKey' => 'user_id'
-                ),
-                'OrderStatus' => array(
-                    'className' => 'OrderStatus',
-                    'foreignKey' => 'order_status_id'
-                ),
-                'Segment' => array(
-                    'className' => 'Segment',
-                    'foreignKey' => 'seqment_id'
-                ),
-                'DeliveryAddress' => array(
-                    'className' => 'DeliveryAddress',
-                    'foreignKey' => 'delivery_address_id'
-                ), 
-                'Store' => array(
-                    'className' => 'Store',
-                    'foreignKey' => 'store_id',
-                    'fields' => array('id', 'store_name')
+                'belongsTo' => array(
+                    'Category' => array(
+                        'className' => 'Category',
+                        'foreignKey' => 'category_id',
+                        'fields' => array('id', 'name')
+                    )
                 )
-            ),
-            'hasMany' => array(
-                'OrderItem' => array(
-                    'className' => 'OrderItem',
-                    'foreignKey' => 'order_id'
-                ),
-            )
-                ), false
+            ), false
         );
-        $orderdetail = $this->Order->find('all', array('recursive' => 2, 'conditions' => array($criteria), 'group' => array('Order.id'), 'order' => array('Order.created' => 'DESC')));
+        
+        $limitProduct = ($productCount != 'All') ? $productCount : '';
+        
+        $orderdetail = $this->OrderItem->find('all', array(
+                    'fields'        => array('id', 'Item.name', 'Item.category_id', 'sum(OrderItem.quantity) AS number', 'sum(OrderItem.total_item_price) AS total_amount', '(OrderItem.total_item_price / OrderItem.quantity) as unit_price', 'order_id', 'quantity', 'item_id', 'size_id', 'type_id', 'total_item_price', 'discount', 'tax_price', 'user_id', 'created'),
+                    'recursive'     => 3, 
+                    'conditions'    => array($criteria), 
+                    'order'         => array('total_amount' => 'DESC'), 
+                    'group'         => array('Item.id'),
+                    'limit'         => $limitProduct
+           
+           ));
         return $orderdetail;
     }
     
@@ -5375,7 +5153,7 @@ class StoreReportsController extends StoreAppController
      *
      * ********************* */
 
-    public function orderProductListingWeekDownloadReport($storeID = null, $startDate = null, $endDate = null, $orderType = null) 
+    public function orderProductListingWeekDownloadReport($storeID = null, $startDate = null, $endDate = null, $orderType = null, $productCount = null) 
     {
         $criteria = "Order.is_deleted=0 AND Order.is_active=1 AND Order.is_future_order=0 AND Order.store_id = $storeID";
         
@@ -5394,45 +5172,34 @@ class StoreReportsController extends StoreAppController
         {
             $criteria .=" AND Order.seqment_id IN (2,3)";
         }
-        $this->Store->unbindModel(array('hasOne' => array('SocialMedia'), 'belongsTo' => array('StoreTheme', 'StoreFont'), 'hasMany' => array('StoreGallery', 'StoreContent')));
         $this->OrderItem->bindModel(array('belongsTo' => array(
-                'Item' => array('className' => 'Item', 'foreignKey' => 'item_id'),
-                'Type' => array('className' => 'Type', 'foreignKey' => 'type_id'),
-                'Size' => array('className' => 'Size', 'foreignKey' => 'size_id'))), false);
-        $this->Order->bindModel(
+                'Order' => array('className' => 'Order', 'foreignKey' => 'order_id', 'fields' => array('id', 'store_id', 'order_number', 'seqment_id', 'order_status_id', 'user_id', 'amount', 'pickup_time', 'delivery_address_id', 'is_pre_order', 'created', 'coupon_discount', 'tip')),
+                'Item' => array('className' => 'Item', 'foreignKey' => 'item_id', 'fields' => array('id', 'name', 'category_id', 'description', 'units')),
+                )), false);
+        
+        $this->OrderItem->Item->bindModel(
                 array(
-            'belongsTo' => array(
-                'User' => array(
-                    'className' => 'User',
-                    'foreignKey' => 'user_id'
-                ),
-                'OrderStatus' => array(
-                    'className' => 'OrderStatus',
-                    'foreignKey' => 'order_status_id'
-                ),
-                'Segment' => array(
-                    'className' => 'Segment',
-                    'foreignKey' => 'seqment_id'
-                ),
-                'DeliveryAddress' => array(
-                    'className' => 'DeliveryAddress',
-                    'foreignKey' => 'delivery_address_id'
-                ), 
-                'Store' => array(
-                    'className' => 'Store',
-                    'foreignKey' => 'store_id',
-                    'fields' => array('id', 'store_name')
+                'belongsTo' => array(
+                    'Category' => array(
+                        'className' => 'Category',
+                        'foreignKey' => 'category_id',
+                        'fields' => array('id', 'name')
+                    )
                 )
-            ),
-            'hasMany' => array(
-                'OrderItem' => array(
-                    'className' => 'OrderItem',
-                    'foreignKey' => 'order_id'
-                ),
-            )
-                ), false
+            ), false
         );
-        $orderdetail = $this->Order->find('all', array('recursive' => 2, 'conditions' => array($criteria), 'group' => array('Order.id'), 'order' => array('Order.created' => 'DESC')));
+        
+        $limitProduct = ($productCount != 'All') ? $productCount : '';
+        
+        $orderdetail = $this->OrderItem->find('all', array(
+                    'fields'        => array('id', 'Item.name', 'Item.category_id', 'sum(OrderItem.quantity) AS number', 'sum(OrderItem.total_item_price) AS total_amount', '(OrderItem.total_item_price / OrderItem.quantity) as unit_price', 'order_id', 'quantity', 'item_id', 'size_id', 'type_id', 'total_item_price', 'discount', 'tax_price', 'user_id', 'created'),
+                    'recursive'     => 3, 
+                    'conditions'    => array($criteria), 
+                    'order'         => array('total_amount' => 'DESC'), 
+                    'group'         => array('Item.id'),
+                    'limit'         => $limitProduct
+           
+           ));
         return $orderdetail;
     }
     
@@ -6385,5 +6152,74 @@ class StoreReportsController extends StoreAppController
         );
         $bookingdetail = $this->paginate('Booking');
         return $bookingdetail;
+    }
+    
+    /*     * ***********************
+     * Function name:dineInPieListing()
+      Description: Dine In Pie Status list
+      created:03/11/2017
+     *
+     * ********************* */
+
+    public function dineInPieListing($storeID = null, $startDate = null, $endDate = null) 
+    {
+        $merchantId = $this->Session->read('merchantId');
+        $bookingCon = array();
+        if($storeID == 'All')
+        {
+            $stores = $this->Store->getMerchantStores($merchantId);
+            $storeIds = array();
+            foreach ($stores as $storeId => $storeName)
+            {
+                $storeIds[]= $storeId;
+            }
+            $bookingCon['Booking.store_id in']= $storeIds;
+        } else {
+            $bookingCon['Booking.store_id']= $storeID;
+        }
+        $conditions = array_merge($bookingCon, array('Booking.is_active' => 1, 'Booking.is_deleted' => 0));
+        if ($startDate && $endDate) {
+            $conditions['DATE(Booking.created) >='] = $startDate;
+            $conditions['DATE(Booking.created) <='] = $endDate;
+        }
+        $orderdetail = $this->Booking->find('all', array('fields' => array('Booking.booking_status_id', 'count(Booking.booking_status_id) as booking_count'), 'conditions' => array($conditions), 'group' => array('Booking.booking_status_id'), 'order' => array('Booking.created' => 'DESC')));
+        return $orderdetail;
+    }
+    
+    /*     * ***********************
+     * Function name:dineInPieWeeklyListing()
+      Description: Dine In Pie Weekly Status list
+      created:03/11/2017
+     *
+     * ********************* */
+
+    public function dineInPieWeeklyListing($storeID = null, $startDate = null, $endDate = null) 
+    {
+        $merchantId = $this->Session->read('merchantId');
+        $criteria = "Booking.is_deleted=0 AND Booking.is_active=1";
+        if ($startDate && $endDate) {
+            $stratdate = $this->Dateform->formatDate($startDate);
+            $enddate = $this->Dateform->formatDate($endDate);
+            $criteria.= " AND WEEK(Booking.created) >= WEEK('" . $startDate . "') AND WEEK(Booking.created) <= WEEK('" . $endDate . "') AND YEAR(Booking.created) = YEAR('" . $endDate . "')";
+        }
+        
+        if ($storeID == 'All') 
+        {
+            $storeList = $this->Store->getMerchantStores($merchantId);
+            $storeIds = '';
+            foreach ($storeList as $storeKey => $storeValue) {
+                $storeIds .= $storeKey . ',';
+            }
+            $storeIds = trim($storeIds,',');
+            if($storeIds && !empty($storeIds))
+            {
+                $criteria .= " AND Booking.store_id IN($storeIds)";
+            }
+        } else {
+            $criteria .= " AND Booking.store_id =$storeID";
+        }
+        
+        $orderdetail = $this->Booking->find('all', array('fields' => array('Booking.booking_status_id', 'count(Booking.booking_status_id) as booking_count'), 'conditions' => array($criteria), 'group' => array('Booking.booking_status_id'), 'order' => array('Booking.created' => 'DESC')));
+        return $orderdetail;
     }
 }

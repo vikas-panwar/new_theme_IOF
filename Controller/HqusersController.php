@@ -16,7 +16,7 @@ class HqusersController extends HqAppController {
 
     public function beforeFilter() {
         parent::beforeFilter();
-        $this->Auth->allow('getMerchantNewsLetterContent', 'logout', 'merchant', 'location', 'gallery', 'staticContent', 'checkMerchantEmail', 'forgetPassword', 'resetPassword', 'accountActivation', 'contact_us', 'newsletter', 'checkHqEndUserEmail', 'city', 'zip', 'getTermsAndPolicyData', 'getStateByCity', 'getState', 'storeRedirect');
+        $this->Auth->allow('getMerchantNewsLetterContent', 'logout', 'merchant', 'location', 'gallery', 'staticContent', 'checkMerchantEmail', 'forgetPassword', 'resetPassword', 'accountActivation', 'contact_us', 'newsletter', 'checkHqEndUserEmail', 'city', 'zip', 'getTermsAndPolicyData', 'getStateByCity', 'getState', 'storeRedirect', 'termsPolicy', 'privacyPolicy');
         $merchantDetail = $this->Merchant->getMerchantDetail($this->Session->read('hq_id'));
         $id = $merchantDetail['Merchant']['id'];
         $name = $merchantDetail['Merchant']['name'];
@@ -141,6 +141,9 @@ class HqusersController extends HqAppController {
                     if ($user['User']['is_deleted'] == 0) {
                         if ($user['User']['is_active'] == 1) {
                             if ($this->Auth->login()) {
+                                $this->Cookie->write('_ME_E', $this->Encryption->encode($this->data['User']['email']), false, 7200);
+                                $this->Cookie->write('_MST_E', $this->Encryption->encode($this->request->data['User']['password']), false, 7200);
+                                $this->Cookie->write('_MF_E', '1', false, 7200);
                                 $this->Session->write('login_date_time', date('Y-m-d H:i:s'));
                                 $response['status'] = 'Success';
                             } else {
@@ -184,22 +187,12 @@ class HqusersController extends HqAppController {
       ----------------------------------------------------- */
 
     public function logout() {
-
-        /* store front user logout start */
-        $this->Session->delete('Auth.User');
-        $this->Session->delete('orderOverview');
-        $this->Session->delete('Order');
-        $this->Session->delete('Cart');
-        $this->Session->delete('cart');
-        $this->Session->delete('FetchProductData');
-        $this->Session->delete('Coupon');
-        $this->Session->delete('Discount');
-        $this->Session->delete('Auth.User');
-        $this->Session->delete('GuestUser');
-        $this->Session->delete('ordersummary');
-        $this->Session->delete('Zone');
+        $this->Cookie->delete('_ME_E');
+        $this->Cookie->delete('_MST_E');
+        $this->Cookie->delete('_MF_E');
         /* store front user logout end */
         $this->Session->delete('Auth.hqusers');
+        $this->Cookie->write('logoutCookie', '1', false, 7200);
         $this->redirect($this->referer());
         die;
 //        $merchantId = $this->Session->read('hq_id');
@@ -249,7 +242,7 @@ class HqusersController extends HqAppController {
                 $this->request->data['User']['state_id'] = 0;
                 $this->request->data['User']['city_id'] = 0;
                 $this->request->data['User']['zip_id'] = 0;
-                
+
                 // Activate User
                 $this->request->data['User']['is_active'] = 1;
 
@@ -260,7 +253,7 @@ class HqusersController extends HqAppController {
                 if ($result == 1 && !empty($merchantId)) {
                     $this->Session->setFlash(__('Registration successfully done'), 'flash_success');
                     if ($this->Auth->login()) {
-                        $this->Session->write('login_date_time', date('Y-m-d H:i:s'));            
+                        $this->Session->write('login_date_time', date('Y-m-d H:i:s'));
                         $this->redirect(array('controller' => 'hqusers', 'action' => 'myProfile'));
                     } else {
                         $this->logout();
@@ -462,7 +455,7 @@ class HqusersController extends HqAppController {
         if (!empty($this->request->data['Store']['keyword'])) {
             $search = $this->request->data['Store']['keyword'];
             $addresskey = str_replace(' ', '+', $search);
-            $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $addresskey . '&sensor=false');
+            $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $addresskey . '&sensor=false');
             $output = json_decode($geocode);
             if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
                 
@@ -1481,7 +1474,8 @@ class HqusersController extends HqAppController {
             $this->loadModel('EmailTemplate');
             $emailSuccess = $this->EmailTemplate->storeTemplates($decrypt_storeId, $decrypt_merchantId, $template_type);
             if ($emailSuccess) {
-                if (($store['Store']['notification_type'] == 1 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_email']))) {
+                $checkEmailNotificationMethod = $this->Common->checkNotificationMethod($store, 'email');
+                if ($checkEmailNotificationMethod) {
                     $storeEmail = trim($store['Store']['notification_email']);
                 } else {
                     $storeEmail = trim($store['Store']['email_id']);
@@ -1524,7 +1518,8 @@ class HqusersController extends HqAppController {
                 }
 
 
-                if (($store['Store']['notification_type'] == 2 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_number']))) {
+                $checkPhoneNotificationMethod = $this->Common->checkNotificationMethod($store, 'number');
+                if ($checkPhoneNotificationMethod) {
                     $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['notification_number']);
                 } else {
                     $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['phone']);
@@ -1628,7 +1623,8 @@ class HqusersController extends HqAppController {
                 $emailSuccess = $this->EmailTemplate->storeTemplates($data['StoreReview']['store_id'], $merchantId, $template_type);
                 $store = $this->Store->fetchStoreDetail($data['StoreReview']['store_id'], $merchantId);
                 if ($emailSuccess) {
-                    if (($store['Store']['notification_type'] == 1 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_email']))) {
+                    $checkEmailNotificationMethod = $this->Common->checkNotificationMethod($store, 'email');
+                    if ($checkEmailNotificationMethod) {
                         $storeEmail = trim($store['Store']['notification_email']);
                     } else {
                         $storeEmail = trim($store['Store']['email_id']);
@@ -1669,7 +1665,8 @@ class HqusersController extends HqAppController {
                         
                     }
 
-                    if (($store['Store']['notification_type'] == 2 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_number']))) {
+                    $checkPhoneNotificationMethod = $this->Common->checkNotificationMethod($store, 'number');
+                    if ($checkPhoneNotificationMethod) {
                         $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['notification_number']);
                     } else {
                         $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['phone']);
@@ -1818,7 +1815,8 @@ class HqusersController extends HqAppController {
                 //$emailSuccess = $this->EmailTemplate->storeTemplates($decrypt_storeId, $decrypt_merchantId, $template_type);
                 $emailSuccess = $this->DefaultTemplate->find('first', array('conditions' => array('DefaultTemplate.template_code' => $template_type, 'DefaultTemplate.is_default' => 1)));
                 if ($emailSuccess) {
-                    if (($store['Store']['notification_type'] == 1 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_email']))) {
+                    $checkEmailNotificationMethod = $this->Common->checkNotificationMethod($store, 'email');
+                    if ($checkEmailNotificationMethod) {
                         $storeEmail = $store['Store']['notification_email'];
                     } else {
                         $storeEmail = $store['Store']['email_id'];
@@ -1866,7 +1864,8 @@ class HqusersController extends HqAppController {
                         
                     }
 
-                    if (($store['Store']['notification_type'] == 2 || $store['Store']['notification_type'] == 3) && (!empty($store['Store']['notification_number']))) {
+                    $checkPhoneNotificationMethod = $this->Common->checkNotificationMethod($store, 'number');
+                    if ($checkPhoneNotificationMethod) {
                         $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['notification_number']);
                     } else {
                         $mobnumber = '+1' . str_replace(array('(', ')', ' ', '-'), '', $store['Store']['phone']);
@@ -2039,7 +2038,7 @@ class HqusersController extends HqAppController {
                 $address = trim(ucwords($tmp['DeliveryAddress']['address']));
                 $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                 $adjuster_address2 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
                 $output = json_decode($geocode);
                 $tmp['DeliveryAddress']['user_id'] = AuthComponent::User('id');
                 $tmp['DeliveryAddress']['merchant_id'] = $decrypt_merchantId;
@@ -2064,7 +2063,7 @@ class HqusersController extends HqAppController {
                 $address = trim(ucwords($tmp['DeliveryAddress1']['address']));
                 $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                 $adjuster_address2 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
                 $output = json_decode($geocode);
                 $tmp['DeliveryAddress1']['user_id'] = AuthComponent::User('id');
                 $tmp['DeliveryAddress1']['merchant_id'] = $decrypt_merchantId;
@@ -2089,7 +2088,7 @@ class HqusersController extends HqAppController {
                 $address = trim(ucwords($tmp['DeliveryAddress2']['address']));
                 $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                 $adjuster_address2 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
                 $output = json_decode($geocode);
                 $tmp['DeliveryAddress2']['user_id'] = AuthComponent::User('id');
                 $tmp['DeliveryAddress2']['merchant_id'] = $decrypt_merchantId;
@@ -2114,7 +2113,7 @@ class HqusersController extends HqAppController {
                 $address = trim(ucwords($tmp['DeliveryAddress3']['address']));
                 $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                 $adjuster_address3 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address3 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address3 . '&sensor=false');
                 $output = json_decode($geocode);
                 $tmp['DeliveryAddress3']['user_id'] = AuthComponent::User('id');
                 $tmp['DeliveryAddress3']['merchant_id'] = $decrypt_merchantId;
@@ -2140,7 +2139,7 @@ class HqusersController extends HqAppController {
                 $address = trim(ucwords($tmp['DeliveryAddress4']['address']));
                 $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
                 $adjuster_address4 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address4 . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address4 . '&sensor=false');
                 $output = json_decode($geocode);
                 $tmp['DeliveryAddress4']['user_id'] = AuthComponent::User('id');
                 $tmp['DeliveryAddress4']['merchant_id'] = $decrypt_merchantId;
@@ -2203,7 +2202,7 @@ class HqusersController extends HqAppController {
             $address = trim(ucwords($this->request->data['DeliveryAddress']['address']));
             $dlocation = $address . " " . $cityName . " " . $stateName . " " . $zipCode;
             $adjuster_address2 = str_replace(' ', '+', $dlocation);
-            $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $adjuster_address2 . '&sensor=false');
+            $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $adjuster_address2 . '&sensor=false');
             $output = json_decode($geocode);
             $this->request->data['DeliveryAddress']['id'] = $decrypt_deliveryAddressId;
             $this->request->data['DeliveryAddress']['user_id'] = AuthComponent::User('id');
@@ -2292,6 +2291,33 @@ class HqusersController extends HqAppController {
             $viewObject = new View($this, false);
             echo $viewObject->Form->input('User.zip_id', array('type' => 'select', 'options' => @$result, 'class' => 'form-control custom-text', 'label' => false, 'div' => false, 'empty' => 'Select Zip'));
         }
+    }
+
+    public function termsPolicy() {
+        $this->layout = 'merchant_front';
+        $this->loadModel('TermsAndPolicy');
+        $merchantId = $this->Session->read('hq_id');
+        $getContent = 'terms_and_conditions';
+        $heading = 'Terms & Conditions';
+
+        $tandcData = $this->TermsAndPolicy->findByMerchantId($merchantId, array($getContent));
+        if (!empty($tandcData)) {
+            $tandcData = $tandcData['TermsAndPolicy']['terms_and_conditions'];
+        }
+        $this->set(compact('tandcData', $tandcData));
+    }
+
+    public function privacyPolicy() {
+        $this->layout = 'merchant_front';
+        $this->loadModel('TermsAndPolicy');
+        $merchantId = $this->Session->read('hq_id');
+        $getContent = 'privacy_policy';
+        $heading = 'Privacy Policy';
+        $tandcData = $this->TermsAndPolicy->findByMerchantId($merchantId, array($getContent));
+        if (!empty($tandcData)) {
+            $tandcData = $tandcData['TermsAndPolicy']['privacy_policy'];
+        }
+        $this->set(compact('tandcData', $tandcData));
     }
 
     public function getTermsAndPolicyData() {

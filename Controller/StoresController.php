@@ -311,9 +311,9 @@ class StoresController extends StoreAppController {
                 $data['store_id'] = $storeId;
                 $data['merchant_id'] = $merchantId;
                 $data['description'] = $this->request->data["StoreGallery"]["description"];
-                $count = $this->StoreGallery->find('count',array('conditions'=>array('store_id'=>$storeId,'merchant_id'=>$merchantId)));
-                if(!empty($count)){
-                    $data['position'] = $count+1;
+                $count = $this->StoreGallery->find('count', array('conditions' => array('store_id' => $storeId, 'merchant_id' => $merchantId)));
+                if (!empty($count)) {
+                    $data['position'] = $count + 1;
                 }
                 if ($this->StoreGallery->saveStoreSliderImage($data)) {
                     $this->Session->setFlash(__("File successfully uploaded"), 'alert_success');
@@ -384,11 +384,28 @@ class StoresController extends StoreAppController {
             $this->request->data = $this->Common->trimValue($this->request->data);
             $deliverystatus = '';
             $pickstatus = '';
+            $notificationTypeArr = array();
             if (!empty($this->request->data['deliverystatus'])) {
                 $deliverystatus = implode(',', array_keys(array_filter($this->request->data['deliverystatus'])));
             }
             if (!empty($this->request->data['pickupstatus'])) {
                 $pickstatus = implode(',', array_keys(array_filter($this->request->data['pickupstatus'])));
+            }
+            if (!empty($this->request->data['Store']['all_notification'])) {
+                $notificationTypeArr[0] = $this->request->data['Store']['all_notification'];
+            }
+            if (!empty($this->request->data['Store']['email_notification'])) {
+                $notificationTypeArr[1] = $this->request->data['Store']['email_notification'];
+            }
+            if (!empty($this->request->data['Store']['text_notification'])) {
+                $notificationTypeArr[2] = $this->request->data['Store']['text_notification'];
+            }
+            if (!empty($this->request->data['Store']['voicecall_notification'])) {
+                $notificationTypeArr[3] = $this->request->data['Store']['voicecall_notification'];
+            }
+            if (!empty($notificationTypeArr)) {
+                $notificationTypeString = implode(",", $notificationTypeArr);
+                $this->request->data['Store']['notification_type'] = $notificationTypeString;
             }
             if (!empty($this->request->data['Store']['credit_card_type'])) {
                 $this->request->data['Store']['credit_card_type'] = implode(",", $this->request->data['Store']['credit_card_type']);
@@ -422,7 +439,7 @@ class StoresController extends StoreAppController {
 
                 $dlocation = trim($this->request->data['Store']['address']) . " " . trim($this->request->data['Store']['city']) . " " . trim($this->request->data['Store']['state']) . " " . trim($this->request->data['Store']['zipcode']);
                 $address2 = str_replace(' ', '+', $dlocation);
-                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . urlencode($address2) . '&sensor=false');
+                $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . urlencode($address2) . '&sensor=false');
                 $output = json_decode($geocode);
 
 
@@ -519,7 +536,7 @@ class StoresController extends StoreAppController {
                         $this->StoreTax->saveStoreTax($taxdata);
                     }
                 }
-                
+
                 // Store Tip Data Save
                 if (!empty($this->request->data['StoreTip'])) {
                     foreach ($this->request->data['StoreTip'] as $key => $tipvalue) {
@@ -529,7 +546,7 @@ class StoresController extends StoreAppController {
                         $this->StoreTip->saveStoreTip($tipdata);
                     }
                 }
-                
+
                 $this->Session->write('storeName', $this->request->data['Store']['store_name']);
                 $this->Session->write('admin_time_zone_id', $this->request->data['Store']['time_zone_id']);
                 $this->Session->setFlash(__("Store Configuration details successfully Updated"), 'alert_success');
@@ -576,7 +593,7 @@ class StoresController extends StoreAppController {
             $storeTax = $this->StoreTax->storeTaxInfo($storeId);
             $this->request->data['StoreTax'] = $storeTax;
         }
-        
+
         // For Store Tip
         $storeTax = $this->StoreTip->storeTipInfo($storeId);
         if (!empty($storeTax)) {
@@ -584,18 +601,18 @@ class StoresController extends StoreAppController {
         } else {
             $createStoretax = array();
             for ($i = 1; $i <= 4; $i++) {
-                $createStoretax['store_id']     = $storeId;
-                $createStoretax['tip_name']     = "Tip" . $i;
-                $createStoretax['tip_value']    = '';
-                $createStoretax['is_checked']   = 0;
-                $createStoretax['id']           = '';
+                $createStoretax['store_id'] = $storeId;
+                $createStoretax['tip_name'] = "Tip" . $i;
+                $createStoretax['tip_value'] = '';
+                $createStoretax['is_checked'] = 0;
+                $createStoretax['id'] = '';
                 $this->StoreTip->saveStoreTip($createStoretax);
             }
             $storeTax = $this->StoreTip->storeTipInfo($storeId);
             $this->request->data['StoreTip'] = $storeTax;
         }
-        
-        
+
+
         $this->loadModel('StoreSetting');
         $storeSetting = $this->StoreSetting->findByStoreId($storeId);
         $this->loadModel('OrderStatus');
@@ -789,11 +806,11 @@ class StoresController extends StoreAppController {
             $roleId = "";
             $email = $this->request->data['User']['email'];
             $roleId = $this->request->data['User']['role_id'];
-            $merchantId = $this->Session->read('merchant_id');
+            $merchantId = $this->Session->read('admin_merchant_id');
             if (!$merchantId) {
                 $merchantId = "";
             }
-            $storeId = $this->Session->read('store_id');
+            $storeId = $this->Session->read('admin_store_id');
             if (!$storeId) {
                 $storeId = '';
             }
@@ -850,7 +867,7 @@ class StoresController extends StoreAppController {
                             $this->redirect(array('controller' => 'stores', 'action' => 'forgetPassword'));
                         }
                     } catch (Exception $e) {
-                        $this->Session->setFlash("Please try after some time", $e->getMessage());
+                        $this->Session->setFlash("Please try after some time", 'alert_failed');
                         $this->redirect(array('controller' => 'Stores', 'action' => 'forgetPassword'));
                     }
                 }
@@ -1430,7 +1447,7 @@ class StoresController extends StoreAppController {
         }
         $this->request->data = $this->HomeModal->findByStoreId($storeId);
     }
-    
+
     /* ------------------------------------------------
       Function name:updateStoreImageOrder()
       Description: Update the display order for Image in slider

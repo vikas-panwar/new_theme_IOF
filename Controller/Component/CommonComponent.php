@@ -509,10 +509,10 @@ class CommonComponent extends Component {
         $reachEndTime = false;
         while ($tNow <= $tEnd) {
             if (!empty($store_data) && !empty($storeBT)) {
-                if ($store_data['Store']['is_break1'] == 1 && $tNow > $BStart1 && $tNow < $BEnd1) {
+                if (!empty($store_data['Store']['is_break_time']) && $store_data['Store']['is_break1'] == 1 && $tNow > $BStart1 && $tNow < $BEnd1) {
                     $tNow = $BEnd1;
                 }
-                if ($store_data['Store']['is_break2'] == 1 && $tNow > $BStart2 && $tNow < $BEnd2) {
+                if (!empty($store_data['Store']['is_break_time']) && $store_data['Store']['is_break2'] == 1 && $tNow > $BStart2 && $tNow < $BEnd2) {
                     $tNow = $BEnd2;
                 }
             }
@@ -723,7 +723,7 @@ class CommonComponent extends Component {
                         if ($store_break['StoreBreak']['break2_start_time'] == '24:00:00') {
                             $store_break['StoreBreak']['break2_start_time'] = "00:00:00";
                         }
-                        if ($store_data['Store']['is_break1'] == 1) {
+                        if (!empty($store_data['Store']['is_break_time']) && $store_data['Store']['is_break1'] == 1) {
                             $start_time = strtotime($store_break['StoreBreak']['break1_start_time']);
                             $end_time = strtotime($store_break['StoreBreak']['break1_end_time']);
                             if (($current_time < $end_time) && ($current_time > $start_time)) {
@@ -732,7 +732,7 @@ class CommonComponent extends Component {
                                 $store_status['end_time'] = $end_time;
                                 return $store_status;
                             } else {
-                                if ($store_data['Store']['is_break2'] == 1) {
+                                if (!empty($store_data['Store']['is_break_time']) && $store_data['Store']['is_break2'] == 1) {
                                     $start_time = strtotime($store_break['StoreBreak']['break2_start_time']);
                                     $end_time = strtotime($store_break['StoreBreak']['break2_end_time']);
                                     if (($current_time < $end_time) && ($current_time > $start_time)) {
@@ -747,7 +747,7 @@ class CommonComponent extends Component {
                                     return true;
                                 }
                             }
-                        } else if ($store_data['Store']['is_break2'] == 1) {
+                        } else if (!empty($store_data['Store']['is_break_time']) && $store_data['Store']['is_break2'] == 1) {
                             $start_time = strtotime($store_break['StoreBreak']['break2_start_time']);
                             $end_time = strtotime($store_break['StoreBreak']['break2_end_time']);
                             if (($current_time < $end_time) && ($current_time > $start_time)) {
@@ -1479,14 +1479,14 @@ class CommonComponent extends Component {
             if ($store_data['Store']['is_break_time'] == 1) {
                 $time_break1 = array();
                 $time_break2 = array();
-                if ($store_data['Store']['is_break1'] == 1) {
+                if (!empty($store_data['Store']['is_break_time']) && $store_data['Store']['is_break1'] == 1) {
                     $break_start_time = $store_break['StoreBreak']['break1_start_time'];
                     $break_end_time = $store_break['StoreBreak']['break1_end_time'];
                     $storeBreak[0]['start'] = $store_break['StoreBreak']['break1_start_time'];
                     $storeBreak[0]['end'] = $store_break['StoreBreak']['break1_end_time'];
                     $time_break1 = $this->getStoreTime($break_start_time, $break_end_time);
                 }
-                if ($store_data['Store']['is_break2'] == 1) {
+                if (!empty($store_data['Store']['is_break_time']) && $store_data['Store']['is_break2'] == 1) {
                     $break_start_time = $store_break['StoreBreak']['break2_start_time'];
                     $break_end_time = $store_break['StoreBreak']['break2_end_time'];
                     $storeBreak[1]['start'] = $store_break['StoreBreak']['break2_start_time'];
@@ -1533,12 +1533,12 @@ class CommonComponent extends Component {
         }
 
         $currST = date("H:i", strtotime($start) - ($deliveryInterval * 60));
-        if ($store_data['Store']['is_break1'] == 1) {
+        if (!empty($store_data['Store']['is_break_time']) && $store_data['Store']['is_break1'] == 1) {
             if (strtotime($currST) > strtotime($storeBT['StoreBreak']['break1_start_time']) && strtotime($currST) < strtotime($storeBT['StoreBreak']['break1_end_time'])) {
                 return $storeBT['StoreBreak']['break1_end_time'];
             }
         }
-        if ($store_data['Store']['is_break2'] == 1) {
+        if (!empty($store_data['Store']['is_break_time']) && $store_data['Store']['is_break2'] == 1) {
             if (strtotime($currST) > strtotime($storeBT['StoreBreak']['break2_start_time']) && strtotime($currST) < strtotime($storeBT['StoreBreak']['break2_end_time'])) {
                 return $storeBT['StoreBreak']['break2_end_time'];
             }
@@ -1578,22 +1578,19 @@ class CommonComponent extends Component {
                     }
                 }
             }
-            
-            if($errorType > 0)
-            {
+
+            if ($errorType > 0) {
                 $response['errmsg'] = "Only jpg,gif,jpeg,png type images are allowed";
                 $response['status'] = false;
                 return $response;
             }
-            
-            if($errorSize > 0)
-            {
+
+            if ($errorSize > 0) {
                 $response['errmsg'] = "The image you are trying to upload is too large. Please limit the file size upto 2MB.";
                 $response['status'] = false;
                 return $response;
             }
-            if($errorType == 0 && $errorSize == 0)
-            {
+            if ($errorType == 0 && $errorSize == 0) {
                 $response['status'] = true;
                 return $response;
             }
@@ -1636,7 +1633,7 @@ class CommonComponent extends Component {
         $longitude = "";
         $dlocation = trim($address) . " " . trim($city) . " " . trim($state) . " " . trim($zipcode);
         $address2 = str_replace(' ', '+', $dlocation);
-        $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key='.GOOGLE_GEOMAP_API_KEY.'&address=' . $address2 . '&sensor=false');
+        $geocode = file_get_contents('https://maps.google.com/maps/api/geocode/json?key=' . GOOGLE_GEOMAP_API_KEY . '&address=' . $address2 . '&sensor=false');
         $output = json_decode($geocode);
         if ($output->status == "ZERO_RESULTS" || $output->status != "OK") {
             
@@ -1668,13 +1665,12 @@ class CommonComponent extends Component {
       created:10/2/2016
       ----------------------------------------------------- */
 
-    function getzonescoords($storeId=null) {
+    function getzonescoords($storeId = null) {
         App::import('Model', 'Zone');
         $this->Zone = new Zone();
         if (empty($storeId)) {
             $storeId = $this->Session->read('store_id');
         }
-        
         $zoneCoords = $this->Zone->getzones($storeId);
         return $zoneCoords;
     }
@@ -1848,6 +1844,34 @@ class CommonComponent extends Component {
         return $returnTime;
     }
 
+    public function getHqCurrentTime($merchantId = null, $returnType = 1) {
+        /*
+         * 1- "Y-m-d h:i:s"
+         * 2- "Y-m-d"
+         * 3- "h:i:s"
+         */
+        $returnTime = null;
+        $storeTimezoneInfo = array();
+        App::import('Model', 'TimeZone');
+        App::import('Model', 'Merchant');
+        $this->TimeZone = new TimeZone();
+        $this->Merchant = new Merchant();
+
+        $merchantInfo = $this->Merchant->find('first', array('conditions' => array("Merchant.id" => $merchantId), 'fields' => array('Merchant.time_zone_id')));
+        if (!empty($merchantInfo['Merchant']['time_zone_id'])) {
+            $merchantTimezoneInfo = $this->TimeZone->find('first', array('conditions' => array("TimeZone.id" => $merchantInfo['Merchant']['time_zone_id']), 'fields' => array('TimeZone.code'), 'recursive' => -1));
+            date_default_timezone_set($merchantTimezoneInfo['TimeZone']['code']);
+            if ($returnType == 1) {
+                $returnTime = date("Y-m-d H:i:s");
+            } elseif ($returnType == 2) {
+                $returnTime = date("Y-m-d");
+            } else {
+                $returnTime = date("h:i:s");
+            }
+        }
+        return $returnTime;
+    }
+
     public function getResize($height, $width, $newHeight, $newWidth, $filenamePass, $uploadPath) {
 
         $extension = $this->getExtension($uploadPath);
@@ -1905,8 +1929,8 @@ class CommonComponent extends Component {
     /*
       To get order Fax format
      */
-    public function getOrderFaxFormat($orderId = null, $store_id = null, $merchant_id = null)
-    {
+
+    public function getOrderFaxFormat($orderId = null, $store_id = null, $merchant_id = null) {
         App::import('Model', 'Store');
         $this->Store = new Store();
         if (isset($store_id) && !empty($store_id)) {
@@ -1941,18 +1965,18 @@ class CommonComponent extends Component {
             $this->Item = new Item();
             App::import('Model', 'ItemPrice');
             $this->ItemPrice = new ItemPrice();
-            
+
             $this->Store->unbindModel(array('hasOne' => array('SocialMedia'), 'belongsTo' => array('StoreTheme'), 'hasMany' => array('StoreGallery', 'StoreContent')));
-            $this->OrderItem->bindModel(array('hasMany' => array('OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id', 'topType')), 'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id','size','price'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('size')))), false);
+            $this->OrderItem->bindModel(array('hasMany' => array('OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id', 'topType')), 'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id', 'size', 'price'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('size')))), false);
             $this->OrderItem->OrderPreference->bindModel(array('belongsTo' => array('SubPreference' => array('fields' => array('name', 'price')))), false);
             $this->OrderItem->OrderTopping->bindModel(array('belongsTo' => array('Topping' => array('className' => 'Topping', 'foreignKey' => 'topping_id', 'fields' => array('id', 'name', 'price')))), false);
-            $this->OrderItem->OrderOffer->bindModel(array('belongsTo' => array('Item' => array('foreignKey' => 'offered_item_id', 'fields' => array('name')), 'Size' => array('className' => 'Size', 'foreignKey' => 'offered_size_id', 'fields' => array('id', 'size')))), false);
+            $this->OrderItem->OrderOffer->bindModel(array('belongsTo' => array('Item' => array('foreignKey' => 'offered_item_id', 'fields' => array('name')), 'Size' => array('className' => 'Size', 'foreignKey' => 'offered_size_id', 'fields' => array('id', 'size')), 'Offer' => array('className' => 'Offer', 'foreignKey' => 'offer_id', 'fields' => array('id', 'is_fixed_price', 'offerprice')), 'OfferDetail' => array('className' => 'OfferDetail', 'foreignKey' => 'offer_id', 'fields' => array('id', 'discountAmt')))), false);
             $this->Order->bindModel(array('hasMany' => array('OrderItemFree' => array('fields' => array('Order_id', 'item_id', 'free_quantity', 'price')))));
             $this->Order->bindModel(array('hasMany' => array('OrderItem' => array('fields' => array('id', 'quantity', 'item_id', 'size_id', 'type_id', 'total_item_price', 'discount', 'total_item_price', 'tax_price', 'interval_id', 'item_price'))), 'belongsTo' => array('Store' => array('fields' => array('id', 'service_fee', 'delivery_fee', 'store_name', 'store_url', 'address')), 'Segment' => array('className' => 'Segment', 'foreignKey' => 'seqment_id', 'fields' => array('name')), 'DeliveryAddress' => array('fields' => array('name_on_bell', 'city', 'address', 'phone', 'email')), 'OrderStatus' => array('fields' => array('name')), 'User' => array('foreignKey' => 'user_id', 'fields' => array('email', 'fname', 'lname', 'phone')), 'OrderPayment' => array('className' => 'OrderPayment', 'foreignKey' => 'payment_id', 'fields' => array('id', 'transection_id', 'amount', 'payment_gateway', 'last_digit')))), false);
 
-            $this->Order->OrderItem->bindModel(array('hasMany' => array('OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id', 'topType', 'price'), 'order' => array('OrderTopping.id' => 'asc')), 'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id','size','price'), 'order' => array('OrderPreference.id' => 'asc'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name', 'category_id')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('size')), 'Category' => array('foreignKey' => 'category_id', 'fields' => array('Category.id', 'Category.name')))), false);
-            
-            
+            $this->Order->OrderItem->bindModel(array('hasMany' => array('OrderTopping' => array('fields' => array('id', 'topping_id', 'addon_size_id', 'topType', 'price'), 'order' => array('OrderTopping.id' => 'asc')), 'OrderOffer' => array('fields' => array('id', 'offered_item_id', 'offered_size_id', 'quantity', 'offer_id')), 'OrderPreference' => array('fields' => array('id', 'sub_preference_id', 'order_item_id', 'size', 'price'), 'order' => array('OrderPreference.id' => 'asc'))), 'belongsTo' => array('Item' => array('foreignKey' => 'item_id', 'fields' => array('id', 'name', 'category_id')), 'Type' => array('foreignKey' => 'type_id', 'fields' => array('name')), 'Size' => array('foreignKey' => 'size_id', 'fields' => array('size')), 'Category' => array('foreignKey' => 'category_id', 'fields' => array('Category.id', 'Category.name')))), false);
+
+
             $orderDetails = $this->Order->getfirstOrder($merchantId, $storeID, $orderId);
             $amount = 0;
             $itemPriceWidth = "";
@@ -1982,18 +2006,16 @@ class CommonComponent extends Component {
             $orderItemByCategory = array();
             foreach ($orderDetails['OrderItem'] as $order) {
                 $categoryId = (isset($order['Item']['category_id']) ? $order['Item']['category_id'] : 0);
-                if(array_key_exists($categoryId, $orderItemByCategory))
-                {
+                if (array_key_exists($categoryId, $orderItemByCategory)) {
                     $orderItemByCategory[$categoryId][] = $order;
                 } else {
                     $orderItemByCategory[$categoryId][] = $order;
                 }
             }
-            
-            
-            $categoryByData= array();
-            foreach ($orderItemByCategory as $orderItemKey => $orderItem)
-            {
+
+
+            $categoryByData = array();
+            foreach ($orderItemByCategory as $orderItemKey => $orderItem) {
                 $itemss = array();
                 $categoryData = '';
                 if (!empty($orderItemKey)) {
@@ -2001,11 +2023,12 @@ class CommonComponent extends Component {
                     $this->Category = new Category();
                     $catName = $this->Category->findById($orderItemKey, array('name'));
                     $categoryData = ''
-                                . '<tr>'
-                                    . '<td style="padding:1px 4px;" colspan="3"><strong>' . strtoupper($catName['Category']['name']) . '</strong></td>'
-                                . '</tr>';
+                            . '<tr>'
+                            . '<td style="padding:1px 4px;">&nbsp;</td>'
+                            . '<td style="padding:1px 4px;" colspan="2"><strong>' . strtoupper($catName['Category']['name']) . '</strong></td>'
+                            . '</tr>';
                 }
-                
+
                 foreach ($orderItem as $order) {
                     $itemPrice = (isset($order['item_price']) ? $order['item_price'] : 0);
                     if (empty($order['OrderOffer'])) {
@@ -2022,45 +2045,42 @@ class CommonComponent extends Component {
 
                         $tempitem = ''
                                 . '<tr>'
-                                    . '<td style="padding:1px 4px;">' . $order['quantity'] . '</td>'
-                                    . '<td style="padding:1px 4px; width: 290px; font-size: 14px;">' . $sizestring . $order['Item']['name'] . '&nbsp;' . $Interval . '</td>'
-                                    . '<td style="padding:1px 4px;">' . $this->amount_format($itemPrice * $order['quantity']) . '</td>'
+                                . '<td style="padding:1px 4px;">' . $order['quantity'] . '</td>'
+                                . '<td style="padding:1px 4px; width: 290px; font-size: 14px;">' . $sizestring . $order['Item']['name'] . '&nbsp;' . $Interval . '&nbsp;x&nbsp;' . $this->amount_format($itemPrice) . '</td>'
+                                . '<td style="padding:1px 4px;">' . $this->amount_format($itemPrice * $order['quantity']) . '</td>'
                                 . '</tr>';
 
                         $toppingstr = "";
-                        
+
                         $toppingArr = array();
                         if (!empty($order['OrderTopping'])) {
                             foreach ($order['OrderTopping'] as $key => $toppingarr) {
-                                if(array_key_exists($toppingarr['topType'], $toppingArr))
-                                {
+                                if (array_key_exists($toppingarr['topType'], $toppingArr)) {
                                     $toppingArr[$toppingarr['topType']][] = $toppingarr;
                                 } else {
                                     $toppingArr[$toppingarr['topType']][] = $toppingarr;
                                 }
                             }
-                            
-                            foreach ($toppingArr as $toppingArrKey => $toppingArrVal)
-                            {
+
+                            foreach ($toppingArr as $toppingArrKey => $toppingArrVal) {
                                 foreach ($toppingArrVal as $key => $toppingarr) {
                                     if (!empty($toppingarr['Topping']['name'])) {
-                                        if($toppingArrKey == 'defaultTop' && $toppingarr['addon_size_id'] == 1)
-                                        {
-                                            $toppingarr['price']= 0.00;
+                                        if ($toppingArrKey == 'defaultTop' && $toppingarr['addon_size_id'] == 1) {
+                                            $toppingarr['price'] = 0.00;
                                         }
-                                        
+
                                         $toppingPrice = $toppingarr['price'] * $toppingarr['addon_size_id'];
-                                        $toppingPriceValue = '';
-                                        if($toppingPrice > 0)
-                                        {
-                                            $toppingPriceValue = $this->amount_format($toppingPrice  * $order['quantity']);
+                                        $toppingPriceValue = $singleToppingPriceString = '';
+                                        if ($toppingPrice > 0) {
+                                            $toppingPriceValue = $this->amount_format($toppingPrice * $order['quantity']);
+                                            $singleToppingPriceString = '&nbsp;x&nbsp;' . $this->amount_format($toppingPrice);
                                         }
                                         $toppingstr .= ''
-                                        . '<tr>'
-                                            . '<td style="padding:1px 4px;"> </td>'
-                                            . '<td style="padding:1px 4px; width: 290px; font-size: 14px;">' . (($toppingarr['addon_size_id'] > 1) ? '+' . $toppingarr['addon_size_id'] . ' ' : '+1 ') . $toppingarr['Topping']['name'] . '</td>'
-                                            . '<td style="padding:1px 4px;">' . $toppingPriceValue . '</td>'
-                                        . '</tr>';
+                                                . '<tr>'
+                                                . '<td style="padding:1px 4px;"> </td>'
+                                                . '<td style="padding:1px 4px; width: 290px; font-size: 14px;">' . (($toppingarr['addon_size_id'] > 1) ? '+' . $toppingarr['addon_size_id'] . ' ' : '+1 ') . $toppingarr['Topping']['name'] . $singleToppingPriceString . '</td>'
+                                                . '<td style="padding:1px 4px;">' . $toppingPriceValue . '</td>'
+                                                . '</tr>';
                                     }
                                 }
                             }
@@ -2069,20 +2089,20 @@ class CommonComponent extends Component {
                         if (!empty($order['OrderPreference'])) {
                             foreach ($order['OrderPreference'] as $key => $prearr) {
                                 if (!empty($prearr['SubPreference']['name'])) {
-                                        $preferenceStrNew = (($prearr['size'] > 1) ? '+' . $prearr['size'] . ' ' : '+1 ') . $prearr['SubPreference']['name'];
-                                        
-                                        $preferencePrice = $prearr['price'] * $prearr['size'];
-                                        $preferencePriceValue = '';
-                                        if($preferencePrice > 0)
-                                        {
-                                            $preferencePriceValue = $this->amount_format($preferencePrice * $order['quantity']);
-                                        }
-                                        $preferencetr .= ''
-                                        . '<tr>'
+                                    $preferenceStrNew = (($prearr['size'] > 1) ? '+' . $prearr['size'] . ' ' : '+1 ') . $prearr['SubPreference']['name'];
+
+                                    $preferencePrice = $prearr['price'] * $prearr['size'];
+                                    $preferencePriceValue = $singlePrefferencePriceString = '';
+                                    if ($preferencePrice > 0) {
+                                        $preferencePriceValue = $this->amount_format($preferencePrice * $order['quantity']);
+                                        $singlePrefferencePriceString = '&nbsp;x&nbsp;' . $this->amount_format($preferencePrice);
+                                    }
+                                    $preferencetr .= ''
+                                            . '<tr>'
                                             . '<td style="padding:1px 4px;"> </td>'
-                                            . '<td style="padding:1px 4px; width: 290px; font-size: 14px;">' . $preferenceStrNew . '</td>'
+                                            . '<td style="padding:1px 4px; width: 290px; font-size: 14px;">' . $preferenceStrNew . $singlePrefferencePriceString . '</td>'
                                             . '<td style="padding:1px 4px;">' . $preferencePriceValue . '</td>'
-                                        . '</tr>';
+                                            . '</tr>';
                                 }
                             }
                         }
@@ -2094,28 +2114,28 @@ class CommonComponent extends Component {
                         if (!empty($preferencetr)) {
                             $preference = $preferencetr;
                         }
-                        
+
                         $tempfinalprice = ''
                                 . '<tr>'
-                                    . '<td style="padding:1px 4px;"> </td>'
-                                    . '<td style="padding:1px 4px; width: 290px;"> </td>'
-                                    . '<td style="padding:1px 4px;"><strong>' . $this->amount_format($order['total_item_price']) . '</strong></td>'
+                                . '<td style="padding:1px 4px;"> </td>'
+                                . '<td style="padding:1px 4px; width: 290px;"> </td>'
+                                . '<td style="padding:1px 4px;"><strong>' . $this->amount_format($order['total_item_price']) . '</strong></td>'
                                 . '</tr>'
                                 . '<tr>'
-                                    . '<td style="padding: 3px;"> </td>'
-                                    . '<td style="padding: 3px; width: 290px;"> </td>'
-                                    . '<td style="padding: 3px;"> </td>'
+                                . '<td style="padding: 3px;"> </td>'
+                                . '<td style="padding: 3px; width: 290px;"> </td>'
+                                . '<td style="padding: 3px;"> </td>'
                                 . '</tr>';
-                        
-                        
+
+
                         $itemss[] = $tempitem . $preference . $topping . $tempfinalprice;
                     } else {
-                        $offerItemName = ''
-                                    . '<tr>'
-                                        . '<td style="padding:1px 4px;"> </td>'
-                                        . '<td style="padding:1px 4px; width: 290px;"><strong>Promotional Offer</strong></td>'
-                                        . '<td style="padding:1px 4px;"> </td>'
-                                    . '</tr>';
+                        $offerItemNameString = ''
+                                . '<tr>'
+                                . '<td style="padding:1px 4px;"> </td>'
+                                . '<td style="padding:1px 4px; width: 290px; font-size: 14px;">Promotional Offer: </td>'
+                                . '<td style="padding:1px 4px;"> </td>'
+                                . '</tr>';
                         foreach ($order['OrderOffer'] as $off) {
                             if (!empty($off['Size']['size'])) {
                                 $offsizestring = $off['Size']['size'] . "&nbsp;";
@@ -2123,12 +2143,53 @@ class CommonComponent extends Component {
                                 $offsizestring = "";
                             }
 
-                            $offerItemName .= ''
-                                . '<tr>'
+                            $offerPrice = 0;
+                            $offerItemName = '';
+                            if ($off['Offer']['is_fixed_price'] == 1) {
+                                $offerType = 1;
+                                if ($off['Offer']['offerprice'] == 0) {
+                                    $offerPrice = 0;
+                                    $rate = 0;
+                                } else {
+                                    $offerPrice = $off['Offer']['offerprice'];
+                                    $rate = 0;
+                                }
+                            } elseif ($off['Offer']['is_fixed_price'] == 0) {
+                                $offerType = 0;
+                                if (!isset($off['OfferDetail']['discountAmt'])) {
+                                    $offerPrice = $offerPrice + 0;
+                                    $rate = 0;
+                                } else {
+                                    if ($off['OfferDetail']['discountAmt'] == 0) {
+                                        $offerPrice = $offerPrice + 0;
+                                        $rate = 0;
+                                    } else {
+                                        $offerPrice = $offerPrice + $off['OfferDetail']['discountAmt'];
+                                        $rate = $off['OfferDetail']['discountAmt'];
+                                    }
+                                }
+                            }
+                            if ($rate == 0) {
+                                if ($offerType == 1) {
+                                    $offerItemName = $off['quantity'] . ' X ' . $offsizestring . $off['Item']['name'];
+                                } else {
+                                    $offerItemName = $off['quantity'] . ' X ' . $offsizestring . $off['Item']['name'] . ' @ Free';
+                                }
+                            } else {
+                                $offerItemName = $off['quantity'] . ' X ' . $offsizestring . $off['Item']['name'] . ' @ ' . $this->amount_format($rate);
+                            }
+
+                            $offerItemNameString .= ''
+                                    . '<tr>'
                                     . '<td style="padding:1px 4px;"> </td>'
-                                    . '<td style="padding:1px 4px; width: 290px; font-size: 14px;">+' . $off['quantity'] . ' ' . $offsizestring . $off['Item']['name'] . '</td>'
+                                    . '<td style="padding:1px 4px; width: 290px; font-size: 14px;">' . $offerItemName . '</td>'
                                     . '<td style="padding:1px 4px;"> </td>'
-                                . '</tr>';
+                                    . '</tr>';
+
+                            // For Offer Price
+                            if ($off['Offer']['is_fixed_price']) {
+                                $itemPrice = (!empty($off['Offer']['offerprice'])) ? $off['Offer']['offerprice'] : $itemPrice;
+                            }
                         }
 
                         $toppingstr = "";
@@ -2136,20 +2197,20 @@ class CommonComponent extends Component {
                             foreach ($order['OrderTopping'] as $key => $toppingarr) {
                                 if (!empty($toppingarr['Topping']['name'])) {
                                     $toppingStrNew = (($toppingarr['addon_size_id'] > 1) ? '+' . $toppingarr['addon_size_id'] . ' ' : '+1 ') . $toppingarr['Topping']['name'];
-                                    
+
                                     $toppingPrice = $toppingarr['price'] * $toppingarr['addon_size_id'];
-                                    $toppingPriceValue = '';
-                                    if($toppingPrice > 0)
-                                    {
+                                    $singleToppingPriceString = $toppingPriceValue = '';
+                                    if ($toppingPrice > 0) {
                                         $toppingPriceValue = $this->amount_format($toppingPrice * $order['quantity']);
+                                        $singleToppingPriceString = '&nbsp;x&nbsp;' . $this->amount_format($toppingPrice);
                                     }
-                                    
+
                                     $toppingstr .= ''
-                                    . '<tr>'
-                                        . '<td style="padding:1px 4px;"> </td>'
-                                        . '<td style="padding:1px 4px; width: 290px; font-size: 14px;">' . $toppingStrNew . '</td>'
-                                        . '<td style="padding:1px 4px;">' . $toppingPriceValue . '</td>'
-                                    . '</tr>';
+                                            . '<tr>'
+                                            . '<td style="padding:1px 4px;"> </td>'
+                                            . '<td style="padding:1px 4px; width: 290px; font-size: 14px;">' . $toppingStrNew . $singleToppingPriceString . '</td>'
+                                            . '<td style="padding:1px 4px;">' . $toppingPriceValue . '</td>'
+                                            . '</tr>';
                                 }
                             }
                         }
@@ -2158,21 +2219,21 @@ class CommonComponent extends Component {
                         if (!empty($order['OrderPreference'])) {
                             foreach ($order['OrderPreference'] as $key => $prearr) {
                                 if (!empty($prearr['SubPreference']['name'])) {
-                                    
+
                                     $preferenceStrNew = (($prearr['size'] > 1) ? '+' . $prearr['size'] . ' ' : '+1 ') . $prearr['SubPreference']['name'];
-                                    
+
                                     $preferencePrice = $prearr['price'] * $prearr['size'];
-                                    $preferencePriceValue = '';
-                                    if($preferencePrice > 0)
-                                    {
+                                    $preferencePriceValue = $singlePrefferencePriceString = '';
+                                    if ($preferencePrice > 0) {
                                         $preferencePriceValue = $this->amount_format($preferencePrice * $order['quantity']);
+                                        $singlePrefferencePriceString = '&nbsp;x&nbsp;' . $this->amount_format($preferencePrice);
                                     }
                                     $preferencetr .= ''
-                                    . '<tr>'
-                                        . '<td style="padding:1px 4px;"> </td>'
-                                        . '<td style="padding:1px 4px; width: 290px; font-size: 14px;">' . $preferenceStrNew . '</td>'
-                                        . '<td style="padding:1px 4px;">' . $preferencePriceValue . '</td>'
-                                    . '</tr>';
+                                            . '<tr>'
+                                            . '<td style="padding:1px 4px;"> </td>'
+                                            . '<td style="padding:1px 4px; width: 290px; font-size: 14px;">' . $preferenceStrNew . $singlePrefferencePriceString . '</td>'
+                                            . '<td style="padding:1px 4px;">' . $preferencePriceValue . '</td>'
+                                            . '</tr>';
                                 }
                             }
                         }
@@ -2189,7 +2250,7 @@ class CommonComponent extends Component {
                         } else {
                             $osizestring = "";
                         }
-                        
+
                         $Interval = "";
                         if (isset($order['interval_id'])) {
                             $intervalId = $order['interval_id'];
@@ -2197,36 +2258,36 @@ class CommonComponent extends Component {
                         }
                         $tempitem = ''
                                 . '<tr>'
-                                    . '<td style="padding:1px 4px;">' . $order['quantity'] . '</td>'
-                                    . '<td style="padding:1px 4px; width: 290px; font-size: 14px;">' . $osizestring . $order['Item']['name'] . '&nbsp;' . $Interval . '</td>'
-                                    . '<td style="padding:1px 4px;">' . $this->amount_format($itemPrice * $order['quantity']) . '</td>'
+                                . '<td style="padding:1px 4px;">' . $order['quantity'] . '</td>'
+                                . '<td style="padding:1px 4px; width: 290px; font-size: 14px;">' . $osizestring . $order['Item']['name'] . '&nbsp;' . $Interval . '&nbsp;x&nbsp;' . $this->amount_format($itemPrice) . '</td>'
+                                . '<td style="padding:1px 4px;">' . $this->amount_format($itemPrice * $order['quantity']) . '</td>'
                                 . '</tr>';
-                        
+
                         $tempfinalprice = ''
                                 . '<tr>'
-                                    . '<td style="padding:1px 4px;"> </td>'
-                                    . '<td style="padding:1px 4px; width: 290px;"> </td>'
-                                    . '<td style="padding:1px 4px;"><strong>' . $this->amount_format($order['total_item_price']) . '</strong></td>'
+                                . '<td style="padding:1px 4px;"> </td>'
+                                . '<td style="padding:1px 4px; width: 290px;"> </td>'
+                                . '<td style="padding:1px 4px;"><strong>' . $this->amount_format($order['total_item_price']) . '</strong></td>'
                                 . '</tr>'
                                 . '<tr>'
-                                    . '<td style="padding: 3px;"> </td>'
-                                    . '<td style="padding: 3px; width: 290px;"> </td>'
-                                    . '<td style="padding: 3px;"> </td>'
+                                . '<td style="padding: 3px;"> </td>'
+                                . '<td style="padding: 3px; width: 290px;"> </td>'
+                                . '<td style="padding: 3px;"> </td>'
                                 . '</tr>';
-                        $itemss[] = $tempitem . $preference . $topping . $offerItemName . $tempfinalprice;
+                        $itemss[] = $tempitem . $preference . $topping . $offerItemNameString . $tempfinalprice;
                     }
                     $amount = $amount + $order['total_item_price'];
                 }
                 $categoryByData[$orderItemKey] = array('name' => $categoryData, 'items' => $itemss);
             }
-            
+
             $printdata = ''
-                . '<table style="width: 550px; border: none; margin :0 auto;">'
+                    . '<table style="width: 550px; border: none; margin :0 auto;">'
                     . '<tr>'
-                        . '<td style="padding:1px 4px; width: 100%;">'
-                            . '<table style="width: 100%; border: 1px solid #000000;">';
-            
-                            
+                    . '<td style="padding:1px 4px; width: 100%;">'
+                    . '<table style="width: 100%; border: 1px solid #000000;">';
+
+
             $createdTime = $this->storeTimeFormateUser($orderDetails['Order']['created'], true, $storeID);
             $eData = explode(" ", $createdTime);
             $date = $time = $am = '';
@@ -2240,10 +2301,10 @@ class CommonComponent extends Component {
                 $am = $eData[2];
             }
             $printdata .= ''
-                . '<tr>'
+                    . '<tr>'
                     . '<td style="padding:1px 4px;" colspan="3">' . $date . '</td>'
-                . '</tr>';
-            
+                    . '</tr>';
+
 
             //---- Start End-User info --------------------------
             if ($orderDetails['Order']['user_id'] == 0) {
@@ -2255,63 +2316,61 @@ class CommonComponent extends Component {
                 $enduser_phone = $orderDetails['User']['phone'];
                 $email = $orderDetails['User']['email'];
             }
-            
+
             $printdata .= ''
-                . '<tr>'
+                    . '<tr>'
                     . '<td style="padding:1px 4px;" colspan="3">' . $enduser_name . '</td>'
-                . '</tr>';
+                    . '</tr>';
             $printdata .= ''
-                . '<tr>'
+                    . '<tr>'
                     . '<td style="padding:1px 4px;" colspan="3"><a href="mailto:' . $email . '">' . $email . '</a></td>'
-                . '</tr>';
+                    . '</tr>';
             $printdata .= ''
-                . '<tr>'
-                    . '<td style="padding:1px 4px;">' . $enduser_phone . '</td>'
-                    . '<td style="padding:1px 4px; width:158px;"> </td>';
-                            
+                    . '<tr>'
+                    . '<td style="padding:1px 4px; width:268px;">' . $enduser_phone . '</td>'
+                    . '<td style="padding:1px 4px; width:100px;"> </td>';
+
             $address = '';
             if ($orderDetails['Order']['seqment_id'] != 2) {
                 $printdata .='<td style="padding:1px 4px;">Delivery Date/Time</td>';
-            } 
-            else {
+            } else {
                 $printdata .= '<td style="padding:1px 4px;">Pick up Date/Time:</td>';
             }
             $printdata .= ''
-                . '</tr>';
-            
+                    . '</tr>';
+
             //---- End End-User info --------------------------------------
 
             $printdata.='<tr>'
-                        . '<td style="padding:1px 4px;"></br>Online ' . $orderDetails['Segment']['name'] . '</td>'
-                        . '<td style="padding:1px 4px; width:158px;"> </td>'
-                        . '<td style="padding:1px 4px;"></td>'
+                    . '<td style="padding:1px 4px; width:268px;"></br><strong>Online ' . $orderDetails['Segment']['name'] . '</strong></td>'
+                    . '<td style="padding:1px 4px; width:100px;"> </td>'
+                    . '<td style="padding:1px 4px;"></td>'
                     . '</tr>';
             if ($orderDetails['OrderPayment']['payment_gateway'] == 'COD') {
                 if ($orderDetails['Order']['seqment_id'] == 3) {
                     $printdata .= ''
                             . '<tr>'
-                                . '<td style="padding:1px 4px;">Cash on Delivery - <b>UNPAID</b></td>';
+                            . '<td style="padding:1px 4px; width:268px;">Cash on Delivery - <b>UNPAID</b></td>';
                 } else {
                     $printdata .= ''
                             . '<tr>'
-                                .'<td style="padding:1px 4px;">Cash on Pickup - <b>UNPAID</b></td>';
+                            . '<td style="padding:1px 4px; width:268px;">Cash on Pickup - <b>UNPAID</b></td>';
                 }
             } else {
                 $cardNumberString = '';
-                if(isset($orderDetails['OrderPayment']['last_digit']) && !empty($orderDetails['OrderPayment']['last_digit']))
-                {
+                if (isset($orderDetails['OrderPayment']['last_digit']) && !empty($orderDetails['OrderPayment']['last_digit'])) {
                     $cardNumberString .= '<br/>Card Number: xxxxxxxxxxxx' . $orderDetails['OrderPayment']['last_digit'];
                 }
                 $printdata .= ''
-                            . '<tr>'
-                                .'<td style="padding:1px 4px;"><b>PAID</b> by credit card (' . $orderDetails['OrderPayment']['payment_gateway'] . ')' . $cardNumberString . '</td>';
+                        . '<tr>'
+                        . '<td style="padding:1px 4px; width:268px;"><b>PAID</b> by credit card (' . $orderDetails['OrderPayment']['payment_gateway'] . ')' . $cardNumberString . '</td>';
             }
-            
-            
+
+
             if ($orderDetails['Order']['seqment_id'] != 2) {
-                
+
                 $address = $orderDetails['DeliveryAddress']['address'] . " " . $orderDetails['DeliveryAddress']['city'];
-                
+
                 $pickuptime = '';
                 $pickup_time = $this->storeTimeFormateUser($orderDetails['Order']['pickup_time'], true, $storeID);
                 $pData = explode(" ", $pickup_time);
@@ -2325,16 +2384,15 @@ class CommonComponent extends Component {
                 if (!empty($pData[2])) {
                     $am = $pData[2];
                 }
-                
+
                 $printdata .= ''
-                            . '<td style="padding:1px 4px; width:158px;"> </td>'
-                            . '<td style="padding:1px 4px;">' . $date . '</td>'
+                        . '<td style="padding:1px 4px; width:100px;"> </td>'
+                        . '<td style="padding:1px 4px;">' . $date . '</td>'
                         . '</tr>'
                         . '<tr>'
-                            . '<td style="padding:1px 4px;">Order#: ' . $orderDetails['Order']['order_number'] . '</td>'
-                            . '<td style="padding:1px 4px; width:158px;"> </td>'
-                            . '<td style="padding:1px 4px;">' . $time . '' . $am .'</td>';
-                
+                        . '<td style="padding:1px 4px; width:268px;">Order#: ' . $orderDetails['Order']['order_number'] . '</td>'
+                        . '<td style="padding:1px 4px; width:100px;"> </td>'
+                        . '<td style="padding:1px 4px;">' . $time . ' ' . $am . '</td>';
             } else {
                 $pickuptime = $this->storeTimeFormateUser($orderDetails['Order']['pickup_time'], true, $storeID);
                 $pData = explode(" ", $pickuptime);
@@ -2349,72 +2407,70 @@ class CommonComponent extends Component {
                     $am = $pData[2];
                 }
                 $printdata .= ''
-                            . '<td style="padding:1px 4px; width:158px;"> </td>'
-                            . '<td style="padding:1px 4px;">' . $date . '</td>'
+                        . '<td style="padding:1px 4px; width:100px;"> </td>'
+                        . '<td style="padding:1px 4px;">' . $date . '</td>'
                         . '</tr>'
                         . '<tr>'
-                            . '<td style="padding:1px 4px;">Order#: ' . $orderDetails['Order']['order_number'] . '</td>'
-                            . '<td style="padding:1px 4px; width:158px;"> </td>'
-                            . '<td style="padding:1px 4px;">' . $time . '' . $am .'</td>';   
-    }
+                        . '<td style="padding:1px 4px; width:268px;">Order#: ' . $orderDetails['Order']['order_number'] . '</td>'
+                        . '<td style="padding:1px 4px; width:100px;"> </td>'
+                        . '<td style="padding:1px 4px;">' . $time . ' ' . $am . '</td>';
+            }
             $printdata .= ''
-                        . '</tr>';
-            
-            if($address != '')
-            {
+                    . '</tr>';
+
+            if ($address != '') {
                 $printdata .= ''
                         . '<tr>'
-                            . '<td style="padding:1px 4px;" colspan="3">&nbsp;</td>'
+                        . '<td style="padding:1px 4px;" colspan="3">&nbsp;</td>'
                         . '</tr>'
                         . '<tr>'
-                            . '<td style="padding:1px 4px;" colspan="3">' . $address . '</td>'
+                        . '<td style="padding:1px 4px;" colspan="3">' . $address . '</td>'
                         . '</tr>';
             }
-                $printdata .= ''
-                        . '</table>'
+            $printdata .= ''
+                    . '</table>'
                     . '</td>'
-                . '</tr>'
-                . '<tr>'
-                    . '<td style="padding:1px 4px; width: 100%;">'
-                        . '<table style="width: 100%; border:1px solid #000000;" cellpadding="0" cellspacing="0">'
-                        . '<tr>'
-                            . '<td style="padding:1px 4px;" colspan="3"><strong>Order Detail</strong></td>'
-                        . '</tr>'
-                        . '<tr>'
-                            . '<td style="padding:1px 4px; width: 94px;"><strong>Qty</strong></td>'
-                            . '<td style="padding:1px 4px; width: 290px;"><strong>Item</strong></td>'
-                            . '<td style="padding:1px 4px; width: 139px;"><strong>Price</strong></td>'
-                        . '</tr>';
-                foreach ($categoryByData as $categoryByDataVal)
-                {
-                    $printdata .= $categoryByDataVal['name'];
-                    foreach ($categoryByDataVal['items'] as $dataItem) {    
-                        $printdata .= $dataItem;
-                    }
-                    $printdata .= ''
-                                . '<tr>'
-                                    . '<td style="padding:1px 4px;" colspan="3">&nbsp;</td>'
-                                . '</tr>';
-                }
-                $printdata .= ''
-                            . '</table>'
-                        . '</td>'
                     . '</tr>'
                     . '<tr>'
-                        . '<td style="padding:1px 4px;">'
-                            . '<table style="width:100%;border:1px solid #000000;">'
-                                . '<tr>'
-                                    . '<td style="padding:1px 4px; width:25%;">Sub-Total:</td>'
-                                    . '<td style="padding:1px 4px; width: 246px;"> </td>'
-                                    . '<td style="padding:1px 4px;">' . $this->amount_format($amount) . '</td>'
-                                . '</tr>';
+                    . '<td style="padding:1px 4px; width: 100%;">'
+                    . '<table style="width: 100%; border:1px solid #000000;" cellpadding="0" cellspacing="0">'
+                    . '<tr>'
+                    . '<td style="padding:1px 4px;" colspan="3"><strong>Order Detail</strong></td>'
+                    . '</tr>'
+                    . '<tr>'
+                    . '<td style="padding:1px 4px; width: 94px;"><strong>Qty</strong></td>'
+                    . '<td style="padding:1px 4px; width: 290px;"><strong>Item</strong></td>'
+                    . '<td style="padding:1px 4px; width: 139px;"><strong>Price</strong></td>'
+                    . '</tr>';
+            foreach ($categoryByData as $categoryByDataVal) {
+                $printdata .= $categoryByDataVal['name'];
+                foreach ($categoryByDataVal['items'] as $dataItem) {
+                    $printdata .= $dataItem;
+                }
+                $printdata .= ''
+                        . '<tr>'
+                        . '<td style="padding:1px 4px;" colspan="3">&nbsp;</td>'
+                        . '</tr>';
+            }
+            $printdata .= ''
+                    . '</table>'
+                    . '</td>'
+                    . '</tr>'
+                    . '<tr>'
+                    . '<td style="padding:1px 4px;">'
+                    . '<table style="width:100%;border:1px solid #000000;">'
+                    . '<tr>'
+                    . '<td style="padding:1px 4px; width:25%;">Sub-Total:</td>'
+                    . '<td style="padding:1px 4px; width: 246px;"> </td>'
+                    . '<td style="padding:1px 4px;">' . $this->amount_format($amount) . '</td>'
+                    . '</tr>';
             if ($orderDetails['Order']['coupon_discount'] > 0) {
                 $printdata .= ''
-                                . '<tr>'
-                                    . '<td style="padding:1px 4px; width:25%;">Coupon Discount: ' . $orderDetails['Order']['coupon_code'] . '</td>'
-                                    . '<td style="padding:1px 4px; width: 246px;"> </td>'
-                                    . '<td style="padding:1px 4px;">' . $this->amount_format($orderDetails['Order']['coupon_discount']) . '</td>'
-                                . '</tr>';
+                        . '<tr>'
+                        . '<td style="padding:1px 4px; width:25%;">Coupon Discount: ' . $orderDetails['Order']['coupon_code'] . '</td>'
+                        . '<td style="padding:1px 4px; width: 246px;"> </td>'
+                        . '<td style="padding:1px 4px;">' . $this->amount_format($orderDetails['Order']['coupon_discount']) . '</td>'
+                        . '</tr>';
             }
             if (!empty($orderDetails['OrderItemFree'])) {
                 $freeInt = 0;
@@ -2424,44 +2480,44 @@ class CommonComponent extends Component {
                     if (!empty($itemName['Item']['name'])) {
                         $printdata .= ''
                                 . '<tr>'
-                                    . '<td style="padding:1px 4px;" colspan="3">Free Item: ' . $freeItem['free_quantity'] . ' ' . $itemName['Item']['name'] . '</td>'
+                                . '<td style="padding:1px 4px;" colspan="3">Free Item: ' . $freeItem['free_quantity'] . ' ' . $itemName['Item']['name'] . '</td>'
                                 . '</tr>';
                     }
                 }
             }
             if ($orderDetails['Order']['service_amount'] > 0) {
                 $printdata .= ''
-                                . '<tr>'
-                                    . '<td style="padding:1px 4px; width:25%;">Service Fee: </td>'
-                                    . '<td style="padding:1px 4px; width: 246px;"> </td>'
-                                    . '<td style="padding:1px 4px;">' . $this->amount_format($orderDetails['Order']['service_amount']) . '</td>'
-                                . '</tr>';
+                        . '<tr>'
+                        . '<td style="padding:1px 4px; width:25%;">Service Fee: </td>'
+                        . '<td style="padding:1px 4px; width: 246px;"> </td>'
+                        . '<td style="padding:1px 4px;">' . $this->amount_format($orderDetails['Order']['service_amount']) . '</td>'
+                        . '</tr>';
             }
             if ($orderDetails['Order']['delivery_amount'] > 0) {
                 $printdata .= ''
-                                . '<tr>'
-                                    . '<td style="padding:1px 4px; width:25%;">Delivery Fee: </td>'
-                                    . '<td style="padding:1px 4px; width: 246px;"> </td>'
-                                    . '<td style="padding:1px 4px;">' . $this->amount_format($orderDetails['Order']['delivery_amount']) . '</td>'
-                                . '</tr>';
+                        . '<tr>'
+                        . '<td style="padding:1px 4px; width:25%;">Delivery Fee: </td>'
+                        . '<td style="padding:1px 4px; width: 246px;"> </td>'
+                        . '<td style="padding:1px 4px;">' . $this->amount_format($orderDetails['Order']['delivery_amount']) . '</td>'
+                        . '</tr>';
             }
             if ($orderDetails['Order']['tax_price'] > 0) {
                 $printdata .= ''
-                                . '<tr>'
-                                    . '<td style="padding:1px 4px; width:25%;">Tax: </td>'
-                                    . '<td style="padding:1px 4px; width: 246px;"> </td>'
-                                    . '<td style="padding:1px 4px;">' . $this->amount_format($orderDetails['Order']['tax_price']) . '</td>'
-                                . '</tr>';
+                        . '<tr>'
+                        . '<td style="padding:1px 4px; width:25%;">Tax: </td>'
+                        . '<td style="padding:1px 4px; width: 246px;"> </td>'
+                        . '<td style="padding:1px 4px;">' . $this->amount_format($orderDetails['Order']['tax_price']) . '</td>'
+                        . '</tr>';
             }
             $tipLabel = '';
             $tipAmount = '';
-            if($orderDetails['Order']['tip_option'] == 0) {
+            if ($orderDetails['Order']['tip_option'] == 0) {
                 $tipLabel = 'No Tip';
                 $tipAmount = '';
-            } else if($orderDetails['Order']['tip_option'] == 1) {
+            } else if ($orderDetails['Order']['tip_option'] == 1) {
                 $tipLabel = 'Tip With Cash';
                 $tipAmount = '';
-            } else if($orderDetails['Order']['tip_option'] == 2) {
+            } else if ($orderDetails['Order']['tip_option'] == 2) {
                 $tipLabel = 'Tip With Card: ';
                 $tipAmount = $this->amount_format($orderDetails['Order']['tip']);
             } else {
@@ -2469,40 +2525,39 @@ class CommonComponent extends Component {
                 $tipAmount = $this->amount_format($orderDetails['Order']['tip']);
             }
             $printdata .= ''
-                            . '<tr>'
-                                . '<td style="padding:1px 4px; width:25%;">' . $tipLabel . '</td>'
-                                . '<td style="padding:1px 4px; width: 246px;"> </td>'
-                                . '<td style="padding:1px 4px;">' . $tipAmount . '</td>'
-                            . '</tr>';
-            
+                    . '<tr>'
+                    . '<td style="padding:1px 4px; width:25%;">' . $tipLabel . '</td>'
+                    . '<td style="padding:1px 4px; width: 246px;"> </td>'
+                    . '<td style="padding:1px 4px;">' . $tipAmount . '</td>'
+                    . '</tr>';
+
             $printdata .= ''
-                                . '<tr>'
-                                    . '<td style="padding:1px 4px; width:25%;"><strong>Total: </strong></td>'
-                                    . '<td style="padding:1px 4px; width: 246px;"> </td>'
-                                    . '<td style="padding:1px 4px;"><strong>' . $this->amount_format($orderDetails['Order']['amount'] - $orderDetails['Order']['coupon_discount']) . '</strong></td>'
-                                . '</tr>';
-            
+                    . '<tr>'
+                    . '<td style="padding:1px 4px; width:25%;"><strong>Total: </strong></td>'
+                    . '<td style="padding:1px 4px; width: 246px;"> </td>'
+                    . '<td style="padding:1px 4px;"><strong>' . $this->amount_format($orderDetails['Order']['amount'] - $orderDetails['Order']['coupon_discount']) . '</strong></td>'
+                    . '</tr>';
+
             $printdata .= ''
-                                . '<tr>'
-                                    . '<td style="padding:1px 4px;" colspan="3">*Special Instruction*</td>'
-                                . '</tr>'
-                                . '<tr>'
-                                    . '<td style="padding:1px 4px;" colspan="3">&nbsp;</td>'
-                                . '</tr>'
-                                . '<tr>'
-                                    . '<td style="padding:1px 4px;" colspan="3">' . $orderDetails['Order']['order_comments'] . '</td>'
-                                . '</tr>'
-                                . '<tr>'
-                                    . '<td style="padding:1px 4px;" colspan="3">We kindly ask you not to reply to this e-mail but instead contact us via phone call.</td>'
-                                . '</tr>'
-                            . '</table>'
-                        . '</td>'
+                    . '<tr>'
+                    . '<td style="padding:1px 4px;" colspan="3">*Special Instruction*</td>'
                     . '</tr>'
-                . '</table>';
+                    . '<tr>'
+                    . '<td style="padding:1px 4px;" colspan="3">&nbsp;</td>'
+                    . '</tr>'
+                    . '<tr>'
+                    . '<td style="padding:1px 4px;" colspan="3">' . $orderDetails['Order']['order_comments'] . '</td>'
+                    . '</tr>'
+                    . '<tr>'
+                    . '<td style="padding:1px 4px;" colspan="3">We kindly ask you not to reply to this e-mail but instead contact us via phone call.</td>'
+                    . '</tr>'
+                    . '</table>'
+                    . '</td>'
+                    . '</tr>'
+                    . '</table>';
             return $printdata;
         }
     }
-    
 
     function currentStoreTime() {
         $storefronttimezone = $this->TimeZone->find('first', array('conditions' => array("TimeZone.id" => $this->Session->read('front_time_zone_id')), 'fields' => array('TimeZone.difference_in_seconds', 'TimeZone.code'), 'recursive' => -1));
@@ -2678,8 +2733,7 @@ class CommonComponent extends Component {
         }
         return $result;
     }
-    
-    
+
     function deleteMultipleRecords($ids = null, $model = null) {
         if (!empty($ids) && !empty($model)) {
             App::import('Model', $model);
@@ -2692,8 +2746,7 @@ class CommonComponent extends Component {
             }
         }
     }
-    
-    
+
     //get HQ stores
 
     function getHQStores($merchantId = null) {
@@ -2704,25 +2757,26 @@ class CommonComponent extends Component {
             return $merchantList;
         }
     }
-    
-    
-    
+
     //change amount in 4 digits i.e. .9 = $00.90
-    function amount_format($amount = null) {
-        $amount = number_format($amount, 2, '.', '');
-        if($amount > 0  && $amount < 1)
-        {
-            $amount = explode('.', $amount);
-            $amount = '.' . $amount[1];
+    function amount_format($amount = null, $symbol = null) {
+        if (strstr($amount, ',')) {
+            $amount = str_replace(',', '', $amount);
         }
-        if($amount >= 1  && $amount <= 9)
-        {
+        $amount = number_format($amount, 2, '.', '');
+        if ($amount > 0 && $amount < 1) {
+            $amount = explode('.', $amount);
+            $amount = '0.' . $amount[1];
+        }
+        if ($amount >= 1 && $amount <= 9) {
             $amount = $amount;
         }
-        $amount = '$' . $amount;
+        if (empty($symbol)) {
+            $amount = '$' . $amount;
+        }
         return $amount;
     }
-    
+
     function orderItemDetail($orderId = null) {
         if ($orderId) {
             App::import('Model', 'OrderItem');
@@ -2748,6 +2802,38 @@ class CommonComponent extends Component {
             $orderItemFreeDetail = $this->OrderItemFree->find('count', array('conditions' => array('OrderItemFree.order_id' => $orderId)));
             return $orderItemFreeDetail;
         }
+    }
+
+    function getStartAndEndDate($week, $year) {
+        $time = strtotime("1 January $year", time());
+        $day = date('w', $time);
+        $time += ((7 * $week) + 1 - $day) * 24 * 3600;
+        $return = date('d', $time);
+        return $return;
+    }
+
+    function checkNotificationMethod($store, $method) {
+        $result = false;
+        $storeNotificatioArr = array();
+        if ($method == 'email') {
+            $notificationType = 1;
+            $notificationMethod = $store['Store']['notification_email'];
+        }
+        if ($method == 'number') {
+            $notificationType = 2;
+            $notificationMethod = $store['Store']['notification_number'];
+        }
+        if ($method == 'voice') {
+            $notificationType = 4;
+            $notificationMethod = $store['Store']['notification_voice'];
+        }
+        if (!empty($store['Store']['notification_type'])) {
+            $storeNotificatioArr = explode(",", $store['Store']['notification_type']);
+        }
+        if ((in_array($notificationType, $storeNotificatioArr) || in_array(3, $storeNotificatioArr)) && (!empty($notificationMethod))) {
+            $result = TRUE;
+        }
+        return $result;
     }
 
 }

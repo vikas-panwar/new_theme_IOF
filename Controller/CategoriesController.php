@@ -324,12 +324,19 @@ class CategoriesController extends StoreAppController {
                 $sheetData = $objPHPExcel->getActiveSheet()->toArray(null, true, true, true);
                 $real_data = array_values($sheetData);
                 $i = 0;
+                $storeId = $this->Session->read('admin_store_id');
+                $merchantId = $this->Session->read('admin_merchant_id');
                 foreach ($real_data as $key => $row) {
+                    $row['A'] = trim($row['A']);
+                    if (!empty($row['A'])) {
+                        $isUniqueId = $this->Category->checkCategoryWithId($row['A']);
+                        if (!empty($isUniqueId) && $isUniqueId['Category']['store_id'] != $storeId) {
+                            continue;
+                        }
+                    }
                     $row = $this->Common->trimValue($row);
                     if ($key > 0) {
                         if (!empty($row['B']) && !empty($row['C']) && !empty($row['E'])) {
-                            $storeId = $this->Session->read('admin_store_id');
-                            $merchantId = $this->Session->read('admin_merchant_id');
                             if (!empty($storeId)) {
                                 $categoryName = trim($row['B']);
                                 if (!empty($row['A'])) {

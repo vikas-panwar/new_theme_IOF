@@ -775,12 +775,19 @@ class ItemsController extends StoreAppController {
                 $sheetData = $objPHPExcel->getActiveSheet()->toArray(null, true, true, true);
                 $real_data = array_values($sheetData);
                 $i = 0;
+                $storeId = $this->Session->read('admin_store_id');
+                $merchantId = $this->Session->read('admin_merchant_id');
                 foreach ($real_data as $key => $row) {
+                    $row['A'] = trim($row['A']);
+                    if (!empty($row['A'])) {
+                        $isUniqueId = $this->Item->checkItemWithId($row['A']);
+                        if (!empty($isUniqueId) && $isUniqueId['Item']['store_id'] != $storeId) {
+                            continue;
+                        }
+                    }
                     $row = $this->Common->trimValue($row);
                     if ($key > 0) {
                         if (!empty($row['B']) && !empty($row['D'])) {
-                            $storeId = $this->Session->read('admin_store_id');
-                            $merchantId = $this->Session->read('admin_merchant_id');
                             if (!empty($storeId)) {
                                 $categoryId = $this->Category->getCategoryByName($storeId, trim($row['D']));
                                 if (!empty($categoryId)) {
@@ -796,8 +803,8 @@ class ItemsController extends StoreAppController {
                                         $itemdata['store_id'] = $storeId;
                                         $itemdata['merchant_id'] = $merchantId;
                                         $itemdata['description'] = $row['C'];
-                                        
-                                        
+
+
                                         if (!empty($row['E'])) {
                                             $itemdata['is_deliverable'] = $row['E'];
                                         } else {
@@ -821,14 +828,14 @@ class ItemsController extends StoreAppController {
                                         } else {
                                             $itemdata['is_seasonal_item'] = 0;
                                         }
-                                        
+
                                         // For Subs Default Price Applicable
                                         if (!empty($row['G'])) {
                                             $itemdata['default_subs_price'] = $row['G'];
                                         } else {
                                             $itemdata['default_subs_price'] = 0;
                                         }
-                                        
+
                                         if (!empty($row['A'])) {
                                             $itemdata['id'] = $row['A'];
                                         } else {
@@ -846,7 +853,7 @@ class ItemsController extends StoreAppController {
                                         } else {
                                             $itemdata['mandatory_item_units'] = 0;
                                         }
-                                        
+
                                         $this->Item->saveItem($itemdata);
                                         if (!empty($row['A'])) {
                                             $itemID = $row['A'];
@@ -1033,21 +1040,21 @@ class ItemsController extends StoreAppController {
             $objPHPExcel->getActiveSheet()->setCellValue("E$i", trim($data['Item']['is_deliverable']));
             $objPHPExcel->getActiveSheet()->setCellValue("F$i", trim($data['Item']['is_seasonal_item']));
             $objPHPExcel->getActiveSheet()->setCellValue("G$i", trim($data['Item']['default_subs_price']));
-            
+
             if (!empty($data['Item']['start_date']) && $data['Item']['start_date'] != 0000 - 00 - 00) {
                 $startDate = date('m-d-Y', strtotime($data['Item']['start_date']));
             } else {
                 $startDate = '';
             }
             $objPHPExcel->getActiveSheet()->setCellValue("H$i", trim($startDate));
-            
+
             if (!empty($data['Item']['end_date']) && $data['Item']['end_date'] != 0000 - 00 - 00) {
                 $endDate = date('m-d-Y', strtotime($data['Item']['end_date']));
             } else {
                 $endDate = '';
             }
             $objPHPExcel->getActiveSheet()->setCellValue("I$i", trim($endDate));
-            
+
             $size = '';
             $price = '';
             $itemTax = '';
@@ -1070,7 +1077,7 @@ class ItemsController extends StoreAppController {
             }
             $objPHPExcel->getActiveSheet()->setCellValue("J$i", $size);
             $objPHPExcel->getActiveSheet()->setCellValue("K$i", $price);
-            
+
             $type = '';
             if (!empty($data['ItemType'])) {
                 $itemType = array();
