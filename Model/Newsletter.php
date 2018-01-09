@@ -90,10 +90,13 @@ class Newsletter extends AppModel {
       created:21/8/2015
       ----------------------------------------------------- */
 
-    public function checkNewsletterUniqueNameByMerchantId($newsletterName = null, $merchantId = null, $newsletterId = null) {
+    public function checkNewsletterUniqueNameByMerchantId($newsletterName = null, $merchantId = null, $newsletterId = null, $newsletterStoreId = null) {
         $conditions = array('LOWER(Newsletter.name)' => strtolower($newsletterName), 'Newsletter.merchant_id' => $merchantId, 'Newsletter.is_deleted' => 0);
         if ($newsletterId) {
             $conditions['Newsletter.id !='] = $newsletterId;
+        }
+        if ($newsletterStoreId) {
+            $conditions['Newsletter.store_id'] = $newsletterStoreId;
         }
         $newsletter = $this->find('first', array('fields' => array('id'), 'conditions' => $conditions));
         if ($newsletter) {
@@ -109,11 +112,14 @@ class Newsletter extends AppModel {
       created:21/8/2015
       ----------------------------------------------------- */
 
-    public function checkNewsletterUniqueCodeByMerchantId($newsletterCode = null, $merchantId = null, $newsletterId = null) {
+    public function checkNewsletterUniqueCodeByMerchantId($newsletterCode = null, $merchantId = null, $newsletterId = null, $newsletterStoreId = null) {
 
         $conditions = array('LOWER(Newsletter.content_key)' => strtolower($newsletterCode), 'Newsletter.merchant_id' => $merchantId, 'Newsletter.is_deleted' => 0);
         if ($newsletterId) {
             $conditions['Newsletter.id !='] = $newsletterId;
+        }
+        if ($newsletterStoreId) {
+            $conditions['Newsletter.store_id'] = $newsletterStoreId;
         }
         $newslettercode = $this->find('first', array('fields' => array('id'), 'conditions' => $conditions));
         if ($newslettercode) {

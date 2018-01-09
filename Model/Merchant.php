@@ -40,7 +40,7 @@ class Merchant extends AppModel {
      * ---------------------------------------- */
 
     public function fetchMerchantDetail($merchantId = null) {
-        $storeResult = $this->find('first', array('fields' => array('email', 'id', 'background_image', 'logo','banner_image','contact_us_bg_image','logotype'), 'conditions' => array('Merchant.id' => $merchantId)));
+        $storeResult = $this->find('first', array('fields' => array('email', 'id', 'background_image', 'logo','banner_image','contact_us_bg_image','logotype','time_zone_id'), 'conditions' => array('Merchant.id' => $merchantId)));
         if ($storeResult) {
             return $storeResult;
         } else {

@@ -67,7 +67,7 @@ class Offer extends AppModel {
         $conditions = array('Offer.is_active' => 1, 'Offer.is_deleted' => 0, 'Offer.item_id' => $itemId);
         $offer = $this->find('first', array('conditions' => $conditions));
         if (!empty($offer)) {
-            $offer['Offer']['count'] = $this->OfferDetail->find('count', array('conditions' => array('is_active' => 1, 'is_deleted' => 0, 'offer_id' => $offer['Offer']['id'])));
+            $offer['Offer']['count'] = $this->OfferDetail->find('count', array('conditions' => array('OfferDetail.is_active' => 1, 'OfferDetail.is_deleted' => 0, 'offer_id' => $offer['Offer']['id'])));
             if ($offer['Offer']['count'] <= 0) {
                 $offer = array();
                 return $offer;
@@ -112,7 +112,7 @@ class Offer extends AppModel {
         $conditions = array('Offer.is_active' => 1, 'Offer.is_deleted' => 0, 'Offer.item_id' => $itemId, 'Offer.size_id' => $sizeId);
         $offer = $this->find('first', array('conditions' => $conditions));
         if (!empty($offer)) {
-            $offer['Offer']['count'] = $this->OfferDetail->find('count', array('conditions' => array('is_active' => 1, 'is_deleted' => 0, 'offer_id' => $offer['Offer']['id'])));
+            $offer['Offer']['count'] = $this->OfferDetail->find('count', array('conditions' => array('OfferDetail.is_active' => 1, 'OfferDetail.is_deleted' => 0, 'offer_id' => $offer['Offer']['id'])));
             if ($offer['Offer']['count'] <= 0) {
                 $offer = array();
                 return $offer;
@@ -157,7 +157,7 @@ class Offer extends AppModel {
         $conditions = array('Offer.unit' => $unit, 'Offer.is_active' => 1, 'Offer.is_deleted' => 0, 'Offer.item_id' => $itemId);
         $offer = $this->find('first', array('conditions' => $conditions));
         if (!empty($offer)) {
-            $offer['Offer']['count'] = $this->OfferDetail->find('count', array('conditions' => array('is_active' => 1, 'is_deleted' => 0, 'offer_id' => $offer['Offer']['id'])));
+            $offer['Offer']['count'] = $this->OfferDetail->find('count', array('conditions' => array('OfferDetail.is_active' => 1, 'OfferDetail.is_deleted' => 0, 'offer_id' => $offer['Offer']['id'])));
             if ($offer['Offer']['count'] <= 0) {
                 $offer = array();
                 return $offer;
@@ -202,7 +202,7 @@ class Offer extends AppModel {
         $conditions = array('Offer.unit' => $unit, 'Offer.is_active' => 1, 'Offer.is_deleted' => 0, 'Offer.item_id' => $itemId, 'Offer.size_id' => $sizeId);
         $offer = $this->find('first', array('conditions' => $conditions));
         if (!empty($offer)) {
-            $offer['Offer']['count'] = $this->OfferDetail->find('count', array('conditions' => array('is_active' => 1, 'is_deleted' => 0, 'offer_id' => $offer['Offer']['id'])));
+            $offer['Offer']['count'] = $this->OfferDetail->find('count', array('conditions' => array('OfferDetail.is_active' => 1, 'OfferDetail.is_deleted' => 0, 'offer_id' => $offer['Offer']['id'])));
             if ($offer['Offer']['count'] <= 0) {
                 $offer = array();
                 return $offer;

@@ -125,7 +125,7 @@ class Store extends AppModel {
     }
 
     public function fetchStoreImage($storeName = null) {
-        $storeResult = $this->find('first', array('fields' => array('id', 'store_name', 'store_logo', 'merchant_id', 'is_store_logo', 'background_image', 'SocialMedia.*', 'navigation', 'StoreTheme.name', 'StoreTheme.body_horizontal', 'StoreTheme.main_horizontal', 'StoreTheme.body_vertical', 'StoreTheme.main_vertical', 'StoreTheme.keyword', 'StoreTheme.layout', 'StoreFont.name', 'StoreFont.class', 'is_not_photo', 'is_booking_open', 'is_delivery', 'is_take_away', 'store_hours', 'logotype', 'deal_page', 'phone', 'address', 'city', 'state', 'zipcode', 'review_page', 'theme_color_id', 'store_theme_id', 'display_email'), 'conditions' => array('Store.store_url' => $storeName, 'Store.is_deleted' => 0)));
+        $storeResult = $this->find('first', array('fields' => array('id', 'store_name', 'store_logo', 'merchant_id', 'is_store_logo', 'background_image', 'SocialMedia.*', 'navigation', 'StoreTheme.name', 'StoreTheme.body_horizontal', 'StoreTheme.main_horizontal', 'StoreTheme.body_vertical', 'StoreTheme.main_vertical', 'StoreTheme.keyword', 'StoreTheme.layout', 'StoreFont.name', 'StoreFont.class', 'is_not_photo', 'is_booking_open', 'is_delivery', 'is_take_away', 'store_hours', 'logotype', 'deal_page', 'phone', 'address', 'city', 'state', 'zipcode', 'review_page', 'theme_color_id', 'store_theme_id', 'display_email','TermsAndPolicy.id','TermsAndPolicy.terms_and_conditions','TermsAndPolicy.privacy_policy'), 'conditions' => array('Store.store_url' => $storeName, 'Store.is_deleted' => 0)));
         return $storeResult;
     }
 

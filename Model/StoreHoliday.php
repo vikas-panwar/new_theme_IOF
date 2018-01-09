@@ -79,4 +79,15 @@ class StoreHoliday extends AppModel {
         }
     }
 
+    public function storeCurrentHolidayDetail($holidayDate = null, $storeId = null) {
+        if ($holidayDate) {
+            $dateExists = $this->find('first', array('conditions' => array('StoreHoliday.store_id' => $storeId, 'StoreHoliday.holiday_date' => $holidayDate, 'StoreHoliday.is_deleted' => 0), 'fields' => array('holiday_date', 'description')));
+            if ($dateExists) {
+                return $dateExists;
+            } else {
+                return false;
+            }
+        }
+    }
+
 }
